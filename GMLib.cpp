@@ -93,6 +93,7 @@ int GM_Init(config* conf) {
         SDLEx_LogError("Failed to create renderer driver_index=%d", conf->driver_index);
         return -1;
     }
+    SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
 
     //log renderer info
     SDL_RendererInfo renderer_info;
@@ -251,4 +252,55 @@ std::string GM_GetPathOfFile(const std::string& filepath)
 std::string GM_JoinPaths(const std::string& root, const std::string& relative)
 {
   return root + PATHSEP + relative;
+}
+
+void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, int d_type)
+{
+  DIR *dir;
+  struct dirent *ent;
+                
+  /* Open directory stream */
+  dir = opendir (folder.c_str());
+  if (dir != NULL) {
+    /* Print all files and directories within the directory */
+    while ((ent = readdir (dir)) != NULL) {
+      if (ent->d_type == d_type) {
+        files.push_back(ent->d_name);
+      }
+    }
+    closedir (dir);
+  }
+  else {
+    /* Could not open directory */
+    SDLEx_LogError("GM_EnumPath: failed to open directory %s", folder.c_str());
+    throw std::exception("Failed to open directory");
+  }
+}
+
+void GM_EnumPathFilesEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files)
+{
+  GM_EnumPath(folder, files, DT_REG);
+  std::vector<std::string>::iterator it = files.begin();
+  for(; it != files.end(); ++it) {
+    size_t pos = it->find_last_of('.');
+    if (pos == std::string::npos) {
+      it = files.erase(it);
+      continue;
+    }
+    std::string file_ext = it->substr(pos, it->length() - pos);
+    if (file_ext != ext) {
+      it = files.erase(it);
+      continue;
+    }
+  }
+}
+
+void GM_EnumPathFiles(const std::string& folder, std::vector<std::string>& files)
+{
+  GM_EnumPath(folder, files, DT_REG);
+}
+
+void GM_EnumPathFolders(const std::string& folder, std::vector<std::string>& files)
+{
+  GM_EnumPath(folder, files, DT_DIR);
 }

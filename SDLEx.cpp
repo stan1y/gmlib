@@ -80,7 +80,7 @@ SDL_Surface* GM_CreateSurface(int width, int height) {
     return surface;
 }
 
-void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color from, SDL_Color to, SDL_Point start, SDL_Point end, uint8_t alpha)
+void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color& from, SDL_Color& to, SDL_Point& start, SDL_Point& end, uint8_t alpha)
 {
   int l = end.y - start.y;
   int rl = to.r - from.r,

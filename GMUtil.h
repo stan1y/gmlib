@@ -29,7 +29,6 @@ inline SDL_Texture* GM_CreateLayer(SDL_Renderer* r, int w, int h)
 }
 
 /** Clear given texture */
-
 inline void GM_ClearLayer(SDL_Renderer* r, SDL_Texture* l)
 {
     SDL_SetRenderTarget(r, l);
@@ -56,7 +55,7 @@ void SDLEx_RenderDrawCircle(SDL_Renderer *renderer, int n_cx, int n_cy, int radi
  * xstep, ystep - gradient direction (i.e vertical growing gradient is xstep = 0, ystep = 1)
  * alpha - drawing alpha value
  */
-void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color from, SDL_Color to, SDL_Point start, SDL_Point end, uint8_t alpha);
+void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color& from, SDL_Color& to, SDL_Point& start, SDL_Point& end, uint8_t alpha);
 
 /* SDL_Rect utils */
 bool operator== (SDL_Rect& a, SDL_Rect& b);
@@ -73,6 +72,10 @@ std::string GM_GetExecutablePath();
 std::string GM_GetCurrentPath();
 std::string GM_GetPathOfFile(const std::string& filepath);
 std::string GM_JoinPaths(const std::string& root, const std::string& relative);
+void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, int d_type);
+void GM_EnumPathFiles(const std::string& folder, std::vector<std::string>& files);
+void GM_EnumPathFilesEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files);
+void GM_EnumPathFolders(const std::string& folder, std::vector<std::string>& folders);
 
  /* SDL_Color class wrapper with assignment constructor */
 struct color: public SDL_Color
