@@ -93,15 +93,17 @@ json_t*      GM_LoadJSON(const char* file);
 
 class screen {
 public:
-    virtual ~screen() {}
+  screen();
+  virtual ~screen() {}
 
-    /* Current game state pointer */
-    static screen* current();
-    static void set_current(screen* s);
+  /* Current game state pointer */
+  static screen* current();
+  static void set_current(screen* s);
 
-    /* Game state render and update API */
-    virtual void update() = 0;
-    virtual void render() = 0;
+  /* Game state render and update API */
+  virtual void update() = 0;
+  virtual void render() = 0;
+  virtual void on_event(SDL_Event* ev) = 0;
 };
 
 

@@ -168,6 +168,18 @@ void GM_EndFrame()
     Game Screens 
 */
 
+static int GM_ScreenEventHandler(void* ptr, SDL_Event* ev)
+{
+  screen* self = static_cast<screen*> (ptr);
+  self->on_event(ev);
+  return 0;
+}
+
+screen::screen()
+{
+  SDL_AddEventWatch(GM_ScreenEventHandler, this);
+}
+
 screen* screen::current() 
 {
   return _screen_Current;
