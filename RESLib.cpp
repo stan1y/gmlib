@@ -47,9 +47,9 @@ void RES_AddItem(cache_item* itm)
     _GM_Cache->insert(std::make_pair(item_path, itm));
 }
 
-void RES_GetFullPath(const std::string& path, std::string& full_path)
+std::string RES_GetFullPath(const std::string& relPath)
 {
-    full_path = GM_JoinPaths(_GM_AssetsRoot, path);
+  return GM_JoinPaths(_GM_AssetsRoot, relPath);
 }
 
 void surface::load_file(const std::string& path)
@@ -57,8 +57,7 @@ void surface::load_file(const std::string& path)
     if (_GM_AssetsRoot == NULL)
         throw std::exception("Resources are not initialized");
     
-    std::string full_path;
-    RES_GetFullPath(path, full_path);
+    std::string full_path = RES_GetFullPath(path);
     _ptr = GM_LoadSurface(full_path.c_str());
     if (!_ptr) throw std::exception("Failed to load surface file");
 }
@@ -68,8 +67,7 @@ void texture::load_file(const std::string& path)
     if (_GM_AssetsRoot == NULL)
         throw std::exception("Resources are not initialized");
 
-    std::string full_path;
-    RES_GetFullPath(path, full_path);
+    std::string full_path = RES_GetFullPath(path);
     _ptr = GM_LoadTexture(full_path.c_str());
     if (!_ptr) throw std::exception("Failed to load texture file");
 }
@@ -79,8 +77,7 @@ void font::load_file(const std::string& path)
     if (_GM_AssetsRoot == NULL)
         throw std::exception("Resources are not initialized");
 
-    std::string full_path;
-    RES_GetFullPath(path, full_path);
+    std::string full_path = RES_GetFullPath(path);
     _ptr = new font_collection(full_path);
     if (!_ptr) throw std::exception("Failed to load font file");
 }
@@ -90,8 +87,7 @@ void data::load_file(const std::string& path)
     if (_GM_AssetsRoot == NULL)
         throw std::exception("Resources are not initialized");
 
-    std::string full_path;
-    RES_GetFullPath(path, full_path);
+    std::string full_path = RES_GetFullPath(path);
     _ptr = GM_LoadJSON(full_path.c_str());
     if (!_ptr) throw std::exception("Failed to load data file");
 }
