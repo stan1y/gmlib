@@ -82,6 +82,9 @@ void RES_Init(const std::string& assets_root);
 /* Return full path to a resource file */
 std::string RES_GetFullPath(const std::string& relPath);
 
+/* Test if resource file present */
+bool RES_CheckExists(const std::string& relPath);
+
 /* Generic load resource from path */
 template<class ResType>
 const ResType* RES_Load(const std::string& res_file, bool persist = true)

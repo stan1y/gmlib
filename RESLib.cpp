@@ -52,6 +52,17 @@ std::string RES_GetFullPath(const std::string& relPath)
   return GM_JoinPaths(_GM_AssetsRoot, relPath);
 }
 
+bool RES_CheckExists(const std::string& relPath)
+{
+  std::string path = GM_JoinPaths(_GM_AssetsRoot, relPath);
+  FILE * f = std::fopen(path.c_str(), "r");
+  if (f != NULL) {
+    std::fclose(f);
+    return true;
+  }
+  return false;
+}
+
 void surface::load_file(const std::string& path)
 {
     if (_GM_AssetsRoot == NULL)
