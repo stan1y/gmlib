@@ -70,7 +70,7 @@ SDL_Window* GM_GetWindow();
 SDL_Renderer* GM_GetRenderer();
 
 /* Init GMLib */
-int GM_Init(config* conf);
+int GM_Init(const char* name, config* conf);
 /* Shutdown GMLib */
 void GM_Quit();
 /* Start game frame, upate frame ticks and clears renderer */

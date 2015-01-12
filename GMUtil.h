@@ -18,23 +18,7 @@ inline SDL_bool SDLEx_IsPointInRect(SDL_Rect* rect, int x, int y) {
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
 /** Create a new surface compatible with OpenGL & PNG */
-SDL_Surface* GM_CreateSurface(int width, int height);
-
-/** Create new texture setup for blended rendering target */
-inline SDL_Texture* GM_CreateLayer(SDL_Renderer* r, int w, int h)
-{
-  SDL_Texture* l = SDL_CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, w, h);
-  SDL_SetTextureBlendMode(l, SDL_BLENDMODE_BLEND);
-  return l;
-}
-
-/** Clear given texture */
-inline void GM_ClearLayer(SDL_Renderer* r, SDL_Texture* l)
-{
-    SDL_SetRenderTarget(r, l);
-    SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
-    SDL_RenderClear(r);
-}
+SDL_Surface* SDLEx_CreateSurface(int width, int height);
 
 /*
  * This is an implementation of the Midpoint Circle Algorithm 

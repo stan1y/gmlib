@@ -40,7 +40,7 @@ globals* GM_GetGlobals() {
      return _globals;
 }
 
-int GM_Init(config* conf) {
+int GM_Init(const char* name, config* conf) {
 
     //check if we're loaded up already
     if ( _globals != nullptr || _window != nullptr || _renderer != nullptr ) {
@@ -81,7 +81,7 @@ int GM_Init(config* conf) {
     _screen_Next = nullptr;
 
     //init SDL window & renderer
-    _window = SDL_CreateWindow("WinComplex", 
+    _window = SDL_CreateWindow(name, 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         conf->display_width, conf->display_height, conf->window_flags);
     if ( _window == nullptr ) {
@@ -120,7 +120,7 @@ void GM_StartFrame()
 
     //clear screen with black
     SDL_SetRenderTarget(_renderer, NULL);
-    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255);
     SDL_RenderClear(_renderer);
 }
 

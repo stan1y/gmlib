@@ -50,7 +50,7 @@ void SDLEx_RenderDrawCircle(SDL_Renderer *renderer, int n_cx, int n_cy, int radi
     }
 }
 
-SDL_Surface* GM_CreateSurface(int width, int height) {
+SDL_Surface* SDLEx_CreateSurface(int width, int height) {
     /* Create a 32-bit surface with the bytes of each pixel in R,G,B,A order,
        as expected by OpenGL for textures */
     SDL_Surface *surface;
@@ -73,7 +73,7 @@ SDL_Surface* GM_CreateSurface(int width, int height) {
     surface = SDL_CreateRGBSurface(0, width, height, 32,
                                    rmask, gmask, bmask, amask);
     if(surface == NULL) {
-        SDLEx_LogError("GM_CreateSurface failed to create surface %dx%d", width, height);
+        SDLEx_LogError("SDLEx_CreateSurface failed to create surface %dx%d", width, height);
         throw std::exception(SDL_GetError());
     }
 
