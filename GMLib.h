@@ -65,7 +65,7 @@ struct globals {
     uint32_t elapsed;
 };
 
-globals* GM_GetGlobals();
+const globals* GM_GetGlobals(); 
 SDL_Window* GM_GetWindow();
 SDL_Renderer* GM_GetRenderer();
 
@@ -128,7 +128,7 @@ public:
 
   inline bool valid() { return idx != invalid; }
   inline bool operator== (sprite& other) {
-      return (idx == other.idx && w == other.w && h == other.h && flip == other.flip && angle == other.angle && sheet == other.sheet);
+      return (idx == other.idx && w == other.w && h == other.h && flip == other.flip && angle == other.angle && _sheet == other._sheet);
   }
   inline bool operator!= (sprite& other) {
       return !(*this == other);
@@ -152,9 +152,9 @@ public:
 
 protected:
   /* sprite sheet info */
-  SDL_Texture* sheet;
-  int sheet_width;
-  int sheet_height;
+  SDL_Texture* _sheet;
+  int _sheet_width;
+  int _sheet_height;
 
 };
 
@@ -171,7 +171,7 @@ public:
     static const uint32_t occilate = 2;
 
     /* list of running animations */
-    static locked_array_list<anim> running;
+    static locked_vector<anim> running;
     /* animate running items */
     static void update_running();
 

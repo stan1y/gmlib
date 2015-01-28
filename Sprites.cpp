@@ -31,31 +31,31 @@ sprite::sprite()
 {
   w = 0; h = 0;
   idx = sprite::invalid;
-  sheet = nullptr;
+  _sheet = nullptr;
   flip = SDL_FLIP_NONE;
   angle = 0;
 }
 
-sprite::sprite(size_t tex_idx, int px_w, int px_h, SDL_Texture* _sheet)
+sprite::sprite(size_t tex_idx, int px_w, int px_h, SDL_Texture* sheet)
 {
     idx = tex_idx;
     w = px_w; h = px_h;
     flip = SDL_FLIP_NONE;
     angle = 0;
-    sheet = nullptr;
-    sheet_width = 0; sheet_height = 0;
+    _sheet = nullptr;
+    _sheet_width = 0; _sheet_height = 0;
 
-    if (_sheet != nullptr) {
-        sheet = _sheet;
+    if (sheet != nullptr) {
+        _sheet = sheet;
 
         //query sprites sheet
         uint32_t fmt = 0; int access = 0;
-        SDL_QueryTexture(sheet, &fmt, &access, &sheet_width, &sheet_height);
-        if ( sheet_width % px_w != 0 || sheet_height % px_h != 0 ) {
-            SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, sheet_width, sheet_height);
+        SDL_QueryTexture(sheet, &fmt, &access, &_sheet_width, &_sheet_height);
+        if ( _sheet_width % px_w != 0 || _sheet_height % px_h != 0 ) {
+            SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet_width, _sheet_height);
             throw std::exception("Invalid sprite size");
         }
-        size_t total_sprites = (sheet_width / px_w) * (sheet_height / px_h);
+        size_t total_sprites = (_sheet_width / px_w) * (_sheet_height / px_h);
         if (tex_idx >= total_sprites) {
             SDLEx_LogError("Invalid sprite idx=%d. total sheet length=%d", tex_idx, total_sprites);
             throw std::exception("Invalid sprite idx");
@@ -81,7 +81,7 @@ SDL_Rect sprite::clip_rect(size_t idx, int sheet_w, int sheet_h, int sprite_w, i
 
 void sprite::render(SDL_Point topleft, uint8_t alpha) 
 {
-    if (sheet == nullptr || w == 0 || h == 0) {
+    if (_sheet == nullptr || w == 0 || h == 0) {
         return;
     }
     uint32_t fmt = 0;
@@ -89,10 +89,10 @@ void sprite::render(SDL_Point topleft, uint8_t alpha)
     SDL_Point cnt = {
         w / 2, h / 2
     };
-    SDL_Rect clip = clip_rect(idx, sheet_width, sheet_height, w, h);
-    SDL_SetTextureAlphaMod(sheet, alpha);
+    SDL_Rect clip = clip_rect(idx, _sheet_width, _sheet_height, w, h);
+    SDL_SetTextureAlphaMod(_sheet, alpha);
     SDL_Rect rect = { topleft.x, topleft.y, w, h };
-    SDL_RenderCopyEx(GM_GetRenderer(), sheet, &clip, &rect, angle, &cnt, flip);
+    SDL_RenderCopyEx(GM_GetRenderer(), _sheet, &clip, &rect, angle, &cnt, flip);
 }
 
 /*
@@ -100,9 +100,9 @@ void sprite::render(SDL_Point topleft, uint8_t alpha)
 */
 
 /* static list of running animations */
-locked_array_list<anim> anim::running = locked_array_list<anim>();
-static locked_array_list<anim> _GM_anim_tostop = locked_array_list<anim>();
-static locked_array_list<anim> _GM_anim_tostart = locked_array_list<anim>();
+locked_vector<anim> anim::running = locked_vector<anim>();
+static locked_vector<anim> _GM_anim_tostop = locked_vector<anim>();
+static locked_vector<anim> _GM_anim_tostart = locked_vector<anim>();
 
 /* init new animation item */
 void anim::init(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
@@ -140,7 +140,7 @@ void anim::start(uint32_t repeat)
         if (!is_running && from >= 0 && to >= 0 && from < to && modifier != 0 && period_ms && target != nullptr) {
             is_running = true;
             repeats = repeat;
-            _GM_anim_tostart.append(*this);
+            _GM_anim_tostart.push_back(*this);
         }
     }
     _GM_anim_tostart.unlock();
@@ -152,11 +152,11 @@ void anim::stop()
     {
         if (is_running) {
             is_running = false;
-            if(_GM_anim_tostop.find(*this) != NULL) {
+            if(_GM_anim_tostop.find(*this) != _GM_anim_tostop.end()) {
                 //already pending
                 return;
             }
-            _GM_anim_tostop.append(*this);
+            _GM_anim_tostop.push_back(*this);
         }
     }
     _GM_anim_tostop.unlock();
@@ -233,13 +233,13 @@ void anim::update()
 
 void anim::update_running()
 {
-    globals* gm = GM_GetGlobals();
+    const globals* gm = GM_GetGlobals();
 
     //stop pending
     _GM_anim_tostop.lock();
     {
-      for(size_t i = 0; i < _GM_anim_tostop.length(); ++i) {
-        running.remove(_GM_anim_tostop.at(i));
+      for(size_t i = 0; i < _GM_anim_tostop.size(); ++i) {
+        running.remove(_GM_anim_tostop[i]);
       }
       _GM_anim_tostop.clear();
     }
@@ -248,8 +248,8 @@ void anim::update_running()
     //run newly added
     _GM_anim_tostart.lock();
     {
-      for(size_t i = 0; i < _GM_anim_tostart.length(); ++i) {
-        running.append(_GM_anim_tostart.at(i));
+      for(size_t i = 0; i < _GM_anim_tostart.size(); ++i) {
+        running.push_back(_GM_anim_tostart[i]);
       }
       _GM_anim_tostart.clear();
     }
@@ -258,12 +258,12 @@ void anim::update_running()
     //update running
     running.lock();
     {
-      for(size_t i = 0; i < running.length(); ++i) {
+      for(size_t i = 0; i < running.size(); ++i) {
         //check if time to run
-        uint32_t delta = gm->frame_ticks - running.at(i).last_updated;
-        if ( delta >= running.at(i).period_ms) {
-            running.at(i).update();
-            running.at(i).last_updated = gm->frame_ticks;
+        uint32_t delta = gm->frame_ticks - running[i].last_updated;
+        if ( delta >= running[i].period_ms) {
+            running[i].update();
+            running[i].last_updated = gm->frame_ticks;
         }
       }
     }

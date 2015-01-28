@@ -99,3 +99,27 @@ void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color& from, SDL_C
     }
   }
 }
+
+bool operator== (SDL_Rect& a, SDL_Rect& b) {
+    return (a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h);
+}
+
+bool operator!= (SDL_Rect& a, SDL_Rect& b) {
+    return (a.x != b.x || a.y != b.y || a.w != b.w || a.h != b.h);
+}
+
+bool operator== (SDL_Point& a, SDL_Point& b) {
+    return (a.x == b.x && a.y == b.y);
+}
+
+bool operator!= (SDL_Point& a, SDL_Point& b) {
+    return (a.x != b.x || a.y != b.y);
+}
+
+void operator+= (SDL_Point& a, SDL_Point& b) {
+  a.x += b.x; a.y += b.y;
+}
+
+void operator-= (SDL_Point& a, SDL_Point& b) {
+  a.x -= b.x; a.y -= b.y;
+}

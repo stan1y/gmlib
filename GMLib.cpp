@@ -1,14 +1,6 @@
 #include "GMLib.h"
 #include "RESLib.h"
 
-bool operator== (SDL_Rect& a, SDL_Rect& b) {
-    return (a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h);
-}
-
-bool operator!= (SDL_Rect& a, SDL_Rect& b) {
-    return (a.x != b.x || a.y != b.y || a.w != b.w || a.h != b.h);
-}
-
 /* Global State */
 static SDL_Window* _window = nullptr;
 static SDL_Renderer* _renderer = nullptr;
@@ -25,19 +17,19 @@ SDL_Window* GM_GetWindow() {
 }
 
 SDL_Renderer* GM_GetRenderer() {
-    if (_renderer == nullptr) {
-        SDLEx_LogError("GM_GetRenderer: not initialized");
-        return nullptr;
-    }
-    return _renderer;
+  if (_renderer == nullptr) {
+    SDLEx_LogError("GM_GetRenderer: not initialized");
+    return nullptr;
+  }
+  return _renderer;
 }
 
-globals* GM_GetGlobals() {
-     if (_globals == nullptr) {
-         SDLEx_LogError("GM_GetGlobals: not initialized");
-         return nullptr;
-     }
-     return _globals;
+const globals* GM_GetGlobals() {
+  if (_globals == nullptr) {
+    SDLEx_LogError("GM_GetGlobals: not initialized");
+    return nullptr;
+  }
+  return _globals;
 }
 
 int GM_Init(const char* name, config* conf) {
