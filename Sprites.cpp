@@ -233,12 +233,11 @@ void anim::update()
 
 void anim::update_running()
 {
-    const globals* gm = GM_GetGlobals();
-
     //stop pending
     _GM_anim_tostop.lock();
     {
       for(size_t i = 0; i < _GM_anim_tostop.size(); ++i) {
+        _GM_anim_tostop[i].target->idx = _GM_anim_tostop[i].base;
         running.remove(_GM_anim_tostop[i]);
       }
       _GM_anim_tostop.clear();
@@ -258,12 +257,13 @@ void anim::update_running()
     //update running
     running.lock();
     {
+      uint32_t ms = SDL_GetTicks();
       for(size_t i = 0; i < running.size(); ++i) {
         //check if time to run
-        uint32_t delta = gm->frame_ticks - running[i].last_updated;
+        uint32_t delta = ms - running[i].last_updated;
         if ( delta >= running[i].period_ms) {
             running[i].update();
-            running[i].last_updated = gm->frame_ticks;
+            running[i].last_updated = ms;
         }
       }
     }

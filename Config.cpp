@@ -8,7 +8,8 @@ config::config()
     driver_name = NULL;
     assets_path = NULL;
     fullscreen = false;
-    fps_cap = 30;
+    calculate_fps = true;
+    fps_cap = 60;
 
     driver_index = -1;
     window_flags = SDL_WINDOW_SHOWN;
@@ -25,10 +26,11 @@ int config::load_file(const char* cfg_file)
 
     json_error_t jerr;
     if (json_unpack_ex(conf_data, &jerr, 0,
-        "{s:i, s:i, s:b, s:s, s:s }",
+        "{s:i s:i s:b s:b s:s s:s }",
         "display_width", &display_width,
         "display_height", &display_height,
         "fullscreen", &fullscreen,
+        "calculate_fps", &calculate_fps,
         "driver_name", &driver_name,
         "assets_path", &assets_path) != 0)
     {

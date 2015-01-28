@@ -46,6 +46,7 @@ struct config {
     char* driver_name;
     char* assets_path;
     bool fullscreen;
+    bool calculate_fps;
     
     //SDL settings
     int32_t driver_index;
@@ -56,23 +57,37 @@ struct config {
     int load_file(const char* cfg_file);
 };
 
-/* Game global state */
-struct globals {
-    config* conf;
+/* Ticks Timer */
+class timer {
+public:
+  timer();
 
-    uint32_t frame_ticks;
-    uint32_t last_frame_ticks;
-    uint32_t elapsed;
+  void start();
+  void stop();
+  void pause();
+  void unpause();
+  uint32_t get_ticks();
+  bool is_started() { return _started; }
+  bool is_paused() { return _started && _paused; }
+
+private:
+  uint32_t _started_ticks;
+  uint32_t _paused_ticks;
+  bool _started;
+  bool _paused;
 };
-
-const globals* GM_GetGlobals(); 
-SDL_Window* GM_GetWindow();
-SDL_Renderer* GM_GetRenderer();
 
 /* Init GMLib */
 int GM_Init(const char* name, config* conf);
 /* Shutdown GMLib */
 void GM_Quit();
+/* Get pointer to applied configuration */
+const config* GM_GetConfig(); 
+/* Get main SDL Window */
+SDL_Window* GM_GetWindow();
+/* Get rendered attached to main window */
+SDL_Renderer* GM_GetRenderer();
+
 /* Start game frame, upate frame ticks and clears renderer */
 void GM_StartFrame();
 /* Update state, timers and animations */
@@ -81,6 +96,11 @@ void GM_UpdateFrame();
 void GM_RenderFrame();
 /* End game frame, update last ticks, delay for fps cap */
 void GM_EndFrame();
+
+/* Get miliseconds elapsed since start of the current frame */
+uint32_t GM_GetFrameTicks();
+/* Get average FPS */
+float GM_GetAvgFps();
 
 /* GFX */
 
