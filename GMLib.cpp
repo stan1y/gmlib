@@ -209,28 +209,191 @@ void screen::set_current(screen* s)
     }
 }
 
+/* Texture */
+
+texture::texture()
+{
+  _texture = NULL;
+  _pixels = NULL;
+  _pitch = 0;
+  _width = 0;
+  _height = 0;
+}
+
+void texture::release()
+{
+  if (_texture) 
+    SDL_DestroyTexture(_texture);
+  _texture = NULL;
+}
+
+texture::~texture()
+{
+  release();
+}
+
+void texture::load(const std::string& path)
+{
+  SDL_Surface* src = GM_LoadSurface(path);
+  load_surface(src);
+  SDL_FreeSurface(src);
+}
+
+void texture::load_text(const std::string& text, TTF_Font* font, SDL_Color& color)
+{
+  SDL_Surface* s = TTF_RenderText_Blended(font, text.c_str(), color);
+  if (!s) {
+    SDLEx_LogError("texture::load_text Failed to render text: %s", TTF_GetError());
+    throw std::exception("Failed to render text");
+  }
+  release();
+  _texture = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
+  SDL_FreeSurface(s);
+}
+
+void texture::load_surface(SDL_Surface* src)
+{
+  release();
+  _texture = GM_CreateTexture(src->w, src->h, SDL_TEXTUREACCESS_STREAMING);
+  SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
+  if (_texture == NULL) {
+    SDLEx_LogError("texture::load_surface - Failed to create blank texture.");
+    throw std::exception("Failed to create blank surface");
+  }
+  //copy pixels from surface to texture
+  SDL_LockTexture(_texture, NULL, &_pixels, &_pitch);
+  memcpy(_pixels, src->pixels, src->pitch * src->h);
+  SDL_UnlockTexture(_texture); //<- this applys _pixles to the texture
+  _pixels = NULL;
+
+  _width = src->w;
+  _height = src->h;
+}
+
+bool texture::lock()
+{
+  if (_pixels != NULL) {
+    SDLEx_LogError("texure::lock - already locked");
+    return false;
+  }
+  if (SDL_LockTexture(_texture, NULL, &_pixels, &_pitch) != 0) {
+    SDLEx_LogError("texture::lock - failed to lock texture: %s", SDL_GetError());
+    return false;
+  }
+
+  return true;
+}
+
+bool texture::unlock()
+{
+  if (_pixels == NULL) {
+    SDLEx_LogError("texture::unlock - texture is not locked");
+    return false;
+  }
+
+  SDL_UnlockTexture(_texture);
+  _pixels = NULL;
+  _pitch = 0;
+  return true;
+}
+
+void texture::replace_color(SDL_Color& from, SDL_Color& to)
+{
+  if (!lock()) return;
+  
+  SDL_PixelFormat* fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+  uint32_t f = SDL_MapRGBA(fmt, from.r, from.g, from.b, from.a);
+  uint32_t t = SDL_MapRGBA(fmt, to.r, to.g, to.b, to.a);
+  SDL_FreeFormat(fmt);
+
+  uint32_t* pixels = (uint32_t*)_pixels;
+  int pixel_count = ( _pitch / 4 ) * _height;
+  for( int i = 0; i < pixel_count; ++i ) {
+      if( pixels[i] == f ) {
+          pixels[i] = t;
+      }
+  }
+  if (!unlock()) return;
+}
+
+void texture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
+{
+  SDL_Rect rect = { x, y, _width, _height };
+  if( clip != NULL ) {
+    rect.w = clip->w;
+    rect.h = clip->h;
+  }
+  //Render to screen
+  SDL_RenderCopyEx( GM_GetRenderer(), _texture, clip, &rect, angle, center, flip );
+}
+
+void texture::set_color(uint8_t red, uint8_t green, uint8_t blue)
+{
+  if (!_texture) return;
+  SDL_SetTextureColorMod(_texture, red, green, blue);
+}
+
+void texture::set_blend_mode(SDL_BlendMode blending)
+{
+  if (!_texture) return;
+  SDL_SetTextureBlendMode(_texture, blending);
+}
+
+void texture::set_alpha(uint8_t alpha)
+{
+  if (!_texture) return;
+  SDL_SetTextureAlphaMod(_texture, alpha);
+}
+
 /* Load helpers */
 
-TTF_Font* GM_LoadFont(const char* font, int ptsize)
+SDL_Surface* GM_LoadSurface(const std::string& image)
 {
-    TTF_Font* f = TTF_OpenFont(font, ptsize);
+  std::string path = RES_GetFullPath(image);
+  SDL_Surface *tmp = IMG_Load(path.c_str());
+  if (!tmp) {
+    SDLEx_LogError("GM_LoadSurface: failed to load %s: %s", path.c_str(), SDL_GetError());
+    throw std::exception("Failed to load surface from file");
+  }
 
-    if (!f) {
-        SDLEx_LogError("LoadFont: failed to load %s", font);
-        return nullptr;
-    }
-    return f;
+  SDL_Surface* s = SDL_ConvertSurfaceFormat(tmp, SDL_PIXELFORMAT_RGBA8888, NULL );
+  if (!s) {
+    SDLEx_LogError("GM_LoadSurface: failed to convert surface: %s", path.c_str(), SDL_GetError());
+    throw std::exception("Failed to convert surface");
+  }
+  SDL_FreeSurface(tmp);
+
+  return s;
+}
+
+SDL_Texture* GM_LoadTexture(const std::string& sheet)
+{
+    SDL_Surface* s = GM_LoadSurface(sheet);
+    SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
+    SDL_FreeSurface(s);
+    return tex;
+}
+
+TTF_Font* GM_LoadFont(const std::string& font, int ptsize)
+{
+  std::string path = RES_GetFullPath(font);
+  TTF_Font* f = TTF_OpenFont(path.c_str(), ptsize);
+  if (!f) {
+      SDLEx_LogError("GM_LoadFont: failed to load %s", path.c_str());
+      return nullptr;
+  }
+  return f;
 }
     
 
-json_t* GM_LoadJSON(const char* file)
+json_t* GM_LoadJSON(const std::string& file)
 {
     json_t* json_data = nullptr;
     json_error_t jerr;
-
-    json_data = json_load_file(file, 0, &jerr);
+    std::string path = RES_GetFullPath(file);
+    json_data = json_load_file(path.c_str(), 0, &jerr);
     if (json_data == nullptr) {
-        SDLEx_LogError("LoadJson: failed to load %s. %s", file, jerr.text);
+        SDLEx_LogError("GM_LoadJson: failed to load %s. %s", path.c_str(), jerr.text);
         return NULL;
     }
 

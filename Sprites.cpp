@@ -1,26 +1,23 @@
 #include "GMLib.h"
 
-/*
-    Load surfaces and sprite sheets 
-*/
+/* helpers */
 
-SDL_Surface* GM_LoadSurface(const char* image)
+SDL_Surface* GM_CreateSurface(int width, int height) 
 {
-    SDL_Surface *s = IMG_Load(image);
-
-    if (!s) {
-      SDLEx_LogError("LoadSurface: failed to load %s: %s", image, SDL_GetError());
-      return nullptr;
-    }
-    return s;
+  int bpp = 0;
+  uint32_t rmask = 0, gmask = 0, bmask = 0, amask = 0;
+  SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA8888, &bpp, &rmask, &gmask, &bmask, &amask);
+  SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp, rmask, gmask, bmask, amask);
+  if(surface == NULL) {
+    SDLEx_LogError("SDLEx_CreateSurface failed to create surface %dx%d", width, height);
+    throw std::exception(SDL_GetError());
+  }
+  return surface;
 }
 
-SDL_Texture* GM_LoadTexture(const char* sheet)
+SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access)
 {
-    SDL_Surface* s = GM_LoadSurface(sheet);
-    SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
-    SDL_FreeSurface(s);
-    return tex;
+  return SDL_CreateTexture(GM_GetRenderer(), SDL_PIXELFORMAT_RGBA8888, access, width, height);
 }
 
 /*
@@ -36,31 +33,28 @@ sprite::sprite()
   angle = 0;
 }
 
-sprite::sprite(size_t tex_idx, int px_w, int px_h, SDL_Texture* sheet)
+sprite::sprite(size_t tex_idx, int px_w, int px_h, texture* sheet)
 {
-    idx = tex_idx;
-    w = px_w; h = px_h;
-    flip = SDL_FLIP_NONE;
-    angle = 0;
-    _sheet = nullptr;
-    _sheet_width = 0; _sheet_height = 0;
+  idx = tex_idx;
+  w = px_w; h = px_h;
+  flip = SDL_FLIP_NONE;
+  angle = 0;
+  _sheet = nullptr;
 
-    if (sheet != nullptr) {
-        _sheet = sheet;
+  if (sheet != nullptr) {
+    _sheet = sheet;
 
-        //query sprites sheet
-        uint32_t fmt = 0; int access = 0;
-        SDL_QueryTexture(sheet, &fmt, &access, &_sheet_width, &_sheet_height);
-        if ( _sheet_width % px_w != 0 || _sheet_height % px_h != 0 ) {
-            SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet_width, _sheet_height);
-            throw std::exception("Invalid sprite size");
-        }
-        size_t total_sprites = (_sheet_width / px_w) * (_sheet_height / px_h);
-        if (tex_idx >= total_sprites) {
-            SDLEx_LogError("Invalid sprite idx=%d. total sheet length=%d", tex_idx, total_sprites);
-            throw std::exception("Invalid sprite idx");
-        }
+    //check sprites sheet
+    if ( _sheet->get_width() % px_w != 0 || _sheet->get_height() % px_h != 0 ) {
+      SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet->get_width(), _sheet->get_height());
+      throw std::exception("Invalid sprite size");
     }
+    size_t total_sprites = (_sheet->get_width() / px_w) * (_sheet->get_height() / px_h);
+    if (tex_idx >= total_sprites) {
+      SDLEx_LogError("Invalid sprite idx=%d. total sheet length=%d", tex_idx, total_sprites);
+      throw std::exception("Invalid sprite idx");
+    }
+  }
 }
 
 SDL_Rect sprite::clip_rect(size_t idx, int sheet_w, int sheet_h, int sprite_w, int sprite_h) {
@@ -81,18 +75,17 @@ SDL_Rect sprite::clip_rect(size_t idx, int sheet_w, int sheet_h, int sprite_w, i
 
 void sprite::render(SDL_Point topleft, uint8_t alpha) 
 {
-    if (_sheet == nullptr || w == 0 || h == 0) {
-        return;
-    }
-    uint32_t fmt = 0;
-    int a = 0, sw = 0, sh = 0;
-    SDL_Point cnt = {
-        w / 2, h / 2
-    };
-    SDL_Rect clip = clip_rect(idx, _sheet_width, _sheet_height, w, h);
-    SDL_SetTextureAlphaMod(_sheet, alpha);
-    SDL_Rect rect = { topleft.x, topleft.y, w, h };
-    SDL_RenderCopyEx(GM_GetRenderer(), _sheet, &clip, &rect, angle, &cnt, flip);
+  if (_sheet == nullptr || _sheet->get_texture() == NULL || w == 0 || h == 0) {
+      return;
+  }
+  uint32_t fmt = 0;
+  int a = 0, sw = 0, sh = 0;
+  SDL_Point cnt = {
+      w / 2, h / 2
+  };
+  SDL_Rect clip = clip_rect(idx, _sheet->get_width(), _sheet->get_height(), w, h);
+  _sheet->set_alpha(alpha);
+  _sheet->render(topleft.x, topleft.y, &clip, angle, &cnt, flip); 
 }
 
 /*
@@ -100,16 +93,21 @@ void sprite::render(SDL_Point topleft, uint8_t alpha)
 */
 
 /* static list of running animations */
-locked_vector<anim> anim::running = locked_vector<anim>();
-static locked_vector<anim> _GM_anim_tostop = locked_vector<anim>();
-static locked_vector<anim> _GM_anim_tostart = locked_vector<anim>();
+locked_vector<anim*> anim::running = locked_vector<anim*>();
+static locked_vector<anim*> _GM_anim_tostop = locked_vector<anim*>();
+static locked_vector<anim*> _GM_anim_tostart = locked_vector<anim*>();
 
 /* init new animation item */
-void anim::init(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
+
+void anim::init(sprite** ss, size_t _count,  size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
 {
   is_running = false;
-  target = s;
-  base = s == nullptr ? 0 : s->idx;
+  target = (sprite**)calloc(_count, sizeof(sprite*));
+  for(size_t i = 0; i < _count; ++i) {
+    target[i] = ss[i];
+  }
+  targets_count = _count;
+  base = _base;
   current = 0;
   from = _from; 
   to = _to;
@@ -121,16 +119,17 @@ void anim::init(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _per
 
 anim::anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
 {
-    init(s, _from, _to, _step, _period_ms, _mode);
+    init(&s, 1,  s == nullptr ? 0 : s->idx, _from, _to, _step, _period_ms, _mode);
 }
 
-anim::anim()
+anim::anim(sprite** s, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
 {
-    init(nullptr, 0, 0, 0, 0, 0);
+    init(s, _count, _base, _from, _to, _step, _period_ms, _mode);
 }
 
-anim::~anim()
+void anim::release_targets()
 {
+  free(target);
 }
 
 void anim::start(uint32_t repeat)
@@ -140,7 +139,7 @@ void anim::start(uint32_t repeat)
         if (!is_running && from >= 0 && to >= 0 && from < to && modifier != 0 && period_ms && target != nullptr) {
             is_running = true;
             repeats = repeat;
-            _GM_anim_tostart.push_back(*this);
+            _GM_anim_tostart.push_back(this);
         }
     }
     _GM_anim_tostart.unlock();
@@ -152,11 +151,11 @@ void anim::stop()
     {
         if (is_running) {
             is_running = false;
-            if(_GM_anim_tostop.find(*this) != _GM_anim_tostop.end()) {
+            if(_GM_anim_tostop.find(this) != _GM_anim_tostop.end()) {
                 //already pending
                 return;
             }
-            _GM_anim_tostop.push_back(*this);
+            _GM_anim_tostop.push_back(this);
         }
     }
     _GM_anim_tostop.unlock();
@@ -165,7 +164,9 @@ void anim::stop()
 void anim::reset()
 {
   stop();
-  target->idx = from;
+  for(size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
+    target[target_idx]->idx = from;
+  }
 }
 
 void anim::update()
@@ -228,7 +229,9 @@ void anim::update()
         throw std::exception("Next animation index is less than zero");
     }
 
-    target->idx = base + current;
+    for(size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
+      target[target_idx]->idx = base + current;
+    }
 }
 
 void anim::update_running()
@@ -237,7 +240,9 @@ void anim::update_running()
     _GM_anim_tostop.lock();
     {
       for(size_t i = 0; i < _GM_anim_tostop.size(); ++i) {
-        _GM_anim_tostop[i].target->idx = _GM_anim_tostop[i].base;
+        for(size_t target_idx = 0; target_idx < _GM_anim_tostop[i]->targets_count; ++target_idx) {
+          _GM_anim_tostop[i]->target[target_idx]->idx = _GM_anim_tostop[i]->base;
+        }
         running.remove(_GM_anim_tostop[i]);
       }
       _GM_anim_tostop.clear();
@@ -260,10 +265,10 @@ void anim::update_running()
       uint32_t ms = SDL_GetTicks();
       for(size_t i = 0; i < running.size(); ++i) {
         //check if time to run
-        uint32_t delta = ms - running[i].last_updated;
-        if ( delta >= running[i].period_ms) {
-            running[i].update();
-            running[i].last_updated = ms;
+        uint32_t delta = ms - running[i]->last_updated;
+        if ( delta >= running[i]->period_ms) {
+            running[i]->update();
+            running[i]->last_updated = ms;
         }
       }
     }

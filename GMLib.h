@@ -37,24 +37,24 @@
 
 /* Config */
 struct config {
-    static const int max_driver_name = 32;
+  static const int max_driver_name = 32;
 
-    //Options
-    int32_t display_width;
-    int32_t display_height;
-    uint32_t fps_cap;
-    char* driver_name;
-    char* assets_path;
-    bool fullscreen;
-    bool calculate_fps;
+  //Options
+  int32_t display_width;
+  int32_t display_height;
+  uint32_t fps_cap;
+  char* driver_name;
+  char* assets_path;
+  bool fullscreen;
+  bool calculate_fps;
     
-    //SDL settings
-    int32_t driver_index;
-    uint32_t window_flags;
-    uint32_t renderer_flags;
+  //SDL settings
+  int32_t driver_index;
+  uint32_t window_flags;
+  uint32_t renderer_flags;
 
-    config();
-    int load_file(const char* cfg_file);
+  config();
+  int load_file(const char* cfg_file);
 };
 
 /* Ticks Timer */
@@ -102,12 +102,14 @@ uint32_t GM_GetFrameTicks();
 /* Get average FPS */
 float GM_GetAvgFps();
 
-/* GFX */
+SDL_Surface* GM_CreateSurface(int width, int height);
+SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access);
 
-SDL_Surface* GM_LoadSurface(const char* image);
-SDL_Texture* GM_LoadTexture(const char* sheet);
-TTF_Font*    GM_LoadFont(const char* font, int ptsize);
-json_t*      GM_LoadJSON(const char* file);
+/* load resources from assets path with help of RES_GetFullPath */
+SDL_Surface* GM_LoadSurface(const std::string& image);
+SDL_Texture* GM_LoadTexture(const std::string& sheet);
+TTF_Font*    GM_LoadFont(const std::string& font, int ptsize);
+json_t*      GM_LoadJSON(const std::string& file);
 
 /* Game screen */
 
@@ -126,8 +128,54 @@ public:
   virtual void on_event(SDL_Event* ev) = 0;
 };
 
+/*
+  Texture wrapper 
+  with SDL_TEXTUREACCESS_STREAMING access
+  for pixel manipulations
+*/
+class texture {
+public:
+  texture();
+  ~texture();
+  void release();
 
-/* Sprites & Lists */
+  /* load texture from resource (see GM_LoadTexture) */
+  void load(const std::string& path);
+  /* load texture data from surface */
+  void load_surface(SDL_Surface* src);
+  /* load texture data by rendering text with font */
+  void load_text(const std::string& text, TTF_Font* font, SDL_Color& color);
+  /* set color modulation */
+  void set_color(uint8_t red, uint8_t green, uint8_t blue);
+  /* set blending mode */
+  void set_blend_mode(SDL_BlendMode blending);
+  /* set alpha opacity */
+  void set_alpha(uint8_t alpha);
+
+  /* access texture properties */
+  int get_width() { return _width; }
+  int get_height() { return _height; }
+  SDL_Texture* get_texture() { return _texture; }
+
+  /* render it */
+  void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+
+  /* pixels access */
+  bool lock();
+  bool unlock();
+  int get_pitch() { return _pitch; }
+  void* get_pixels() { return _pixels; }
+  void replace_color(SDL_Color& from, SDL_Color& to);
+
+private:
+  SDL_Texture* _texture;
+  int _width;
+  int _height;
+  void* _pixels;
+  int _pitch;
+};
+
+/* Sprite */
 
 class sprite {
 public:
@@ -158,7 +206,7 @@ public:
   sprite();
 
   /* create new sprite with texture index */
-  sprite(size_t tex_idx, int px_w, int px_h, SDL_Texture* sheet);
+  sprite(size_t tex_idx, int px_w, int px_h, texture* sheet);
   virtual ~sprite() {}
 
   /* get center point based on rect */
@@ -171,11 +219,8 @@ public:
   static SDL_Rect clip_rect(size_t idx, int sheet_w, int sheet_h, int sprite_w, int sprite_h);
 
 protected:
-  /* sprite sheet info */
-  SDL_Texture* _sheet;
-  int _sheet_width;
-  int _sheet_height;
-
+  /* sprites sheet*/
+  texture* _sheet;
 };
 
 /*
@@ -191,13 +236,16 @@ public:
     static const uint32_t occilate = 2;
 
     /* list of running animations */
-    static locked_vector<anim> running;
+    static locked_vector<anim*> running;
     /* animate running items */
     static void update_running();
 
+    /* Sprite(s) to animate */
+    sprite** target;
+    size_t targets_count;
+
     /* Animation item task properties */
     bool is_running;
-    sprite* target;
     uint32_t mode;
     uint32_t period_ms;
     uint32_t last_updated;
@@ -212,9 +260,10 @@ public:
 
     /* create new animation task */
     anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
+    anim(sprite** ss, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
 
-    anim();
-    virtual ~anim();
+    virtual ~anim() {};
+    void release_targets();
     
     /* start/stop animation task */
     void start(uint32_t repeat = 0);
@@ -224,7 +273,7 @@ public:
     void update();
 
 private:
-  void init(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
+  void init(sprite** s, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
   void reset();
 
   /* Animated frame info */

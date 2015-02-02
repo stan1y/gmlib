@@ -17,9 +17,6 @@ inline SDL_bool SDLEx_IsPointInRect(SDL_Rect* rect, int x, int y) {
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
-/** Create a new surface compatible with OpenGL & PNG */
-SDL_Surface* SDLEx_CreateSurface(int width, int height);
-
 /*
  * This is an implementation of the Midpoint Circle Algorithm 
  * found on Wikipedia at the following link:
