@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="GMData.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMEventHandler.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMLib.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMSprites.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMTexture.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUI.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUIBox.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUIButton.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUILabel.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUITheme.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUtil.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="RESLib.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUITextInput.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUICombo.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUIPushButton.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GMLib.cpp" />
+    <ClCompile Include="RESLib.cpp" />
+    <ClCompile Include="GMUI.cpp" />
+    <ClCompile Include="GMUtil.cpp" />
+    <ClCompile Include="GMData.cpp" />
+    <ClCompile Include="GMUILabel.cpp" />
+    <ClCompile Include="GMUIBox.cpp" />
+    <ClCompile Include="GMUITheme.cpp" />
+    <ClCompile Include="GMConfig.cpp" />
+    <ClCompile Include="GMSprites.cpp" />
+    <ClCompile Include="GMTexture.cpp" />
+    <ClCompile Include="GMUIControl.cpp" />
+    <ClCompile Include="GMUIButton.cpp" />
+    <ClCompile Include="GMUIScrollbar.cpp" />
+    <ClCompile Include="GMUITextInput.cpp" />
+    <ClCompile Include="GMUITextInputKeySyms.cpp" />
+    <ClCompile Include="GMUIPushButton.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="inlcude">
+      <UniqueIdentifier>{9e8035ef-6f9b-4fe1-a0e7-c37e05a82e92}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

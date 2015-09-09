@@ -11,6 +11,7 @@ void RES_Put(const std::string& id, void* res);
 
 /* Initialize resources root */
 void RES_Init(const std::string& assets_root);
+std::string RES_GetAssetsRoot();
 
 /* Return full path to a resource file */
 std::string RES_GetFullPath(const std::string& relPath);

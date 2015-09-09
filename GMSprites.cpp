@@ -1,4 +1,4 @@
-#include "GMLib.h"
+#include "GMSprites.h"
 
 /* helpers */
 
@@ -21,6 +21,34 @@ SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access)
 }
 
 /*
+  Sprites Sheet 
+  */
+
+sprites_sheet::sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_t sprite_h)
+  :texture(res)
+{
+  _cols = width() / sprite_w;
+  _rows = height() / sprite_h;
+}
+
+rect sprites_sheet::get_sprite_cliprect(size_t idx)
+{
+  rect clip;
+  int row_idx = 0;
+  uint32_t sprite_w = sprite_width();
+  uint32_t sprite_h = sprite_height();
+  while(idx >= _cols) {
+      idx -= _cols;
+      row_idx += 1;
+  }
+  clip.x = idx * sprite_w;
+  clip.y = row_idx * sprite_h;
+  clip.w = sprite_w;
+  clip.h = sprite_h;
+  return clip;
+}
+
+/*
     Sprite class
 */
 
@@ -33,7 +61,7 @@ sprite::sprite()
   angle = 0;
 }
 
-sprite::sprite(size_t tex_idx, int px_w, int px_h, texture* sheet)
+sprite::sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet* sheet)
 {
   idx = tex_idx;
   w = px_w; h = px_h;
@@ -45,11 +73,11 @@ sprite::sprite(size_t tex_idx, int px_w, int px_h, texture* sheet)
     _sheet = sheet;
 
     //check sprites sheet
-    if ( _sheet->get_width() % px_w != 0 || _sheet->get_height() % px_h != 0 ) {
-      SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet->get_width(), _sheet->get_height());
+    if ( _sheet->width() % px_w != 0 || _sheet->height() % px_h != 0 ) {
+      SDLEx_LogError("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet->width(), _sheet->height());
       throw std::exception("Invalid sprite size");
     }
-    size_t total_sprites = (_sheet->get_width() / px_w) * (_sheet->get_height() / px_h);
+    size_t total_sprites = (_sheet->width() / px_w) * (_sheet->height() / px_h);
     if (tex_idx >= total_sprites) {
       SDLEx_LogError("Invalid sprite idx=%d. total sheet length=%d", tex_idx, total_sprites);
       throw std::exception("Invalid sprite idx");
@@ -57,36 +85,33 @@ sprite::sprite(size_t tex_idx, int px_w, int px_h, texture* sheet)
   }
 }
 
-SDL_Rect sprite::clip_rect(size_t idx, int sheet_w, int sheet_h, int sprite_w, int sprite_h) {
-    SDL_Rect clip;
-    size_t columns = sheet_w / sprite_w;
-    int rows = sheet_h / sprite_h;
-    int row_idx = 0;
-    while(idx >= columns) {
-        idx -= columns;
-        row_idx += 1;
-    }
-    clip.x = idx * sprite_w;
-    clip.y = row_idx * sprite_h;
-    clip.w = sprite_w;
-    clip.h = sprite_h;
-    return clip;
-}
-
-void sprite::render(SDL_Point topleft, uint8_t alpha) 
+void sprite::render(SDL_Renderer * r, point & topleft, uint8_t alpha) const
 {
   if (_sheet == nullptr || _sheet->get_texture() == NULL || w == 0 || h == 0) {
       return;
   }
   uint32_t fmt = 0;
   int a = 0, sw = 0, sh = 0;
-  SDL_Point cnt = {
-      w / 2, h / 2
-  };
-  SDL_Rect clip = clip_rect(idx, _sheet->get_width(), _sheet->get_height(), w, h);
+  point cnt(w / 2, h / 2);
+  rect src = _sheet->get_sprite_cliprect(idx);
+  rect dst = rect(topleft.x, topleft.y, w, h);
   _sheet->set_alpha(alpha);
-  _sheet->render(topleft.x, topleft.y, &clip, angle, &cnt, flip); 
+  _sheet->render(r, src, dst, angle, &cnt, flip); 
 }
+
+void sprite::render(SDL_Renderer * r, rect & dst, uint8_t alpha) const
+{
+  if (_sheet == nullptr || _sheet->get_texture() == NULL || w == 0 || h == 0) {
+      return;
+  }
+  uint32_t fmt = 0;
+  int a = 0, sw = 0, sh = 0;
+  point cnt(w / 2, h / 2);
+  rect src = _sheet->get_sprite_cliprect(idx);
+  _sheet->set_alpha(alpha);
+  _sheet->render(r, src, dst, angle, &cnt, flip); 
+}
+
 
 /*
     Sprite animation

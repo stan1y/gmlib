@@ -1,19 +1,32 @@
+#include <limits.h>
+#include <boost/filesystem.hpp>
+
 #include "GMLib.h"
+#include "GMTexture.h"
+#include "GMSprites.h"
 #include "RESLib.h"
+#include "GMUI.h"
+
+using namespace boost::filesystem;
 
 /* Global State */
 static SDL_Window* g_window = nullptr;
 static SDL_Renderer* g_renderer = nullptr;
+static SDL_GLContext g_glcontext = nullptr;
 static config* g_config = nullptr;
 static timer* g_frame_timer = nullptr;
 static timer* g_fps_timer = nullptr;
-static int g_counted_frames = 0;
-static int g_screen_ticks_per_frame = 0;
+static uint32_t g_counted_frames = 0;
+static uint32_t g_screen_ticks_per_frame = 0;
 static float g_avg_fps = 0.0f;
+static texture g_fps;
+static color g_fps_color;
+static TTF_Font* g_fps_font;
 
 /* Screens */
-static screen* g_screen_current;
-static screen* g_screen_next;
+static screen * g_screen_current;
+static screen * g_screen_next;
+static screen * g_screen_global;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
@@ -51,15 +64,15 @@ int GM_Init(const char* name, config* conf) {
 
     //init subsystems
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-        SDLEx_LogError("Failed to initialize SDL");
+        SDLEx_LogError("GM_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (IMG_Init(IMG_INIT_PNG) == -1) {
-        SDLEx_LogError("Failed to initialize SDL_img");
+        SDLEx_LogError("GM_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (TTF_Init() == -1) {
-        SDLEx_LogError("Failed to initialize SDL_ttf");
+        SDLEx_LogError("GM_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
         return -1;;
     }
     SDL_version c_ver;
@@ -70,39 +83,53 @@ int GM_Init(const char* name, config* conf) {
         l_ver.major, l_ver.minor, l_ver.patch,
         c_ver.major, c_ver.minor, c_ver.patch);
 
+    //setup random
+    srand(time(NULL));
+
     //setup game state
     g_config = conf;
     g_frame_timer = new timer();
     g_screen_ticks_per_frame = 1000 / conf->fps_cap;
     g_fps_timer = new timer();
     
-    //setup screen
+    //setup screens
     g_screen_current = nullptr;
     g_screen_next = nullptr;
-
+    g_screen_global = new screen();
+    
     //init SDL window & renderer
     g_window = SDL_CreateWindow(name, 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-        conf->display_width, conf->display_height, conf->window_flags);
+        conf->display_width, conf->display_height, conf->window_flags | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
-        SDLEx_LogError("Failed to system window");
+        SDLEx_LogError("GM_Init: Failed to system window. SDL Error: %s", SDL_GetError());
         return -1;
     }
+    // setup renderer
     g_renderer = SDL_CreateRenderer(g_window, conf->driver_index, conf->renderer_flags);
     if ( g_renderer == nullptr ) {
-        SDLEx_LogError("Failed to create renderer driver_index=%d", conf->driver_index);
+        SDLEx_LogError("GM_Init: Failed to create renderer driver_index=%d", conf->driver_index);
         return -1;
     }
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
 
-    //log renderer info
+    // log renderer info
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
     SDL_Log("Screen ready size=%dx%d, fullscreen=%d, driver=%s", conf->display_width, conf->display_height, conf->fullscreen, renderer_info.name);
     
-    //resources cache
+    // resources cache
     RES_Init(conf->assets_path);
-    
+
+    // init UI
+    rect display = GM_GetDisplayRect();
+    ui::manager::initialize(display, g_config->ui_flags);
+    g_screen_global->add_component(ui::manager::instance());
+
+    //fps counter
+    g_fps_color = color( 0, 255, 0, 255 );
+    g_fps_font = GM_LoadFont("fonts/terminus.ttf", 12);
+
     return 0;
 }
 
@@ -135,9 +162,9 @@ void GM_StartFrame()
   }
 
   //clear screen with black
-  SDL_SetRenderTarget(g_renderer, NULL);
-  SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
-  SDL_RenderClear(g_renderer);
+   SDL_SetRenderTarget(g_renderer, NULL);
+   SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
+   SDL_RenderClear(g_renderer);
 }
 
 void GM_UpdateFrame()
@@ -151,10 +178,11 @@ void GM_UpdateFrame()
   // update running animations
   anim::update_running();
     
-  // update current screen
+  // update global & current screens
   if (g_screen_current != nullptr) {
     g_screen_current->update();  
   }
+  g_screen_global->update();
 }
 
 void GM_RenderFrame()
@@ -164,17 +192,27 @@ void GM_RenderFrame()
     SDLEx_LogError("Failed to render: no active screen");
     throw std::exception("No active screen to update");
   }
-  g_screen_current->render();
+  SDL_Renderer * r = GM_GetRenderer();
+  g_screen_current->render(r);
+  g_screen_global->render(r);
+
+  // render avg fps
+  if (g_config->calculate_fps) {
+    g_fps.load_text_solid( std::string("fps: ") + std::to_string(float_to_sint32(GM_GetAvgFps())), g_fps_font, g_fps_color);
+    g_fps.render(GM_GetRenderer(), point(g_config->display_width - g_fps.width() - 5, 5));
+  }
+
   //re-start frame timer
   g_frame_timer->start();
 }
 
 void GM_EndFrame()
 {
-  //present rendered screen
+  //swap opengl buffers
   SDL_RenderPresent(g_renderer);
   //update counted frames and delay frame end
   ++g_counted_frames;
+
   uint32_t frame_ticks = GM_GetFrameTicks();
   if (frame_ticks < g_screen_ticks_per_frame) {
     SDL_Delay(g_screen_ticks_per_frame - frame_ticks);
@@ -209,141 +247,6 @@ void screen::set_current(screen* s)
     }
 }
 
-/* Texture */
-
-texture::texture()
-{
-  _texture = NULL;
-  _pixels = NULL;
-  _pitch = 0;
-  _width = 0;
-  _height = 0;
-}
-
-void texture::release()
-{
-  if (_texture) 
-    SDL_DestroyTexture(_texture);
-  _texture = NULL;
-}
-
-texture::~texture()
-{
-  release();
-}
-
-void texture::load(const std::string& path)
-{
-  SDL_Surface* src = GM_LoadSurface(path);
-  load_surface(src);
-  SDL_FreeSurface(src);
-}
-
-void texture::load_text(const std::string& text, TTF_Font* font, SDL_Color& color)
-{
-  SDL_Surface* s = TTF_RenderText_Blended(font, text.c_str(), color);
-  if (!s) {
-    SDLEx_LogError("texture::load_text Failed to render text: %s", TTF_GetError());
-    throw std::exception("Failed to render text");
-  }
-  release();
-  _texture = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
-  SDL_FreeSurface(s);
-}
-
-void texture::load_surface(SDL_Surface* src)
-{
-  release();
-  _texture = GM_CreateTexture(src->w, src->h, SDL_TEXTUREACCESS_STREAMING);
-  SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
-  if (_texture == NULL) {
-    SDLEx_LogError("texture::load_surface - Failed to create blank texture.");
-    throw std::exception("Failed to create blank surface");
-  }
-  //copy pixels from surface to texture
-  SDL_LockTexture(_texture, NULL, &_pixels, &_pitch);
-  memcpy(_pixels, src->pixels, src->pitch * src->h);
-  SDL_UnlockTexture(_texture); //<- this applys _pixles to the texture
-  _pixels = NULL;
-
-  _width = src->w;
-  _height = src->h;
-}
-
-bool texture::lock()
-{
-  if (_pixels != NULL) {
-    SDLEx_LogError("texure::lock - already locked");
-    return false;
-  }
-  if (SDL_LockTexture(_texture, NULL, &_pixels, &_pitch) != 0) {
-    SDLEx_LogError("texture::lock - failed to lock texture: %s", SDL_GetError());
-    return false;
-  }
-
-  return true;
-}
-
-bool texture::unlock()
-{
-  if (_pixels == NULL) {
-    SDLEx_LogError("texture::unlock - texture is not locked");
-    return false;
-  }
-
-  SDL_UnlockTexture(_texture);
-  _pixels = NULL;
-  _pitch = 0;
-  return true;
-}
-
-void texture::replace_color(SDL_Color& from, SDL_Color& to)
-{
-  if (!lock()) return;
-  
-  SDL_PixelFormat* fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-  uint32_t f = SDL_MapRGBA(fmt, from.r, from.g, from.b, from.a);
-  uint32_t t = SDL_MapRGBA(fmt, to.r, to.g, to.b, to.a);
-  SDL_FreeFormat(fmt);
-
-  uint32_t* pixels = (uint32_t*)_pixels;
-  int pixel_count = ( _pitch / 4 ) * _height;
-  for( int i = 0; i < pixel_count; ++i ) {
-      if( pixels[i] == f ) {
-          pixels[i] = t;
-      }
-  }
-  if (!unlock()) return;
-}
-
-void texture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
-{
-  SDL_Rect rect = { x, y, _width, _height };
-  if( clip != NULL ) {
-    rect.w = clip->w;
-    rect.h = clip->h;
-  }
-  //Render to screen
-  SDL_RenderCopyEx( GM_GetRenderer(), _texture, clip, &rect, angle, center, flip );
-}
-
-void texture::set_color(uint8_t red, uint8_t green, uint8_t blue)
-{
-  if (!_texture) return;
-  SDL_SetTextureColorMod(_texture, red, green, blue);
-}
-
-void texture::set_blend_mode(SDL_BlendMode blending)
-{
-  if (!_texture) return;
-  SDL_SetTextureBlendMode(_texture, blending);
-}
-
-void texture::set_alpha(uint8_t alpha)
-{
-  if (!_texture) return;
-  SDL_SetTextureAlphaMod(_texture, alpha);
-}
 
 /* Load helpers */
 
@@ -384,27 +287,8 @@ TTF_Font* GM_LoadFont(const std::string& font, int ptsize)
   }
   return f;
 }
-    
-
-json_t* GM_LoadJSON(const std::string& file)
-{
-    json_t* json_data = nullptr;
-    json_error_t jerr;
-    std::string path = RES_GetFullPath(file);
-    json_data = json_load_file(path.c_str(), 0, &jerr);
-    if (json_data == nullptr) {
-        SDLEx_LogError("GM_LoadJson: failed to load %s. %s", path.c_str(), jerr.text);
-        return NULL;
-    }
-
-    return json_data;
-}
 
 /* File and folder helpers */
-
-#ifdef _WIN32
-#define PATHSEP '\\'
-#endif
 
 std::string GM_GetExecutablePath()
 {
@@ -432,69 +316,36 @@ std::string GM_GetCurrentPath()
   _getcwd(cwd, MAX_PATH * sizeof(char));
 #endif
 
-  return cwd;
+  return std::string(cwd);
 }
 
-std::string GM_GetPathOfFile(const std::string& filepath)
+void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, bool recursive)
 {
-  size_t pos = filepath.find_last_of(PATHSEP);
-  return filepath.substr(0, pos);
+  GM_EnumPathEx(folder, "", files, recursive);
 }
 
-std::string GM_JoinPaths(const std::string& root, const std::string& relative)
+template<typename Iter>
+void EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files)
 {
-  return root + PATHSEP + relative;
-}
-
-void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, int d_type)
-{
-  DIR *dir;
-  struct dirent *ent;
-                
-  /* Open directory stream */
-  dir = opendir (folder.c_str());
-  if (dir != NULL) {
-    /* Print all files and directories within the directory */
-    while ((ent = readdir (dir)) != NULL) {
-      if (ent->d_type == d_type) {
-        files.push_back(ent->d_name);
-      }
+  Iter iter(folder), eod;
+  for (; iter != eod; ++iter) {
+    if ( is_regular_file(iter->path())) {
+      if (ext.length() > 0 && iter->path().extension().string() != ext)
+        continue;
+      files.push_back(iter->path().string());
     }
-    closedir (dir);
+  }
+}
+
+void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive)
+{
+  path dir(folder);
+  if (recursive) {
+    EnumPathEx<recursive_directory_iterator>(folder, ext, files);
   }
   else {
-    /* Could not open directory */
-    SDLEx_LogError("GM_EnumPath: failed to open directory %s", folder.c_str());
-    throw std::exception("Failed to open directory");
+    EnumPathEx<directory_iterator>(folder, ext, files);
   }
-}
-
-void GM_EnumPathFilesEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files)
-{
-  GM_EnumPath(folder, files, DT_REG);
-  std::vector<std::string>::iterator it = files.begin();
-  for(; it != files.end(); ++it) {
-    size_t pos = it->find_last_of('.');
-    if (pos == std::string::npos) {
-      it = files.erase(it);
-      continue;
-    }
-    std::string file_ext = it->substr(pos, it->length() - pos);
-    if (file_ext != ext) {
-      it = files.erase(it);
-      continue;
-    }
-  }
-}
-
-void GM_EnumPathFiles(const std::string& folder, std::vector<std::string>& files)
-{
-  GM_EnumPath(folder, files, DT_REG);
-}
-
-void GM_EnumPathFolders(const std::string& folder, std::vector<std::string>& files)
-{
-  GM_EnumPath(folder, files, DT_DIR);
 }
 
 /* Timer implementation */

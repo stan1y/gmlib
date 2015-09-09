@@ -1,17 +1,25 @@
 #include "RESLib.h"
+#include <boost/filesystem.hpp>
+
+using namespace boost::filesystem;
 
 /* Static pointer to assets folder */
-static char* _GM_AssetsRoot = "";
+static path * _GM_AssetsRoot;
 typedef std::map<std::string, void*> cache;
 static cache* _GM_Cache = NULL;
 
 void RES_Init(const std::string& assets_root)
 {
-  std::string cwd = GM_GetCurrentPath();
-  _GM_AssetsRoot = _strdup(GM_JoinPaths(cwd, assets_root).c_str());
-
+  path cwd(GM_GetCurrentPath());
+  cwd /= assets_root;
+  _GM_AssetsRoot = new path(cwd);
   _GM_Cache = new cache();
-  SDL_Log("init(): ready root=%s", _GM_AssetsRoot);
+  SDL_Log("RES_Init(): assets ready at [%s]", _GM_AssetsRoot->string().c_str());
+}
+
+std::string RES_GetAssetsRoot()
+{
+  return _GM_AssetsRoot->string();
 }
 
 void* RES_Get(const std::string& id)
@@ -48,18 +56,20 @@ void RES_Put(const std::string& id, void* res)
 
 std::string RES_GetFullPath(const std::string& relPath)
 {
-  if (strlen(_GM_AssetsRoot) > 0) 
-    return GM_JoinPaths(_GM_AssetsRoot, relPath);
-  return relPath;
+  path rel(relPath);
+  //check if path is abs
+  if (rel.is_absolute()) return relPath;
+  //combite relative path with assets root
+  path root(_GM_AssetsRoot ? _GM_AssetsRoot->string() : ".");
+  root /= rel;
+  return root.string();
 }
 
 bool RES_CheckExists(const std::string& relPath)
 {
-  std::string path = GM_JoinPaths(_GM_AssetsRoot, relPath);
-  FILE * f = std::fopen(path.c_str(), "r");
-  if (f != NULL) {
-    std::fclose(f);
-    return true;
-  }
-  return false;
+  path itm(_GM_AssetsRoot ? _GM_AssetsRoot->string() : ".");
+  path rel(relPath);
+  if (rel.is_absolute()) return exists(rel);
+  itm /= rel;
+  return exists(itm);
 }

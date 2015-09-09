@@ -1,4 +1,5 @@
 #include "GMLib.h"
+#include "GMData.h"
 
 config::config()
 {
@@ -7,45 +8,54 @@ config::config()
     display_height = 768;
     driver_name = NULL;
     assets_path = NULL;
+    default_ui = NULL;
+    ui_flags = 0;
     fullscreen = false;
     calculate_fps = true;
     fps_cap = 60;
 
     driver_index = -1;
     window_flags = SDL_WINDOW_SHOWN;
-    renderer_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE;
+    renderer_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_PRESENTVSYNC;
 }
 
-int config::load_file(const char* cfg_file)
- {
-    SDL_Log("Reading configuration from %s", cfg_file);
-    json_t* conf_data = GM_LoadJSON(cfg_file);
-    if (conf_data == nullptr) {
-        return -1;
-    }
+config::~config()
+{
+  //if (driver_name) free(driver_name);
+  //if (assets_path) free(assets_path);
+  //if (default_ui) free(default_ui);
+}
 
-    json_error_t jerr;
-    if (json_unpack_ex(conf_data, &jerr, 0,
-        "{s:i s:i s:b s:b s:s s:s }",
+int config::load(const std::string& cfg_file)
+ {
+    SDL_Log("config: loading settings...");
+    data cfg(cfg_file);
+    
+    char* assets = NULL;
+    char* driver = NULL;
+    char* theme = NULL;
+    cfg.unpack("{s:i s:i s:b s:b s:s s:s s:s s:i}",
         "display_width", &display_width,
         "display_height", &display_height,
         "fullscreen", &fullscreen,
         "calculate_fps", &calculate_fps,
-        "driver_name", &driver_name,
-        "assets_path", &assets_path) != 0)
-    {
-        SDLEx_LogError("Failed to unpack configuration, error at line: %d, column: %d, position: %d. %s",
-            jerr.line, jerr.column, jerr.position, jerr.text);
-        return -1;
-    }
+        "driver", &driver,
+        "assets_path", &assets,
+        "default_ui", &theme,
+        "ui_flags", &ui_flags);
+    
+    //copy strings
+    driver_name = copy_string(driver);
+    assets_path = copy_string(assets);
+    default_ui = copy_string(theme);
 
     //select driver
-    if (driver_name) {
+    if (driver) {
         int drivers = SDL_GetNumRenderDrivers();
         for(int i = 0; i < drivers; i++) {
             SDL_RendererInfo renderer_info;
             SDL_GetRenderDriverInfo(i, &renderer_info);
-            if (SDL_strncmp(driver_name, renderer_info.name, max_driver_name) == 0) {
+            if (SDL_strncmp(driver, renderer_info.name, max_driver_name) == 0) {
                 driver_index = i;
                 break;
             }

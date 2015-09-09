@@ -39,7 +39,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -47,12 +49,22 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\dirent\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\glew-1.12.0\include;$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\boost\include\boost-1_58;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2_image.lib;SDL2_ttf.lib;jansson.lib</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -72,17 +84,40 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Pebble\Tileset.h" />
+    <ClInclude Include="GMData.h" />
+    <ClInclude Include="GMEventHandler.h" />
     <ClInclude Include="GMLib.h" />
+    <ClInclude Include="GMSprites.h" />
+    <ClInclude Include="GMTexture.h" />
+    <ClInclude Include="GMUIBox.h" />
+    <ClInclude Include="GMUIButton.h" />
+    <ClInclude Include="GMUICombo.h" />
+    <ClInclude Include="GMUILabel.h" />
+    <ClInclude Include="GMUIPushButton.h" />
+    <ClInclude Include="GMUITextInput.h" />
+    <ClInclude Include="GMUITheme.h" />
     <ClInclude Include="GMUtil.h" />
     <ClInclude Include="RESLib.h" />
+    <ClInclude Include="GMUI.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="GMConfig.cpp" />
+    <ClCompile Include="GMData.cpp" />
     <ClCompile Include="GMLib.cpp" />
+    <ClCompile Include="GMTexture.cpp" />
+    <ClCompile Include="GMUI.cpp" />
+    <ClCompile Include="GMUIButton.cpp" />
+    <ClCompile Include="GMUIControl.cpp" />
+    <ClCompile Include="GMUILabel.cpp" />
+    <ClCompile Include="GMUIBox.cpp" />
+    <ClCompile Include="GMUIPushButton.cpp" />
+    <ClCompile Include="GMUIScrollbar.cpp" />
+    <ClCompile Include="GMUITextInput.cpp" />
+    <ClCompile Include="GMUITextInputKeySyms.cpp" />
+    <ClCompile Include="GMUITheme.cpp" />
     <ClCompile Include="RESLib.cpp" />
-    <ClCompile Include="SDLEx.cpp" />
-    <ClCompile Include="Sprites.cpp" />
+    <ClCompile Include="GMUtil.cpp" />
+    <ClCompile Include="GMSprites.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

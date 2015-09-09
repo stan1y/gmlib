@@ -1,13 +1,118 @@
 #ifndef GM_UTIL_H
 #define GM_UTIL_H
 
-#include "GMLib.h"
+#include <SDL.h>
+
+#include <direct.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif 
+
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <string>
+#include <set>
+#include <list>
+#include <vector>
+#include <map>
+#include <memory>
+#include <algorithm>
 #include <exception>
+
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
+#include <boost/foreach.hpp>
+
+/* SDL_Color wrapper */
+struct color : SDL_Color {
+  color() { r = 0; g = 0; b = 0; a = 0; }
+  color(const SDL_Color & clr) { r = clr.r; g = clr.g; b = clr.b; a = clr.a; }
+  color(uint8_t rr, uint8_t gg, uint8_t bb, uint8_t aa) { r = rr; g = gg; b = bb; a = aa; }
+
+  void apply(SDL_Renderer* rnd) const;
+  void apply() const;
+};
+
+/* SDL_Point wrapper */
+struct point : SDL_Point {
+  point() { x = 0; y = 0; }
+  point(int _x, int _y) { x = _x; y = _y; }
+  point(const point& copy) { x = copy.x; y = copy.y; }
+
+  std::string tostr() const
+  { 
+    std::stringstream ss;
+    ss << "point<" << x << ", " << y << ">";
+    return ss.str();
+  }
+};
+
+/* SDL_Rect wrapper */
+struct rect : SDL_Rect {
+  rect() { x = 0; y = 0; w = 0; h = 0; }
+  rect(int _x, int _y, int _w, int _h) { x = _x; y = _y; w = _w; h = _h; }
+  rect(const rect& copy) { x = copy.x; y = copy.y; w = copy.w; h = copy.h; }
+  rect(const SDL_Rect& copy) { x = copy.x; y = copy.y; w = copy.w; h = copy.h; }
+
+  point topleft() const { return point(x, y); }
+  point bottomright() const { return point(x + w, y + h); }
+
+  std::string tostr() const
+  { 
+    std::stringstream ss;
+    ss << "rect<" << x << ", " << y \
+       << ", " << w << ", " << h << ">";
+    return ss.str();
+  }
+
+  /** Produce a new rect as a clip of this and another rect */
+  rect rect::clip(const rect & other) const
+  {
+    rect res;
+    res.x = max(x, other.x);
+    res.w = min(x + w, other.x + other.w) - x;
+    res.y = max(y, other.y);
+    res.h = min(y + h, other.y + other.h) - y;
+
+    if (w <= 0 || h <= 0) {
+      res.w = 0; res.h = 0;
+    }
+    return res;
+  }
+
+  /** Check this rect collides with another rect */
+  bool rect::collide_rect(const rect & b) const
+  {
+    return x + w > b.x && b.x + b.w > x && \
+          y + h > b.y && b.y + b.h > y;
+  }
+
+  /** Check this rect collides with a point */
+  bool rect::collide_point(const point & pnt) const
+  {
+    return pnt.x >= x && \
+            pnt.y >= y && \
+            pnt.x < x + w && \
+            pnt.y < y + h;
+  }
+
+
+};
 
 /** Check point in rect
     Returns SDL_TRUE or SDL_FALSE
 */
-inline SDL_bool SDLEx_IsPointInRect(SDL_Rect* rect, int x, int y) {
+inline SDL_bool IsPointInRect(SDL_Rect* rect, int x, int y) {
     return x >= rect->x && x <= rect->x + rect->w && y >= rect->y && y <= rect->y + rect->h ? SDL_TRUE : SDL_FALSE;
 }
 
@@ -18,17 +123,6 @@ inline SDL_bool SDLEx_IsPointInRect(SDL_Rect* rect, int x, int y) {
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
 /*
- * This is an implementation of the Midpoint Circle Algorithm 
- * found on Wikipedia at the following link:
- *
- *   http://en.wikipedia.org/wiki/Midpoint_circle_algorithm
- *
- * The algorithm elegantly draws a circle quickly, using a
- * SDL_RenderDrawPoint function for rendering.
- */
-void SDLEx_RenderDrawCircle(SDL_Renderer *renderer, int n_cx, int n_cy, int radius);
-
-/*
  * Implementation of linear gradient
  * color - base color to start gradient
  * start - top left corner to start drawing
@@ -36,32 +130,57 @@ void SDLEx_RenderDrawCircle(SDL_Renderer *renderer, int n_cx, int n_cy, int radi
  * xstep, ystep - gradient direction (i.e vertical growing gradient is xstep = 0, ystep = 1)
  * alpha - drawing alpha value
  */
-void SDLEx_RenderVerticalGradient(SDL_Renderer* renderer, SDL_Color& from, SDL_Color& to, SDL_Point& start, SDL_Point& end, uint8_t alpha);
+void RenderVerticalGradient(SDL_Renderer* renderer,  const color & from, const color& to, const point & start, const point & end, uint8_t alpha);
 
 /* SDL_Rect & SDL_Point utils */
-bool operator== (SDL_Rect& a, SDL_Rect& b);
-bool operator!= (SDL_Rect& a, SDL_Rect& b);
-bool operator== (SDL_Point& a, SDL_Point& b);
-bool operator!= (SDL_Point& a, SDL_Point& b);
-void operator+= (SDL_Rect& r, SDL_Point& p);
+bool operator== (rect& a, rect& b);
+bool operator!= (rect& a, rect& b);
+rect operator+ (const rect& a, const rect& b);
+rect operator- (const rect& a, const rect& b);
 
-void operator+= (SDL_Point& a, SDL_Point& b);
-void operator-= (SDL_Point& a, SDL_Point& b);
+rect operator+ (const rect& r, const point& p);
+rect operator- (const rect& r, const point& p);
 
-bool operator< (SDL_Rect& a, SDL_Rect& b);
-bool operator<= (SDL_Rect& a, SDL_Rect& b);
-bool operator> (SDL_Rect& a, SDL_Rect& b);
-bool operator>= (SDL_Rect& a, SDL_Rect& b);
+point operator+ (const point& a, const point& b);
+point operator- (const point& a, const point& b);
+
+bool operator== (point& a, point& b);
+bool operator!= (point& a, point& b);
+
+void operator+= (rect& r, point& p);
+void operator-= (rect& r, point& p);
+
+void operator+= (point& a, point& b);
+void operator-= (point& a, point& b);
+
+bool operator< (rect& a, rect& b);
+bool operator<= (rect& a, rect& b);
+bool operator> (rect& a, rect& b);
+bool operator>= (rect& a, rect& b);
 
 /* Executable path and folder functions */
 std::string GM_GetExecutablePath();
 std::string GM_GetCurrentPath();
-std::string GM_GetPathOfFile(const std::string& filepath);
-std::string GM_JoinPaths(const std::string& root, const std::string& relative);
-void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, int d_type);
-void GM_EnumPathFiles(const std::string& folder, std::vector<std::string>& files);
-void GM_EnumPathFilesEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files);
-void GM_EnumPathFolders(const std::string& folder, std::vector<std::string>& folders);
+void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, bool recursive);
+void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive);
+
+/* SDL_Error exception wrapper */
+class SDLException : public std::exception {
+private:
+  const char* _msg;
+
+public:
+  SDLException():
+    std::exception(),
+    _msg(SDL_GetError())
+  {
+  }
+
+  virtual const char * what() const
+  {
+    return _msg;
+  }
+};
 
 /*
     SDL_Mutex wrapper
@@ -79,6 +198,7 @@ public:
 
     void lock() { SDL_LockMutex(mtx); }
     void unlock() { SDL_UnlockMutex(mtx); }
+    int try_lock() { return SDL_TryLockMutex(mtx); }
 
 private:
     SDL_mutex* mtx;
@@ -89,6 +209,8 @@ private:
 */
 template<class T> class locked_vector: public mutex {
 public:
+  typedef typename std::vector<T>::iterator iterator;
+
   locked_vector()
   {}
 
@@ -129,25 +251,18 @@ private:
 
 /** Utility convertors */
 
-inline uint32_t jint_to_uint32(json_int_t i) {
-    if (i > _UI32_MAX) {
-        return _UI32_MAX;
-    }
-    return (uint32_t)i;
-}
-
-inline int32_t jint_to_sint32(json_int_t i) {
-    if (i > _I32_MAX) {
-        return _I32_MAX;
-    }
-    return (int32_t)i;
-}
-
-inline uint8_t jint_to_uint8(json_int_t i) {
+inline uint8_t uint32_to_uint8(uint32_t i) {
     if (i > _UI8_MAX) {
         return _UI8_MAX;
     }
     return (uint8_t)i;
+}
+
+inline int32_t uint32_to_int32(uint32_t i) {
+    if (i > _I32_MAX) {
+        return _I32_MAX;
+    }
+    return (int32_t)i;
 }
 
 inline uint8_t int32_to_uint8(int32_t i) {
@@ -171,16 +286,19 @@ inline int8_t int32_to_int8(int32_t i) {
     return (int8_t)i;
 }
 
-inline int32_t str_to_sint32(const char* str) {
-    long l = std::strtol(str, nullptr, 10);
-    return jint_to_uint32(l);
+inline uint8_t int32_to_uint8(uint32_t i) {
+  if (i > _I8_MAX) {
+        return _I8_MAX;
+    }
+    return (int8_t)i;
 }
 
-inline char* sint32_to_str(int32_t i) {
-    static char buf[12];
-    memset(buf, 0, sizeof(buf));
-    sprintf(buf, "%d", i);
-    return buf;
+inline int32_t str_to_sint32(const char* str) {
+    long l = std::strtol(str, nullptr, 10);
+    if (l > _I32_MAX) {
+        return _I32_MAX;
+    }
+    return (int32_t)l;
 }
 
 inline int32_t double_to_sint32(double d) {
@@ -189,6 +307,18 @@ inline int32_t double_to_sint32(double d) {
 
 inline int32_t float_to_sint32(float f) {
 	return f >= 0.0 ? (int32_t)(f+0.5) : (int32_t)(f-0.5);
+}
+
+/* create a new raw string copy for a given */
+inline char* copy_string(const char* str, size_t l = 0)
+{
+  if (l == 0) 
+    l = SDL_strlen(str);
+  size_t s = sizeof(char) * (l + 1);
+  char* c = (char*)SDL_malloc(s);
+  memset(c, 0, s);
+  SDL_strlcpy(c, str, s);
+  return c;
 }
 
 /* Get random interger in range */
@@ -206,6 +336,5 @@ inline char rand_char()
     int r = rand_int(ascii_start, ascii_end);
     return int32_to_int8(r);
 }
-
 
 #endif //GM_UTIL_H
