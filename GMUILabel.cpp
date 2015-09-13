@@ -16,7 +16,6 @@ label::~label()
 {
 }
 
-
 void label::set_text(const std::string& txt)
 {
   _text = txt;
@@ -154,7 +153,7 @@ void label::update()
   }
 }
 
-void label::toggle()
+void label::toggle(int step)
 {
   if (_animating) {
     return;
@@ -163,12 +162,12 @@ void label::toggle()
   if (_visible) {
     SDL_Log("label::toggle - fade out");
     _alpha = 255;
-    _alpha_step = -8;
+    _alpha_step = -step;
   }
   else {
     SDL_Log("label::toggle - fade in");
     _alpha = 0;
-    _alpha_step = 8;
+    _alpha_step = step;
   }
 
   set_visible(true);

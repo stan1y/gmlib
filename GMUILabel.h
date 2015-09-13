@@ -105,7 +105,7 @@ public:
 
   /* Show-Hide animation */
   virtual void update();
-  void toggle();
+  void toggle(int step = 25);
   
 protected:
   void paint(SDL_Renderer * r);

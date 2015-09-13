@@ -133,7 +133,7 @@ int GM_Init(const char* name, config* conf) {
     return 0;
 }
 
-inline uint32_t GM_GetFrameTicks()
+uint32_t GM_GetFrameTicks()
 {
   return g_frame_timer->get_ticks();
 }

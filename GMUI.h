@@ -233,4 +233,7 @@ std::string UI_GetThemeRoot(const std::string & theme_path);
 inline ui::manager * UI_GetManager() { return ui::manager::instance(); }
 inline const ui::theme & UI_GetTheme() { return ui::manager::instance()->get_theme(); }
 
+/* Get miliseconds since last user input (kbd, mouse, touch) */
+uint32_t UI_GetUserIdle();
+
 #endif _GMUI_H_

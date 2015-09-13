@@ -110,6 +110,7 @@ void GM_EndFrame();
 
 /* Get miliseconds elapsed since start of the current frame */
 uint32_t GM_GetFrameTicks();
+
 /* Get average FPS */
 float GM_GetAvgFps();
 

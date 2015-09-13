@@ -5,6 +5,14 @@
 #include "GMUIButton.h"
 #include "GMUITextInput.h"
 
+/** User Idle Counter **/
+
+static uint32_t g_usr_idle_cnt = 0;
+uint32_t UI_GetUserIdle()
+{
+  return g_usr_idle_cnt;
+}
+
 namespace ui {
 
 static manager* g_manager = NULL;
@@ -13,8 +21,6 @@ static dead_list g_graveyard;
 
 static message * g_message = NULL;
 static mutex g_message_mx;
-
-
 
 /** Manager **/
 
@@ -113,6 +119,9 @@ void manager::render(SDL_Renderer* r, screen * src)
 
 void manager::update(screen * scr)
 {
+  // count idle miliseconds
+  g_usr_idle_cnt += GM_GetFrameTicks();
+
   SDL_GetMouseState(&_pointer.x, &_pointer.y);
 
   // process graveyard
@@ -136,6 +145,14 @@ void manager::on_event(SDL_Event* ev, screen * src)
 {
   _cur_event_mx.lock();
   _cur_event = ev;
+
+  // reset user idle timer
+  if (ev->type == SDL_MOUSEMOTION || ev->type == SDL_MOUSEWHEEL ||
+      ev->type == SDL_MOUSEBUTTONDOWN || ev->type == SDL_MOUSEBUTTONUP ||
+      ev->type == SDL_KEYDOWN || ev->type == SDL_KEYUP)
+  {
+    g_usr_idle_cnt = 0;
+  }
 
   // update hovered control if pointer was moved
   if (ev->type == SDL_MOUSEMOTION) {
