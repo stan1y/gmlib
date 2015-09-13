@@ -196,6 +196,10 @@ private:
   theme _theme;
 };
 
+// ui::destroy(control *)
+// quick-link to manager's destroy method
+inline void destroy(control * cnt) { ui::manager::instance()->destroy(cnt); }
+
 /******************** Core Controls ***************************/
 /**
   UI Message control.

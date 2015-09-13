@@ -22,6 +22,7 @@ theme::font::font()
 
 theme::font::font(const std::string & font_res, uint32_t pt_size, font_style st)
 {
+  load(font_res, pt_size, st);
 }
 
 void theme::font::load(const std::string & font_res, uint32_t pt_size, font_style st)
