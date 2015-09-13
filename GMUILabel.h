@@ -73,7 +73,7 @@ public:
   const std::string& get_text() { return _text; }
   
   /* Label text font */
-  void set_font(theme::font * f)
+  void set_font(const theme::font * f)
   {
     _font = f;
     _dirty = true;
