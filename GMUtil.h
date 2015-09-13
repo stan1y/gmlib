@@ -165,15 +165,16 @@ void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, boo
 void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive);
 
 /* SDL_Error exception wrapper */
-class SDLException : public std::exception {
+class sdl_exception : public std::exception {
 private:
   const char* _msg;
 
 public:
-  SDLException():
+  sdl_exception():
     std::exception(),
     _msg(SDL_GetError())
   {
+    SDLEx_LogError("SDL Error: %s", SDL_GetError());
   }
 
   virtual const char * what() const

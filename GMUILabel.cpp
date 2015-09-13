@@ -7,6 +7,7 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _font(&UI_GetTheme().font_text_norm),
   _font_color(UI_GetTheme().color_text),
   _dirty(true),
+  _animating(false),
   control(pos)
 {
 }
@@ -133,10 +134,52 @@ void label::load(data & d)
   control::load(d);
 }
 
+void label::update()
+{
+  if (_animating) {
+    _alpha += _alpha_step;
+    if (_alpha <= 0 || _alpha >= 255 ) {
+      _animating = false;
+      if (_alpha <= 0) {
+        SDL_Log("label::update - fade out done");
+        set_visible(false);
+      }
+      else {
+        SDL_Log("label::update - fade in done");
+      }
+    }
+
+    if (_alpha < 0 ) _alpha = 0;
+    if (_alpha > 255) _alpha = 255;
+  }
+}
+
+void label::toggle()
+{
+  if (_animating) {
+    return;
+  }
+  // check current state
+  if (_visible) {
+    SDL_Log("label::toggle - fade out");
+    _alpha = 255;
+    _alpha_step = -8;
+  }
+  else {
+    SDL_Log("label::toggle - fade in");
+    _alpha = 0;
+    _alpha_step = 8;
+  }
+
+  set_visible(true);
+  _animating = true;
+}
+
 void label::render(SDL_Renderer * r, const rect & dst)
 {
   if (_dirty) paint(r);
   _icon_tx.render(r, dst.topleft() + _icon_offset);
+  _text_tx.set_alpha(int32_to_uint8(_alpha));
   _text_tx.render(r, dst.topleft() + _text_offset);
 
   control::render(r, dst);

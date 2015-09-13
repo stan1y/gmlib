@@ -72,12 +72,16 @@ public:
   void apply_text(SDL_Surface * s);
   /* calculate rect needed to hold text rendered with font & color */
   static rect get_string_rect(const std::string& text, TTF_Font* font);
-  /* set color modulation */
-  void set_color(uint8_t red, uint8_t green, uint8_t blue);
-  /* set blending mode */
+  /* get/set color modulation */
+  void set_color_mod(uint8_t red, uint8_t green, uint8_t blue);
+  void set_color_mod(const color & rgb);
+  color get_color_mod();
+  /* get/set blending mode */
   void set_blend_mode(SDL_BlendMode blending);
-  /* set alpha opacity */
+  SDL_BlendMode get_blend_mode();
+  /* get/set alpha opacity */
   void set_alpha(uint8_t alpha);
+  uint8_t get_alpha();
 
   /* access texture properties */
   int width() const { return _width; }

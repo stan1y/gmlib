@@ -128,8 +128,7 @@ void texture::lock()
     return;
   }
   if (SDL_LockTexture(_texture, NULL, &_pixels, &_pitch) != 0) {
-    SDLEx_LogError("texture::lock - failed to lock texture: %s", SDL_GetError());
-    throw std::exception("failed to lock texture");
+    throw sdl_exception();
   }
 }
 
@@ -149,6 +148,8 @@ void texture::replace_color(SDL_Color& from, SDL_Color& to)
 {
   lock();
   SDL_PixelFormat* fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+  if (fmt == NULL)
+    throw sdl_exception();
   uint32_t f = SDL_MapRGBA(fmt, from.r, from.g, from.b, from.a);
   uint32_t t = SDL_MapRGBA(fmt, to.r, to.g, to.b, to.a);
   SDL_FreeFormat(fmt);
@@ -191,23 +192,50 @@ void texture::render(SDL_Renderer* r, const rect & src, const rect & dst,
     return;
   }
   //Render to screen
-  SDL_RenderCopyEx(r, _texture, &src, &dst, angle, center, flip );
+  if (SDL_RenderCopyEx(r, _texture, &src, &dst, angle, center, flip ) != 0)
+    throw sdl_exception();
 }
 
-void texture::set_color(uint8_t red, uint8_t green, uint8_t blue)
+void texture::set_color_mod(const color & rgb)
+{
+  set_color_mod(rgb.r, rgb.g, rgb.b);
+}
+
+void texture::set_color_mod(uint8_t red, uint8_t green, uint8_t blue)
 {
   if (!_texture) return;
-  SDL_SetTextureColorMod(_texture, red, green, blue);
+  if (SDL_SetTextureColorMod(_texture, red, green, blue) != 0)
+    throw sdl_exception();
 }
 
 void texture::set_blend_mode(SDL_BlendMode blending)
 {
   if (!_texture) return;
-  SDL_SetTextureBlendMode(_texture, blending);
+  if (SDL_SetTextureBlendMode(_texture, blending) != 0)
+    throw sdl_exception();
+}
+
+SDL_BlendMode texture::get_blend_mode()
+{
+  if (!_texture) return SDL_BLENDMODE_NONE;
+  SDL_BlendMode mode;
+  if (SDL_GetTextureBlendMode(_texture, &mode) != 0)
+    throw sdl_exception();
+  return mode;
 }
 
 void texture::set_alpha(uint8_t alpha)
 {
   if (!_texture) return;
-  SDL_SetTextureAlphaMod(_texture, alpha);
+  if (SDL_SetTextureAlphaMod(_texture, alpha) != 0)
+    throw sdl_exception();
+}
+
+uint8_t texture::get_alpha()
+{
+  if (!_texture) return 0;
+  uint8_t a = 0;
+  if (SDL_GetTextureAlphaMod(_texture, &a) != 0)
+    throw sdl_exception();
+  return a;
 }

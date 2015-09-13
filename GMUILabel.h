@@ -102,6 +102,10 @@ public:
 
   /* Label rendering */
   virtual void render(SDL_Renderer* r, const rect & dst);
+
+  /* Show-Hide animation */
+  virtual void update();
+  void toggle();
   
 protected:
   void paint(SDL_Renderer * r);
@@ -124,6 +128,9 @@ protected:
   color _icon_clr;
   
   bool _dirty;
+  bool _animating;
+  int _alpha;
+  int _alpha_step;
 };
 
 }; //namespace ui
