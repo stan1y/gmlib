@@ -31,7 +31,7 @@ sprites_sheet::sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_
   _rows = height() / sprite_h;
 }
 
-rect sprites_sheet::get_sprite_cliprect(size_t idx)
+rect sprites_sheet::get_sprite_cliprect(size_t idx) const
 {
   rect clip;
   int row_idx = 0;
@@ -61,7 +61,7 @@ sprite::sprite()
   angle = 0;
 }
 
-sprite::sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet* sheet)
+sprite::sprite(size_t tex_idx, int px_w, int px_h, const sprites_sheet* sheet)
 {
   idx = tex_idx;
   w = px_w; h = px_h;
@@ -85,21 +85,22 @@ sprite::sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet* sheet)
   }
 }
 
-void sprite::render(SDL_Renderer * r, point & topleft, uint8_t alpha) const
+void sprite::render(SDL_Renderer * r, const point & dst_pnt) const
 {
-  if (_sheet == nullptr || _sheet->get_texture() == NULL || w == 0 || h == 0) {
-      return;
-  }
-  uint32_t fmt = 0;
-  int a = 0, sw = 0, sh = 0;
-  point cnt(w / 2, h / 2);
-  rect src = _sheet->get_sprite_cliprect(idx);
-  rect dst = rect(topleft.x, topleft.y, w, h);
-  _sheet->set_alpha(alpha);
-  _sheet->render(r, src, dst, angle, &cnt, flip); 
+  render(r, rect(), dst_pnt); 
 }
 
-void sprite::render(SDL_Renderer * r, rect & dst, uint8_t alpha) const
+void sprite::render(SDL_Renderer * r, const rect & dst) const
+{
+  render(r, rect(), dst);
+}
+
+void sprite::render(SDL_Renderer * r, const rect & dsrc, const point & dst_pnt) const
+{
+  render(r, dsrc, rect( dst_pnt.x, dst_pnt.y, w, h));
+}
+
+void sprite::render(SDL_Renderer * r, const rect & dsrc, const rect & dst) const
 {
   if (_sheet == nullptr || _sheet->get_texture() == NULL || w == 0 || h == 0) {
       return;
@@ -108,7 +109,11 @@ void sprite::render(SDL_Renderer * r, rect & dst, uint8_t alpha) const
   int a = 0, sw = 0, sh = 0;
   point cnt(w / 2, h / 2);
   rect src = _sheet->get_sprite_cliprect(idx);
-  _sheet->set_alpha(alpha);
+  src += dsrc.topleft();
+  if (dsrc.w > 0 && dsrc.h > 0) {
+    src.w = dsrc.w;
+    src.h = dsrc.h;
+  }
   _sheet->render(r, src, dst, angle, &cnt, flip); 
 }
 

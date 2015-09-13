@@ -82,7 +82,7 @@ public:
   /* access texture properties */
   int width() const { return _width; }
   int height() const { return _height; }
-  SDL_Texture* get_texture() { return _texture; }
+  SDL_Texture* get_texture() const { return _texture; }
 
   /* render it */
   void render(SDL_Renderer* r, const rect & src, const rect & dst, 

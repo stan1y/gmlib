@@ -84,7 +84,7 @@ int GM_Init(const char* name, config* conf) {
         c_ver.major, c_ver.minor, c_ver.patch);
 
     //setup random
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
 
     //setup game state
     g_config = conf;
