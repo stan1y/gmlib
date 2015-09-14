@@ -50,7 +50,7 @@ control::~control()
 
 #define YES_NO(val) (val == true ? "yes" : "no")
 
-void control::load(data & d)
+void control::load(const data & d)
 {
   std::string old_id = _id;
   _id = d.get("id", _id);

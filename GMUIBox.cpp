@@ -178,7 +178,7 @@ void box::on_child_click(control * target)
 }
 
 
-void box::load(data & d)
+void box::load(const data & d)
 {
   if (d.has_key("type")) {
     if (d["type"].is_number()) {
@@ -292,6 +292,8 @@ void box::update_children()
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control* child = (*it);
+    if (!child->visible())
+      continue;
     rect pos = child->pos();
     // position type
     switch(_type) {
@@ -392,7 +394,7 @@ panel::~panel()
 {
 }
 
-void panel::load(data & d)
+void panel::load(const data & d)
 {
   if (d.has_key("panel_style")) {
     if (d["panel_style"].is_string()) {

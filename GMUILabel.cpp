@@ -40,7 +40,7 @@ void label::set_icon(SDL_Texture* icon)
   _icon_tx = texture(icon);
 }
 
-void label::load(data & d)
+void label::load(const data & d)
 {
   _text = d.get("text", "");
   _icon_res = d.get("icon", "");

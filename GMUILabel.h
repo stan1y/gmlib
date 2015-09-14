@@ -66,7 +66,7 @@ public:
   void set_margin(margin & pad) { _pad = pad; }
   margin & get_margin() { return _pad; }
 
-  virtual void load(data &);
+  virtual void load(const data &);
 
   /* Label text */
   void set_text(const std::string& txt);

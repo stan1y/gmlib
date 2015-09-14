@@ -119,48 +119,58 @@ public:
   }
 
   /* Template methods to convert into cutom type */
-  template<typename T> T as();
+  template<typename T> T as() const;
   
-  template<> int32_t as()
+  template<> int32_t as() const
   {
     if (!json_is_integer(_p)) throw std::exception("data object is not an integer");
     json_int_t i = json_integer_value(_p);
     return jint_to_sint32(i);
   }
 
-  template<> uint32_t as()
+  template<> uint32_t as() const
   {
     if (!json_is_integer(_p)) throw std::exception("data object is not an integer");
     json_int_t i = json_integer_value(_p);
     return jint_to_uint32(i);
   }
 
-  template<> uint8_t as()
+  template<> uint8_t as() const
   {
     if (!json_is_integer(_p)) throw std::exception("object is not an integer");
     json_int_t i = json_integer_value(_p);
     return jint_to_uint8(i);
   }
 
-  template<> point as()
+  template<> point as() const
   {
-    if (!json_is_array(_p)) throw std::exception("object is not a point array");
-    if (length() != 2) throw std::exception("invalid object array length for a point array");
+    if (!json_is_array(_p)) {
+      throw std::exception("object is not a point array");
+    }
+    if (length() != 2) {
+      throw std::exception("invalid object array length for a point array");
+    }
     point p;
     unpack("[ii]", &p.x, &p.y);
-    return p;
+    return p;  
   }
 
-  template<> rect as()
+  template<> rect as() const
   {
-    if (!json_is_array(_p)) throw std::exception("object is not a rect array");
-    if (length() != 4) throw std::exception("invalid object array length for a rect array");
+    if (!json_is_array(_p)){
+      SDLEx_LogError("data::as - json is not a rect array");
+      throw std::exception("json is not a rect array");
+    }
+    if (length() != 4) {
+      SDLEx_LogError("data::as - invalid object array length for a rect array");
+      throw std::exception("invalid object array length for a rect array");
+    }
     rect r;
     unpack("[iiii]", &r.x, &r.y, &r.w, &r.h);
     return r;
   }
 
-  template<> color as()
+  template<> color as() const
   {
     if (!json_is_array(_p)) throw std::exception("object is not a color array");
     if (length() != 4) throw std::exception("invalid object array length for a color array");
@@ -174,19 +184,19 @@ public:
     return c;
   }
 
-  template<> const char * as()
+  template<> const char * as() const
   {
     if (!json_is_string(_p)) throw std::exception("object is not a string");
     const char * s = json_string_value(_p);
     return s;
   }
 
-  template<> std::string as()
+  template<> std::string as() const
   {
     return std::string(as<const char*>());
   }
 
-  template<> std::pair<int,int> as()
+  template<> std::pair<int,int> as() const
   {
     if (!json_is_array(_p)) throw std::exception("object is not a pair array");
     if (length() != 2) throw std::exception("invalid object array length for a pair array");
@@ -195,19 +205,19 @@ public:
     return std::make_pair(f, s);
   }
 
-  template<> bool as()
+  template<> bool as() const
   {
     return (json_typeof(_p) == JSON_TRUE);
   }
 
-  bool is_true()
+  bool is_true() const
   {
     if (!json_is_boolean(_p)) throw std::exception("object is not a boolean");
     return json_is_true(_p);
   }
 
   template<typename T>
-  T get(const char* key, T def_value)
+  T get(const char* key, T def_value) const
   {
     if (!is_object()) 
       throw std::exception("data is not a object");

@@ -32,4 +32,5 @@ public:
 private:
   callbacks_list _callbacks;
 };
+
 #endif //GM_EVENT_HANDLER_H_

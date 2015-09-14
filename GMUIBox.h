@@ -52,12 +52,16 @@ public:
     void set_type(scrollbar_type t) { _type = t; }
     scrollbar_type type() const { return _type; }
 
+    // get/set position of the scrollbar
     const rect & pos() { return _pos; }
     void set_pos(const rect & p) { _pos = p; }
     
+    // get/set state of the scrollbar cursor
     const cursor_drag_state get_state() { return _drag; }
     void set_state(cursor_drag_state s) { _drag = s; }
 
+    // returns position of the scrollbar cursor rect on the box
+    // with relation to the scrolled area and total size of children_rect
     rect get_cursor_rect(const rect & children_rect) const;
 
     virtual void render(SDL_Renderer * r, const rect & parent_dst);
@@ -98,20 +102,24 @@ public:
   virtual rect get_children_rect() { return _children_rect; }
 
   /* Setup box settings from data */
-  virtual void load(data &);
+  virtual void load(const data &);
 
   virtual void update();
 
   /* returns scrolled position for children of this control to draw */
   virtual rect get_scrolled_rect() { return _scrolled_rect; }
   
+  // scroll box width given delta pixels
   void do_scroll(int dx, int dy);
+
+  // scroll box to a point on it's absolute body
   void scroll_to_point(const point & pnt);
 
-protected:
   // auto-positioning of children controls
   // children can override to implement more layouting options
   virtual void update_children();
+
+protected:
   // update selection on the box
   void switch_selection(control * target);
 
@@ -160,7 +168,7 @@ public:
   void set_background_color(color & c) { _back = c; }
 
   virtual void render(SDL_Renderer* r, const rect & dst);
-  virtual void load(data &);
+  virtual void load(const data &);
 
 private:
   panel_style _ps;

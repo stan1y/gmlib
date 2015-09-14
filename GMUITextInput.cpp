@@ -25,28 +25,28 @@ text_input::~text_input()
   
 }
 
-void text_input::load(data & d)
+void text_input::load(const data & d)
 {
   if (d.has_key("validation")) {
     if (d["validation"].is_string()) {
       std::string sval = d["validation"].as<std::string>();
       input_validation v;
-      if (sval == "whitespace") {
+      if (sval == std::string("whitespace")) {
         v = input_validation::whitespace;
       }
-      if (sval == "alpha") {
+      if (sval == std::string("alpha")) {
         v = input_validation::alpha;
       }
-      if (sval == "numbers") {
+      if (sval == std::string("numbers")) {
         v = input_validation::numbers;
       }
-      if (sval == "alphanum") {
+      if (sval == std::string("alphanum")) {
         v = (input_validation)alphanum;
       }
-      if (sval == "everything") {
+      if (sval == std::string("everything")) {
         v = (input_validation)everything;
       }
-      SDL_Log("text_input: allow %s (%d)");
+      SDL_Log("text_input: allow %s (%d)", sval.c_str(), v);
       set_validation(v);
     }
   }

@@ -55,7 +55,7 @@ public:
   /* per-frame update control state */
   virtual void update();
   /* load properties from data */
-  virtual void load(data &);
+  virtual void load(const data &);
 
   bool visible() const { return _visible; } 
   void set_visible(bool v) { _visible = v; }
@@ -67,7 +67,14 @@ public:
   control_list::iterator find_child(control* child);
 
   /* returns pointer to a child of some level of this control */
-  control * recursive_find_child(const std::string & id);
+  control * find_child(const std::string & id);
+  template<class T> T * find_child(const std::string & id)
+  {
+    control * child = find_child(id);
+    if (!child)
+      return nullptr;
+    return dynamic_cast<T*> (child);
+  }
 
   /* returns child control at the given screen coordinates. 
      otherwise:
@@ -153,7 +160,7 @@ public:
 
   /** Construct new control assuming data is an object for
      a top-level parent control of the whole data object */
-  static control* build(data &);
+  control* build(const data &);
 
   /** UI Theme reference */
   const theme & get_theme() { return _theme; }
@@ -196,11 +203,24 @@ private:
   theme _theme;
 };
 
-// ui::destroy(control *)
-// quick-link to manager's destroy method
-inline void destroy(control * cnt) { ui::manager::instance()->destroy(cnt); }
+/******************* UI Namespace global functions **********/
+
+// void ui::destroy(control *)
+// shortcut to manager's destroy method
+static void destroy(control * cnt) 
+{ 
+  ui::manager::instance()->destroy(cnt); 
+}
+
+// T* ui::build<T>(const data &)
+// template shortcut to manager's build method
+template<class T> T * build(const data & d) 
+{
+  return dynamic_cast<T *>( manager::instance()->build(d) );
+}
 
 /******************** Core Controls ***************************/
+
 /**
   UI Message control.
   Fade-out top level alert with text

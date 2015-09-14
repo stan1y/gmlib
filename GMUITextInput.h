@@ -30,7 +30,7 @@ public:
   void set_cursor(size_t c);
 
   virtual void render(SDL_Renderer * r, const rect & dst);
-  virtual void load(data &);
+  virtual void load(const data &);
   virtual void update();
 
   void set_readonly(bool state) { _readonly = state; }

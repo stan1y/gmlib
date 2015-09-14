@@ -240,7 +240,7 @@ control* create_control(const std::string type_id, rect & pos)
   return NULL;
 }
 
-control * control::recursive_find_child(const std::string & id)
+control * control::find_child(const std::string & id)
 {
   // check self
   if (_id == id) return this;
@@ -250,14 +250,14 @@ control * control::recursive_find_child(const std::string & id)
     control * child = *it;
     if (child->identifier() == id)
       return child;
-    child = child->recursive_find_child(id);
+    child = child->find_child(id);
     if (child)
       return child;
   }
   return NULL;
 }
 
-control* manager::build(data & d)
+control* manager::build(const data & d)
 {
   if (!d.is_object()) {
     SDLEx_LogError("manager::build - given data is not a json object");
