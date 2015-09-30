@@ -87,7 +87,7 @@ rect texture::get_string_rect(const std::string& text, TTF_Font* font)
   return r;
 }
 
-void texture::apply_text(SDL_Surface * s)
+void texture::convert_surface(SDL_Surface * s)
 {
   if (s == NULL) {
     SDLEx_LogError("texture::load_text Failed to render text: %s", TTF_GetError());
@@ -101,12 +101,12 @@ void texture::apply_text(SDL_Surface * s)
 
 void texture::load_text_solid(const std::string& text, TTF_Font* font, const color & c)
 {
-  apply_text(TTF_RenderText_Solid(font, text.c_str(), c));
+  convert_surface(TTF_RenderText_Solid(font, text.c_str(), c));
 }
 
 void texture::load_text_blended(const std::string& text, TTF_Font* font, const color & c)
 {
-  apply_text(TTF_RenderText_Blended(font, text.c_str(), c));
+  convert_surface(TTF_RenderText_Blended(font, text.c_str(), c));
 }
 
 void texture::load_surface(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode)
@@ -118,6 +118,9 @@ void texture::load_surface(SDL_Surface* src, SDL_TextureAccess access, SDL_Blend
     memcpy(_pixels, src->pixels, src->pitch * src->h);
     //apply _pixles to the texture
     unlock();
+  }
+  else {
+    convert_surface(src);
   }
 }
 
@@ -199,6 +202,16 @@ void texture::render(SDL_Renderer* r, const rect & src, const rect & dst,
 void texture::set_color_mod(const color & rgb)
 {
   set_color_mod(rgb.r, rgb.g, rgb.b);
+}
+
+color texture::get_color_mod()
+{
+	color clr;
+	clr.a = 255;
+	if (SDL_GetTextureColorMod(_texture, &clr.r, &clr.g, &clr.b) != 0) {
+		throw sdl_exception();
+	}
+	return clr;
 }
 
 void texture::set_color_mod(uint8_t red, uint8_t green, uint8_t blue)

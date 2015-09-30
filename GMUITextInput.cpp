@@ -14,6 +14,8 @@ label(pos, pad, ip, ha, va),
   _cursor(0),
   _cursor_alpha(255),
   _blink_phase(-1),
+  _readonly(false),
+  _draw_frame(true),
   _timer()
 {
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
@@ -51,11 +53,23 @@ void text_input::load(const data & d)
     }
   }
 
+  if (d.has_key("readonly")) {
+    _readonly = d["readonly"].as<bool>();
+  }
+
+  if (d.has_key("frame")) {
+    _draw_frame = d["frame"].as<bool>();
+  }
+
   label::load(d);
 }
 
 void text_input::on_kbd_up(control * target)
 {
+  // ignore input in readonly
+  if (_readonly)
+    return;
+
   const uint8_t * kbdstate = SDL_GetKeyboardState(NULL);
   const SDL_KeyboardEvent & kbd = manager::instance()->current_event()->key;
   if (
@@ -105,11 +119,16 @@ void text_input::on_kbd_up(control * target)
 
 void text_input::on_focus(control * target)
 {
+  if (_readonly)
+    return;
+
   set_cursor(_text.length());
 }
 
 void text_input::on_focus_lost(control * target)
 {
+  if (_readonly)
+    return;
 }
 
 void text_input::update()
@@ -199,10 +218,11 @@ void text_input::insert_at(size_t c, const std::string & val)
 // render text & cursor
 void text_input::render(SDL_Renderer * r, const rect & dst)
 {
-  // draw input frame
-  const theme & th = UI_GetTheme();
-  th.draw_button_frame(th.input, r, dst);
-
+  if (_draw_frame) {
+    // draw input frame
+    const theme & th = UI_GetTheme();
+    th.draw_button_frame(th.input, r, dst);
+  }
   // debug blue frame for text input rect
   if (manager::instance()->get_flags() & manager::ui_debug && \
     manager::instance()->get_focused_control() == this) 
@@ -216,7 +236,7 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
   label::render(r, dst);
 
   // cursor
-  if (manager::instance()->get_focused_control() == this) {
+  if (!_readonly && manager::instance()->get_focused_control() == this) {
     point cur = get_cursor_pos(dst) + dst.topleft();
     color clr(UI_GetTheme().color_highlight);
     clr.a = _cursor_alpha;

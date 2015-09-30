@@ -17,6 +17,21 @@ private:
 
 public:
 
+  /* Themed pointer information */
+  struct pointer {
+    enum pointer_type {
+      normal = 0,
+      resize_topleft = 1,
+      resize_topright = 2,
+      resize_bottomleft = 3,
+      resize_bottomright = 4,
+      select = 5
+    };
+    texture tx_normal;
+    texture tx_resize;
+    texture tx_select;
+  };
+
   /* UI Theme's font cache */
   class font {
   public:
@@ -37,6 +52,8 @@ public:
   private:
     TTF_Font * _f;
     font_style _fs;
+    texture _pointer;
+    texture _pointer_resize;
   };
 
   class frame {
@@ -68,9 +85,6 @@ public:
      texture right_hover;
      texture center_hover;
 
-     color font_color;
-     color font_hover_color;
-
      virtual void load(theme * t, const std::string & frame_name);
    };
 
@@ -96,9 +110,14 @@ public:
   color color_back;
   color color_highlight;
   color color_text;
+  color color_toolbox;
   font font_text_norm;
   font font_text_bold;
   font font_text_ital;
+
+  /* Pointer */
+  pointer ptr;
+  pointer::pointer_type ptr_type;
 
   /* Create new frame based on resources folder */
   theme(const std::string & res_folder);
@@ -110,6 +129,7 @@ public:
   /** Theme Drawing APIs */
   void draw_container_frame(const container_frame & f, SDL_Renderer * r, const rect & dst) const;
   void draw_button_frame(const button_frame & f, SDL_Renderer * r, const rect & dst) const;
+  void draw_pointer(SDL_Renderer* r, const rect & dst);
 
   const data & get_desc() const { return _desc; }
 };

@@ -1,4 +1,5 @@
 #include "GMLib.h"
+#include "GMUI.h"
 
 void RenderVerticalGradient(SDL_Renderer* renderer, const color & from, const color& to, const point & start, const point & end, uint8_t alpha)
 {
@@ -144,4 +145,39 @@ void color::apply(SDL_Renderer* rnd) const
 void color::apply() const
 {
   apply(GM_GetRenderer());
+}
+
+color color::from_string(const std::string & sclr)
+{
+  const ui::theme & th = UI_GetTheme();
+  if (sclr == std::string("front")) {
+    return th.color_front;
+  }
+  if (sclr == std::string("back")) {
+    return th.color_back;
+  }
+  if (sclr == std::string("highlight")) {
+    return th.color_highlight;
+  }
+  if (sclr == std::string("toolbox")) {
+    return th.color_toolbox;
+  }
+  if (sclr == std::string("red")) {
+    return color(255, 0, 0, 255);
+  }
+  if (sclr == std::string("green")) {
+    return color(0, 255, 0, 255);
+  }
+  if (sclr == std::string("blue")) {
+    return color(0, 0, 255, 255);
+  }
+  if (sclr == std::string("white")) {
+    return color(255, 255, 255, 255);
+  }
+  if (sclr == std::string("black")) {
+    return color(0, 0, 0, 255);
+  }
+
+  SDLEx_LogError("color::from_string - unknown name %s", sclr.c_str());
+  throw std::exception("unknown color name");
 }

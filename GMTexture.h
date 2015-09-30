@@ -21,20 +21,18 @@ public:
     render_context(texture * t, SDL_Renderer * r):_t(t), _r(r) 
     {
       _prev = SDL_GetRenderTarget(_r);
-      SDL_Log("render_context::enter(r=%p, t=%p, prev=%p)", _r, _t, _prev);
       int ret = SDL_SetRenderTarget(_r, _t->get_texture());
       if (ret != 0) {
         SDLEx_LogError("render_context: failed to set target to texture. %s", SDL_GetError());
-        throw std::exception("failed to set render target to texture");
+        //throw std::exception("failed to set render target to texture");
       }
     }
 
     virtual ~render_context() {
-      SDL_Log("render_context::leave(r=%p, t=%p, prev=%p)", _r, _t, _prev);
       int ret = SDL_SetRenderTarget(_r, _prev);
       if (ret != 0) {
         SDLEx_LogError("render_context: failed to set target to texture. %s", SDL_GetError());
-        throw std::exception("failed to set render target to texture");
+        //throw std::exception("failed to set render target to texture");
       }
     }
 
@@ -64,12 +62,12 @@ public:
   void load(const std::string& resource_path);
   /* load texture data from surface */
   void load_surface(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
+  void convert_surface(SDL_Surface * s);
   /* set raw texture */
   void set_texture(SDL_Texture*);
   /* load texture data by rendering text with font */
   void load_text_solid(const std::string& text, TTF_Font* font, const color & clr);
   void load_text_blended(const std::string& text, TTF_Font* font, const color & clr);
-  void apply_text(SDL_Surface * s);
   /* calculate rect needed to hold text rendered with font & color */
   static rect get_string_rect(const std::string& text, TTF_Font* font);
   /* get/set color modulation */

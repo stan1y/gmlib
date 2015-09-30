@@ -5,11 +5,16 @@ namespace ui {
 label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
   _font(&UI_GetTheme().font_text_norm),
+  _font_idle_color(UI_GetTheme().color_text),
+  _font_hover_color(UI_GetTheme().color_text),
   _font_color(UI_GetTheme().color_text),
   _dirty(true),
   _animating(false),
+  _alpha(255),
   control(pos)
 {
+  hovered += boost::bind( &label::on_hovered, this, _1 );
+  hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
 }
 
 label::~label()
@@ -38,6 +43,16 @@ void label::set_icon(SDL_Texture* icon)
 {
   _icon_res.clear();
   _icon_tx = texture(icon);
+}
+
+void label::on_hovered(control * target)
+{
+  set_font_color(_font_hover_color);
+}
+
+void label::on_hover_lost(control * target)
+{
+  set_font_color(_font_idle_color);
 }
 
 void label::load(const data & d)
@@ -117,6 +132,26 @@ void label::load(const data & d)
       _font = &UI_GetTheme().font_text_bold;
     if (sfont == "ital")
       _font = &UI_GetTheme().font_text_ital;
+  }
+
+  if (d.has_key("font_hover_color")) {
+    if (d["font_hover_color"].is_string()) {
+      std::string sclr = d["font_hover_color"].as<std::string>();
+      _font_hover_color = color::from_string(sclr);
+    }
+    if (d["font_hover_color"].is_array()) {
+      _font_hover_color = d["font_hover_color"].as<color>();
+    }
+  }
+
+  if (d.has_key("font_idle_color")) {
+    if (d["font_idle_color"].is_string()) {
+      std::string sclr = d["font_idle_color"].as<std::string>();
+      _font_idle_color = color::from_string(sclr);
+    }
+    if (d["font_idle_color"].is_array()) {
+      _font_idle_color = d["font_idle_color"].as<color>();
+    }
   }
 
   if (d.has_key("margin")) {

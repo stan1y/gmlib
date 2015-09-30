@@ -41,6 +41,8 @@ struct color : SDL_Color {
 
   void apply(SDL_Renderer* rnd) const;
   void apply() const;
+
+  static color from_string(const std::string & sclr);
 };
 
 /* SDL_Point wrapper */

@@ -1,5 +1,20 @@
 == GMLib UI Toolkit Controls Reference ==
 
+-- ui::color --
+Description: Colors are represented as array of 4 ints or as a constant string of known name
+List of values:
+ * [r, g, b, a] array of 4 ints as color
+constants:
+ * red
+ * green
+ * blue
+ * black
+ * white
+theme constants:
+ * front
+ * back
+ * highlight
+
 -- ui::control --
 Inherits: none
 JSON name: none
@@ -15,11 +30,10 @@ JSON Properties (mandatory):
 * size     - [width, height] array of 2 ints.
              required by [position] and as hint in auto-sizeing in boxes.
 
--- ui::box, ui:panel --
+-- ui::box --
 Inherits: ui::control
-JSON Name: box, panel
+JSON Name: box
 Description: Generic containers for groups of controls with scrolling.
-             The panel class can render a frame of several types.
 JSON Properties:
 * type           - the type of a box.
                    * hbox - horizontal packing
@@ -36,7 +50,18 @@ JSON Properties:
                    default is 16px
 * margin         - space between box contents and box frame in pixels
                    * int value in pixels for all directions
-                   * [top, left, bottom, right] array of 4 ints
+                   
+
+-- ui::panel -- 
+Inherits: ui::box
+JSON Name: panel
+Description: The panel class is a box that can render a frame of several types.
+JSON Properties:
+* panel_style   - the frame style selector in the current theme
+                  * dialog (default)
+                  * toolbox
+                  * group
+* background    - [r, g, b, a] array of 4 ints with color
 
 -- ui::label --
 Inherits: ui::control
@@ -45,6 +70,12 @@ Description: A label control displays a text and optional icon.
 JSON properties:
 * text      - label text string
 * icon      - icon resource
+* font      - theme font selection
+              * normal
+              * bold
+              * ital
+* font_idle_color  - ui::color of the idle label's text
+* font_hover_color - ui::color of the hovered label's text
 * v_align   - label contents vertical alignment
               * top (default)
               * botton
@@ -72,6 +103,8 @@ JSON Properties:
              * numbers
              * alphanum
              * everything (default)
+* readonly   - ignores input and cursor if true
+* frame      - do not render frame if false
 
 -- ui::btn, ui::sbtn --
 Inherits: label
@@ -79,3 +112,14 @@ JSON Name: btn, sbtn
 Description: 2 push button classes. Button ans Small button.
              Use different theme frames and sizes.
 No JSON Properties
+
+-- ui::combo --
+Inherits: text_input
+JSON Name: combo
+Description: Combo box with items selection.
+JSON Properties:
+* area_maxlen     - max lenght of the items area in pixels
+* area_color      - ui::color of the area background
+* items           - array of items (ui::label)
+                    * text - label text
+                    * icon - label icon

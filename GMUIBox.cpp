@@ -384,10 +384,9 @@ void box::update_children()
   */
 
 panel::panel(rect pos, panel_style ps, box_type t, box_style s, int margin):
-  box(pos, t, s, margin),
-  _ps(ps),
-  _back(UI_GetTheme().color_back)
+  box(pos, t, s, margin)
 {
+  set_panel_style(ps);
 }
 
 panel::~panel()
@@ -400,13 +399,13 @@ void panel::load(const data & d)
     if (d["panel_style"].is_string()) {
       std::string pstyle = d["panel_style"].as<std::string>();
       if (pstyle == "dialog") {
-        _ps = panel_style::dialog;
+        set_panel_style(panel_style::dialog);
       }
       if (pstyle == "toolbox") {
-        _ps = panel_style::toolbox;
+        set_panel_style(panel_style::toolbox);
       }
       if (pstyle == "group") {
-        _ps = panel_style::group;
+        set_panel_style(panel_style::group);
       }
     }
   }
@@ -445,6 +444,28 @@ void panel::render(SDL_Renderer * r, const rect & dst)
     th.draw_container_frame(th.group, r, dst);
     break;
   };
+}
+
+panel::panel_style panel::get_panel_style() 
+{ 
+  return _ps;
+}
+
+void panel::set_panel_style(panel_style ps) 
+{ 
+  _ps = ps;
+  const theme & th = UI_GetTheme();
+  switch (_ps) {
+  default:
+  case panel_style::dialog:
+  case panel_style::group:
+    set_background_color(th.color_back);
+    break;
+
+  case panel_style::toolbox:
+    set_background_color(th.color_toolbox);
+    break;
+  }
 }
 
 } //namespace ui

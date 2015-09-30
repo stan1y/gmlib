@@ -34,8 +34,8 @@ void theme::font::load(const std::string & font_res, uint32_t pt_size, font_styl
 void theme::font::load(const std::string & font_res, uint32_t pt_size, const std::string str)
 {
   font_style st;
-  if (str == "blended") st = font_style::blended;
-  if (str == "solid") st = font_style::blended;
+  if (str == std::string("blended")) st = font_style::blended;
+  if (str == std::string("solid")) st = font_style::solid;
   load(font_res, pt_size, st);
 }
 
@@ -60,9 +60,6 @@ void theme::container_frame::load(theme * t, const std::string & frame_name)
 
 void theme::button_frame::load(theme * t, const std::string & frame_name)
 {
-  font_color = t->get_desc()["btn"]["font_color"].as<color>();
-  font_hover_color = t->get_desc()["btn"]["font_hover_color"].as<color>();
-
   left.load(t->get_theme_respath(frame_name, "left.png"));
   right.load(t->get_theme_respath(frame_name, "right.png"));
   center.load(t->get_theme_respath(frame_name, "center.png"));
@@ -84,6 +81,7 @@ void theme::push_button_frame::load(theme * t, const std::string & frame_name)
 }
 
 theme::theme(const std::string & res_folder):
+  ptr_type(pointer::normal),
   _res_root( UI_GetThemeRoot(res_folder) )
 {
   path p(_res_root);
@@ -96,6 +94,7 @@ theme::theme(const std::string & res_folder):
   color_back = _desc["color_back"].as<color>();
   color_highlight = _desc["color_highlight"].as<color>();
   color_text = _desc["color_text"].as<color>();
+  color_toolbox = _desc["color_toolbox"].as<color>();
   font_text_norm.load(
     _desc["font_norm"]["face"].as<std::string>(),
     _desc["font_norm"]["size"].as<uint32_t>(),
@@ -108,6 +107,19 @@ theme::theme(const std::string & res_folder):
     _desc["font_ital"]["face"].as<std::string>(),
     _desc["font_ital"]["size"].as<uint32_t>(),
     _desc["font_ital"]["style"].as<std::string>());
+
+  // load pointer
+  if (_desc.has_key("pointer") && _desc["pointer"].is_object()) {
+    char *norm = NULL, *rsz = NULL, *slt = NULL;
+    _desc["pointer"].unpack("{s:s s:s s:s}", 
+      "normal", &norm, "resize", &rsz, "select", &slt);
+    ptr.tx_normal.load(norm);
+    ptr.tx_resize.load(rsz);
+    ptr.tx_select.load(slt);
+    // disable SDL pointer rendering
+    SDL_ShowCursor(SDL_DISABLE);
+    SDL_Log("theme: customer pointer loaded");
+  }
 
   // load frames
   dialog.load(this, "dialog");
@@ -138,6 +150,34 @@ bool theme::theme_respath_exists(const std::string & frame_name, const std::stri
   p /= frame_name;
   p /= frame_res;
   return exists(p);
+}
+
+void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
+{
+  if (!ptr.tx_normal.is_valid() || !ptr.tx_resize.is_valid()) {
+    return;
+  }
+
+  switch (ptr_type) {
+  case pointer::pointer_type::normal:
+    ptr.tx_normal.render(r, dst);
+    break;
+  case pointer::pointer_type::select:
+    ptr.tx_select.render(r, dst);
+    break;
+  case pointer::pointer_type::resize_topleft:
+    ptr.tx_resize.render(r, dst, 0.0, NULL, SDL_FLIP_HORIZONTAL);
+    break;
+  case pointer::pointer_type::resize_topright:
+    ptr.tx_resize.render(r, dst);
+    break;
+  case pointer::pointer_type::resize_bottomleft:
+    ptr.tx_resize.render(r, dst, 0.0, NULL, (SDL_RendererFlip)(SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL));
+    break;
+  case pointer::pointer_type::resize_bottomright:
+    ptr.tx_resize.render(r, dst, 0.0, NULL, SDL_FLIP_VERTICAL);
+    break;
+  }
 }
 
 void theme::draw_container_frame(const container_frame & f, SDL_Renderer * r, const rect & dst) const

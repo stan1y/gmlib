@@ -4,6 +4,7 @@
 #include "GMUILabel.h"
 #include "GMUIButton.h"
 #include "GMUITextInput.h"
+#include "GMUICombo.h"
 
 /** User Idle Counter **/
 
@@ -115,6 +116,12 @@ void manager::render(SDL_Renderer* r, screen * src)
 {
   // call UI protocol's render
   control::render(r, get_absolute_pos());
+  // render pointer of theme supports
+  if (_theme.ptr.tx_normal.is_valid()) {
+    point pnt;
+    SDL_GetMouseState(&pnt.x, &pnt.y);
+    _theme.draw_pointer(r, rect(0, 0, 16, 16) + pnt);
+  }
 }
 
 void manager::update(screen * scr)
@@ -237,6 +244,9 @@ control* create_control(const std::string type_id, rect & pos)
   if (type_id == "input") {
     return new text_input(pos);
   }
+  if (type_id == "combo") {
+    return new combo(pos);
+  }
   return NULL;
 }
 
@@ -255,6 +265,29 @@ control * control::find_child(const std::string & id)
       return child;
   }
   return NULL;
+}
+
+void manager::pop_front(control * c)
+{
+  size_t idx = find_child_index(c);
+  if (idx == MAXSIZE_T) {
+    return;
+  }
+  size_t last = _children.size() - 1;
+  control * tmp = _children[last];
+  _children[last] = c;
+  _children[idx] = tmp;
+}
+
+void manager::push_back(control * c)
+{
+  size_t idx = find_child_index(c);
+  if (idx == MAXSIZE_T) {
+    return;
+  }
+  control * tmp = _children[0];
+  _children[0] = c;
+  _children[idx] = tmp;
 }
 
 control* manager::build(const data & d)
@@ -284,10 +317,16 @@ control* manager::build(const data & d)
 
     // check position property
     if (d.has_key("position")) {
-      std::string p = d["position"].as<std::string>();
-      if (p == "center") {
-        pos.x = (manager::instance()->pos().w - pos.w) / 2;
-        pos.y = (manager::instance()->pos().h - pos.h) / 2;
+      if ( d["position"].is_string()) {
+        std::string p = d["position"].as<std::string>();
+        if (p == "center") {
+          pos.x = (manager::instance()->pos().w - pos.w) / 2;
+          pos.y = (manager::instance()->pos().h - pos.h) / 2;
+        }
+      }
+      if (d["position"].is_array()) {
+        point pp = d["position"].as<point>();
+        pos.x = pp.x; pos.y = pp.y;
       }
     }
   }
@@ -314,6 +353,16 @@ control* manager::build(const data & d)
   }
 
   return inst;
+}
+
+void manager::set_pointer(theme::pointer::pointer_type t)
+{
+  _theme.ptr_type = t;
+}
+
+theme::pointer::pointer_type manager::get_pointer_type()
+{
+  return _theme.ptr_type;
 }
 
 /**

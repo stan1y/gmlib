@@ -80,13 +80,26 @@ public:
   }
   const theme::font * get_font() { return _font; }
   
-  /* Label text font color */
+  /* Currently used label text font color */
   void set_font_color(const color & c)
   {
     _font_color = c;
     _dirty = true;
   }
   color get_font_color() { return _font_color; }
+
+  /* Idle and hovered color options */
+  void set_font_hover_color(const color & c)
+  {
+    _font_hover_color = c;
+  }
+  color get_font_hover_color() { return _font_hover_color; }
+
+  void set_font_idle_color(const color & c)
+  {
+    _font_idle_color = c;
+  }
+  color get_font_idle_color() { return _font_idle_color; }
 
   /* Label icon */
   void set_icon(const std::string& res);
@@ -110,6 +123,9 @@ public:
 protected:
   void paint(SDL_Renderer * r);
 
+  void on_hovered(control * target);
+  void on_hover_lost(control * target);
+
   icon_pos _ip;
   margin _pad;
   h_align _ha;
@@ -124,6 +140,8 @@ protected:
   texture _icon_tx;
   const theme::font * _font;
   color _font_color;
+  color _font_hover_color;
+  color _font_idle_color;
   std::string _icon_res;
   color _icon_clr;
   

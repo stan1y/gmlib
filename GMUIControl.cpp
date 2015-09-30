@@ -91,6 +91,24 @@ void control::set_parent(control* parent)
   _parent = parent;
 }
 
+size_t control::find_child_index(control * c)
+{
+  for(size_t i = 0; i < _children.size(); ++i) {
+    if (_children[i] == c) {
+      return i;
+    }
+  }
+  return MAXSIZE_T;
+}
+
+size_t control::zlevel()
+{
+  if (_parent) {
+    return _parent->find_child_index(this);
+  }
+  return 0;
+}
+
 control * control::find_child_at(uint32_t x, uint32_t y)
 {
   point at(x, y);
@@ -148,12 +166,14 @@ void control::remove_child(control* child)
 void control::render(SDL_Renderer* r, const rect & dst)
 {
   control_list::iterator it = _children.begin();
+  //SDL_Log(">> [%s]", _id.c_str());
   for(; it != _children.end(); ++it) {
     control * c = *it;
     if (!c->visible()) continue;
     rect control_dst = c->get_absolute_pos();
     c->render(r, control_dst);
   }
+  //SDL_Log("<< [%s]", _id.c_str());
   if (manager::instance()->get_flags() & manager::ui_debug) {
     if (manager::instance()->get_hovered_control() == this) {
       static color red(255, 0, 0, 255);

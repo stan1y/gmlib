@@ -161,11 +161,11 @@ public:
   panel(rect pos, panel_style ps = panel_style::dialog, box_type t = box::vbox, box_style s = box::no_style, int margin = 0);
   virtual ~panel();
 
-  panel_style get_panel_style() { return _ps; }
-  void set_panel_style(panel_style & ps) { _ps = ps; }
+  panel_style get_panel_style();
+  void set_panel_style(panel_style ps);
 
   color get_background_color() { return _back; }
-  void set_background_color(color & c) { _back = c; }
+  void set_background_color(const color & c) { _back = c; }
 
   virtual void render(SDL_Renderer* r, const rect & dst);
   virtual void load(const data &);

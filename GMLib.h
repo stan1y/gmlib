@@ -64,9 +64,9 @@ public:
   void stop();
   void pause();
   void unpause();
-  uint32_t get_ticks();
-  bool is_started() { return _started; }
-  bool is_paused() { return _started && _paused; }
+  uint32_t get_ticks() const;
+  bool is_started() const { return _started; }
+  bool is_paused() const { return _started && _paused; }
 
 private:
   uint32_t _started_ticks;

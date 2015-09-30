@@ -65,6 +65,7 @@
     <ClCompile Include="GMUITextInput.cpp" />
     <ClCompile Include="GMUITextInputKeySyms.cpp" />
     <ClCompile Include="GMUIPushButton.cpp" />
+    <ClCompile Include="GMUICombo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="inlcude">

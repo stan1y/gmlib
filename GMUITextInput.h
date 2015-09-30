@@ -22,7 +22,7 @@ public:
     margin pad = margin(),
     icon_pos ip = icon_pos::icon_left,
     h_align ha = label::left, 
-    v_align va = label::top);
+    v_align va = label::middle);
 
   virtual ~text_input();
 
@@ -38,6 +38,9 @@ public:
 
   const input_validation & get_validation() { return _valid; }
   void set_validation(const input_validation & v) { _valid = v; }
+  
+  void set_draw_frame(bool state) { _draw_frame = state; }
+  bool get_draw_frame() { return _draw_frame; }
 
 protected:
   void blink_cursor();
@@ -50,6 +53,7 @@ protected:
   void on_kbd_up(control * target);
 
   bool _readonly;
+  bool _draw_frame;
 
   size_t _cursor;
   input_validation _valid;

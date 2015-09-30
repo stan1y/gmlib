@@ -23,9 +23,6 @@ public:
   bool checked() { return _checked; }
   void set_checked(bool c) { _checked = c; }
 
-  void on_hovered(control * target);
-  void on_hover_lost(control * target);
-
   void render_as(const theme & th, const theme::button_frame & f, SDL_Renderer * r, const rect & dst);
 
 protected:

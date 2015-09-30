@@ -394,7 +394,7 @@ void timer::unpause()
   }
 }
 
-uint32_t timer::get_ticks()
+uint32_t timer::get_ticks() const
 {
   if (!_started) return 0;
 

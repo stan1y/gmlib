@@ -14,7 +14,7 @@ class control;
 typedef std::vector<control*> control_list;
 
 /* Define control-based event_handler */
-typedef ::event_handler<control> event_handler;
+typedef ::event_handler<control*> event_handler;
 
 /* Forward UI manager class */
 class manager;
@@ -49,6 +49,7 @@ public:
 
   /** UI Control protocol */
   const std::string & identifier() const { return _id; }
+  void set_identifier(const std::string & id) { _id = id; }
 
   /* render control at absolute rect */
   virtual void render(SDL_Renderer* r, const rect & dst);
@@ -65,6 +66,10 @@ public:
 
   /* returns an iterator corresponding to a direct child control of this control */
   control_list::iterator find_child(control* child);
+  /* returns index of the child control */
+  size_t find_child_index(control* child);
+  /* returns order this control is drawn on parent */
+  size_t zlevel();
 
   /* returns pointer to a child of some level of this control */
   control * find_child(const std::string & id);
@@ -119,7 +124,7 @@ protected:
   control_list _children;
   rect _scrolled_rect;
   rect _pos;
-  
+
   /* control state */
   bool _visible;
   bool _proxy;
@@ -152,6 +157,12 @@ public:
   /* Desktop absolute position of the mouse pointer */
   const point& get_pointer() const { return _pointer; }
 
+  /* Set pointer type */
+  void set_pointer(theme::pointer::pointer_type t);
+
+  /* Get current pointer type */
+  theme::pointer::pointer_type get_pointer_type();
+
   /* Pointer to top-level hovered control */
   control* get_hovered_control() { return _hovered_cnt; }
 
@@ -161,6 +172,12 @@ public:
   /** Construct new control assuming data is an object for
      a top-level parent control of the whole data object */
   control* build(const data &);
+
+  /** Puts direct child at the end of the rendering order */
+  void pop_front(control * c);
+
+  /** Puts direct child at the begining of the rendering order */
+  void push_back(control * c);
 
   /** UI Theme reference */
   const theme & get_theme() { return _theme; }
@@ -218,6 +235,49 @@ template<class T> T * build(const data & d)
 {
   return dynamic_cast<T *>( manager::instance()->build(d) );
 }
+
+// ui::pop_front(control *)
+// shortcut to the same manager's method
+static void pop_front(control * c)
+{
+  manager::instance()->pop_front(c);
+}
+
+// ui::push_back(control *)
+// shortcut to the same manager's method
+static void push_back(control * c)
+{
+  manager::instance()->push_back(c);
+}
+
+// return currently hovered control or nullptr
+static control * get_hovered_control()
+{
+  return manager::instance()->get_hovered_control();
+}
+
+// return typed-instance of currently hovered control
+template<class T>
+T * get_hovered_control()
+{
+  control * c = get_hovered_control();
+  if (c == nullptr)
+    return c;
+  return dynamic_cast<T*> (c);
+}
+
+/* Set pointer type */
+static void set_pointer(theme::pointer::pointer_type t)
+{
+  return manager::instance()->set_pointer(t);
+}
+
+/* Get current pointer type */
+static theme::pointer::pointer_type get_pointer_type()
+{
+  return manager::instance()->get_pointer_type();
+}
+
 
 /******************** Core Controls ***************************/
 
