@@ -43,6 +43,12 @@ struct color : SDL_Color {
   void apply() const;
 
   static color from_string(const std::string & sclr);
+
+  static color red() { return color(196, 0, 0, 255); }
+  static color green() { return color(0, 196, 0, 255); }
+  static color blue() { return color(0, 0, 196, 255); }
+  static color black() { return color(0, 0, 0, 255); }
+  static color white() { return color(255, 255, 255, 255); }
 };
 
 /* SDL_Point wrapper */

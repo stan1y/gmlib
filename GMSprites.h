@@ -79,54 +79,52 @@ protected:
     Animations
 */
 
-/* SDL_Timer-based animation index */
+/* basic timer-based animation */
 class anim {
 public:
-    /* Animation consts */
-    static const uint32_t once     = 0;
-    static const uint32_t repeat   = 1;
-    static const uint32_t occilate = 2;
+  /* Animation consts */
+  static const uint32_t once = 0;
+  static const uint32_t repeat = 1;
+  static const uint32_t occilate = 2;
+  static const uint32_t linear = 3;
 
-    /* list of running animations */
-    static locked_vector<anim*> running;
-    /* animate running items */
-    static void update_running();
+  /* Animation item task properties */
+  int identifier;
+  bool is_running;
+  uint32_t mode;
+  uint32_t period_ms;
+  uint32_t last_updated;
+  uint32_t repeats; // 0 = repeat forever if mode != once
 
-    /* Sprite(s) to animate */
-    sprite** target;
-    size_t targets_count;
+                    /* list of running animations */
+  static locked_vector<anim*> running;
+  /* animate running items */
+  static void update_running();
 
-    /* Animation item task properties */
-    bool is_running;
-    uint32_t mode;
-    uint32_t period_ms;
-    uint32_t last_updated;
-    uint32_t repeats; // 0 = repeat forever if mode != once
+  inline bool operator== (anim other) {
+    return (identifier == other.identifier);
+  }
+  inline bool operator!= (anim other) {
+    return !(*this == other);
+  }
 
-    inline bool operator== (anim other) {
-        return (target == other.target && period_ms == other.period_ms && from == other.from && to == other.to && step == other.step && base == other.base);
-    }
-    inline bool operator!= (anim other) {
-        return !(*this == other);
-    }
+  /* start/stop animation task */
+  void start(uint32_t repeat = 0);
+  void stop();
 
-    /* create new animation task */
-    anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
-    anim(sprite** ss, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
+  /* reset state of the animation */
+  virtual void reset() { stop(); }
 
-    virtual ~anim() {};
-    void release_targets();
-    
-    /* start/stop animation task */
-    void start(uint32_t repeat = 0);
-    void stop();
+  /* animate this item */
+  void update();
 
-    /* animate this item */
-    void update();
+  anim(size_t _base, size_t _from, size_t _to, size_t _step, 
+    uint32_t _period_ms, uint32_t _mode);
+  virtual ~anim() {};
 
-private:
-  void init(sprite** s, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
-  void reset();
+protected:
+  /* sub-class implementation of anumation step */
+  virtual void animate() = 0;
 
   /* Animated frame info */
   size_t base;
@@ -136,5 +134,27 @@ private:
   int current; //<current> = base + slide_index. slide_index => [from .. to] 
   int modifier; //animation direction. <next> = slide_index + modifier. modifier => [-1; 1]
 };
+
+class sprite_anim : public anim {
+public:
+  /* Sprite(s) to animate */
+  sprite** target;
+  size_t targets_count;
+  void release_targets();
+
+  /* create new animation task */
+  sprite_anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
+  sprite_anim(sprite** ss, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
+
+  virtual ~sprite_anim() {};
+  virtual void reset();
+
+protected:
+  /* animate step */
+  virtual void animate();
+  void init(sprite** s, size_t _count);
+
+};
+
 
 #endif //_GM_SPRITES_H_

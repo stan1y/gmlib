@@ -119,7 +119,7 @@ void sprite::render(SDL_Renderer * r, const rect & dsrc, const rect & dst) const
 
 
 /*
-    Sprite animation
+    Animations
 */
 
 /* static list of running animations */
@@ -129,44 +129,22 @@ static locked_vector<anim*> _GM_anim_tostart = locked_vector<anim*>();
 
 /* init new animation item */
 
-void anim::init(sprite** ss, size_t _count,  size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
+anim::anim(size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode) :
+  identifier(rand_int(1, 999)),
+  is_running(false),
+  mode(_mode), period_ms(_period_ms),
+  last_updated(0), repeats(0),
+  base(_base), step(_step),
+  from(_from), to(_to),
+  current(0), modifier(_step)
 {
-  is_running = false;
-  target = (sprite**)calloc(_count, sizeof(sprite*));
-  for(size_t i = 0; i < _count; ++i) {
-    target[i] = ss[i];
-  }
-  targets_count = _count;
-  base = _base;
-  current = 0;
-  from = _from; 
-  to = _to;
-  step = modifier = _step;
-  mode = _mode;
-  period_ms = _period_ms; 
-  last_updated = 0;
-}
-
-anim::anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
-{
-    init(&s, 1,  s == nullptr ? 0 : s->idx, _from, _to, _step, _period_ms, _mode);
-}
-
-anim::anim(sprite** s, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode)
-{
-    init(s, _count, _base, _from, _to, _step, _period_ms, _mode);
-}
-
-void anim::release_targets()
-{
-  free(target);
 }
 
 void anim::start(uint32_t repeat)
 {
     _GM_anim_tostart.lock();
     {
-        if (!is_running && from >= 0 && to >= 0 && from < to && modifier != 0 && period_ms && target != nullptr) {
+        if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms) {
             is_running = true;
             repeats = repeat;
             _GM_anim_tostart.push_back(this);
@@ -191,14 +169,6 @@ void anim::stop()
     _GM_anim_tostop.unlock();
 }
 
-void anim::reset()
-{
-  stop();
-  for(size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
-    target[target_idx]->idx = from;
-  }
-}
-
 void anim::update()
 {
     if (!is_running) {
@@ -206,6 +176,12 @@ void anim::update()
     }
 
     current += modifier;
+    if (from == to) {
+      // continue calling animation forever
+      animate();
+      return;
+    }
+
     if (current <= from && modifier < 0) {
       //reached start going backwards
 
@@ -259,9 +235,8 @@ void anim::update()
         throw std::exception("Next animation index is less than zero");
     }
 
-    for(size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
-      target[target_idx]->idx = base + current;
-    }
+    // call sub-class implementation
+    animate();
 }
 
 void anim::update_running()
@@ -270,9 +245,7 @@ void anim::update_running()
     _GM_anim_tostop.lock();
     {
       for(size_t i = 0; i < _GM_anim_tostop.size(); ++i) {
-        for(size_t target_idx = 0; target_idx < _GM_anim_tostop[i]->targets_count; ++target_idx) {
-          _GM_anim_tostop[i]->target[target_idx]->idx = _GM_anim_tostop[i]->base;
-        }
+        _GM_anim_tostop[i]->reset();
         running.remove(_GM_anim_tostop[i]);
       }
       _GM_anim_tostop.clear();
@@ -303,4 +276,52 @@ void anim::update_running()
       }
     }
     running.unlock();
+}
+
+/**
+  Sprite Animation
+  */
+
+void sprite_anim::init(sprite** ss, size_t _count)
+{
+  is_running = false;
+  target = (sprite**)calloc(_count, sizeof(sprite*));
+  for (size_t i = 0; i < _count; ++i) {
+    target[i] = ss[i];
+  }
+  targets_count = _count;
+}
+
+sprite_anim::sprite_anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode):
+  anim(0, _from, _to, _step, _period_ms, _mode)
+{
+  init(&s, 1);
+}
+
+sprite_anim::sprite_anim(sprite** s, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode):
+  anim(0, _from, _to, _step, _period_ms, _mode)
+{
+  init(s, _count);
+}
+
+void sprite_anim::release_targets()
+{
+  free(target);
+}
+
+void sprite_anim::reset()
+{
+  anim::reset();
+  // reset indexes of target(s)
+  for (size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
+    target[target_idx]->idx = from;
+  }
+}
+
+void sprite_anim::animate()
+{
+  // apply index to target(s)
+  for (size_t target_idx = 0; target_idx < targets_count; ++target_idx) {
+    target[target_idx]->idx = base + current;
+  }
 }

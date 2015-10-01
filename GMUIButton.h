@@ -41,7 +41,11 @@ public:
     h_align ha = label::left, 
     v_align va = label::top):
   button(pos, pad, ip, ha, va)
-  {}
+  {
+    set_font(&UI_GetTheme().font_text_bold);
+    set_font_idle_color(UI_GetTheme().color_front);
+    set_font_color(get_font_idle_color());
+  }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
@@ -62,7 +66,11 @@ public:
     h_align ha = label::left, 
     v_align va = label::top):
   button(pos, pad, ip, ha, va)
-  {}
+  {
+    set_font(&UI_GetTheme().font_text_norm);
+    set_font_idle_color(UI_GetTheme().color_highlight);
+    set_font_color(get_font_idle_color());
+  }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
