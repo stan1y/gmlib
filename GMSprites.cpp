@@ -144,7 +144,8 @@ void anim::start(uint32_t repeat)
 {
     _GM_anim_tostart.lock();
     {
-        if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms) {
+        if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms &&
+          ( (from == 0 && to == 0) || from != to) ) {
             is_running = true;
             repeats = repeat;
             _GM_anim_tostart.push_back(this);
@@ -176,7 +177,7 @@ void anim::update()
     }
 
     current += modifier;
-    if (from == to) {
+    if (from == 0 && to == 0) {
       // continue calling animation forever
       animate();
       return;

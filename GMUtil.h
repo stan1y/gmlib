@@ -172,6 +172,24 @@ std::string GM_GetCurrentPath();
 void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, bool recursive);
 void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive);
 
+static std::vector<std::string> & GM_StringSplit(const std::string &s, const char delim, std::vector<std::string> &elems) 
+{
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
+}
+
+
+static std::vector<std::string> GM_StringSplit(const std::string &s, const char delim) 
+{
+  std::vector<std::string> elems;
+  GM_StringSplit(s, delim, elems);
+  return elems;
+}
+
 /* SDL_Error exception wrapper */
 class sdl_exception : public std::exception {
 private:

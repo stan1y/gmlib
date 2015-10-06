@@ -147,7 +147,7 @@ void texture::unlock()
   _pitch = 0;
 }
 
-void texture::replace_color(SDL_Color& from, SDL_Color& to)
+void texture::replace_color(const color & from, const color & to)
 {
   lock();
   SDL_PixelFormat* fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);

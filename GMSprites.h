@@ -96,15 +96,15 @@ public:
   uint32_t last_updated;
   uint32_t repeats; // 0 = repeat forever if mode != once
 
-                    /* list of running animations */
+  /* list of running animations */
   static locked_vector<anim*> running;
   /* animate running items */
   static void update_running();
 
-  inline bool operator== (anim other) {
+  inline bool operator== (anim & other) {
     return (identifier == other.identifier);
   }
-  inline bool operator!= (anim other) {
+  inline bool operator!= (anim & other) {
     return !(*this == other);
   }
 
@@ -152,6 +152,8 @@ public:
 protected:
   /* animate step */
   virtual void animate();
+
+private:
   void init(sprite** s, size_t _count);
 
 };

@@ -23,24 +23,40 @@ label::~label()
 
 void label::set_text(const std::string& txt)
 {
+  if (_animating) {
+    // ignore text change during animation
+    return;
+  }
   _text = txt;
   _dirty = true;
 }
 
 void label::set_icon(const std::string& res)
 {
+  if (_animating) {
+    // ignore icon change during animation
+    return;
+  }
   _icon_res = res;
   _dirty = true;
 }
 
 void label::set_icon(SDL_Surface* icon)
 {
+  if (_animating) {
+    // ignore icon change during animation
+    return;
+  }
   _icon_res.clear();
   _icon_tx.load_surface(icon, SDL_TEXTUREACCESS_STATIC, SDL_BLENDMODE_BLEND);
 }
 
 void label::set_icon(SDL_Texture* icon)
 {
+  if (_animating) {
+    // ignore icon change during animation
+    return;
+  }
   _icon_res.clear();
   _icon_tx = texture(icon);
 }

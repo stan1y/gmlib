@@ -102,7 +102,7 @@ public:
   void unlock();
   int get_pitch() { return _pitch; }
   void* get_pixels() { return _pixels; }
-  void replace_color(SDL_Color& from, SDL_Color& to);
+  void replace_color(const color & from, const color & to);
 
 private:
   SDL_Texture* _texture;

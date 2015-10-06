@@ -227,11 +227,21 @@ public:
     return data(p, GMDATA_PROXY).as<T>();
   }
 
-  data operator[](const char* key) const
+  data operator[](const std::string& key) const
   {
     if (!is_object()) 
       throw std::exception("data is not a object");
-    json_t * p = json_object_get(_p, key);
+
+    json_t * p = NULL;
+    if (key.find(".") == UINT32_MAX) {
+      p = json_object_get(_p, key.c_str());
+    }
+    else {
+      std::vector < std::string> tokens = GM_StringSplit(key, '.');
+      for (size_t i = 0; i < tokens.size(); ++i) {
+        p = json_object_get(p == NULL ? _p : p, tokens[i].c_str());
+      }
+    }
     if (p == NULL) 
       throw std::exception("data object has no key");
     return data(p, GMDATA_PROXY);
