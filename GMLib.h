@@ -7,19 +7,16 @@
 #include <ctime>
 #include <cctype>
 
-#include <gl/glew.h>
-#include <gl/glu.h>
-#include <gl/gl.h>
-
 #include <SDL.h>
 #include <SDL_config.h>
 #include <SDL_render.h> 
+#include <SDL_video.h> 
 #include <SDL_opengl.h> 
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_log.h>
-
 #include <SDLEx.h>
+
 #include "GMUtil.h"
 
 /** Default log category */
@@ -28,31 +25,20 @@
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
-/* Config */
+/* Global Config */
 struct config {
 public:
-  static const int max_driver_name = 32;
+  const rect          screen_rect() const;
+  const std::string   driver_name() const;
+  const int32_t       driver_index() const;
+  const std::string   assets_path() const;
+  const bool          fullscreen() const;
+  const bool          calculate_fps() const;
+  const int           fps_cap() const;
+  const uint32_t      window_flags() const;
+  const uint32_t      renderer_flags() const;
 
-  /** Options **/
-  int32_t display_width;
-  int32_t display_height;
-  uint32_t fps_cap;
-  char* driver_name;
-  char* assets_path;
-  bool fullscreen;
-  bool calculate_fps;
-  char* default_ui;
-  uint32_t ui_flags;
-    
-  //SDL settings
-  int32_t driver_index;
-  uint32_t window_flags;
-  uint32_t renderer_flags;
-
-  config();
-  ~config();
-
-  int load(const std::string & cfg_file);
+  static int load(const std::string & cfg_file);
 };
 
 /* Ticks Timer */
@@ -76,7 +62,8 @@ private:
 };
 
 /* Init GMLib */
-int GM_Init(const char* name, config* conf);
+int GM_Init(const char* cfg_path, 
+            const char* name = "SDL App");
 
 /* Shutdown GMLib */
 void GM_Quit();
@@ -112,7 +99,9 @@ void GM_EndFrame();
 uint32_t GM_GetFrameTicks();
 
 /* Get average FPS */
-float GM_GetAvgFps();
+float GM_GetAvgFPS();
+/* Display & calculate FPS: on/off */
+void GM_SetFPS(bool state);
 
 SDL_Surface* GM_CreateSurface(int width, int height);
 SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access);
@@ -125,6 +114,11 @@ TTF_Font*    GM_LoadFont(const std::string& font, int ptsize);
 /* Game screen */
 
 class screen {
+
+  
+  SDL_Window * _wnd;
+  SDL_GLContext _glctx;
+
 public:
 
   class component {
@@ -135,13 +129,22 @@ public:
     virtual void update(screen * src) = 0;
     virtual void on_event(SDL_Event* ev, screen * src) = 0;
     screen * get_screen() { return _parent_screen; }
+
   private:
     screen * _parent_screen;
   };
 
+  /* Active OpenGL context attached to this screen */
+  virtual void activate() { SDL_GL_MakeCurrent(_wnd, _glctx); }
+
   /* Construct new custom screen instance */
+  
+  /* New screen with shared window and gl context */
   screen();
-  virtual ~screen() {}
+  /* New screen with custom window and gl content */
+  screen(SDL_Window* wnd);
+
+  virtual ~screen() { SDL_GL_DeleteContext(_glctx); }
 
   /* Current game screen pointer */
   static screen* current();

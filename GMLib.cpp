@@ -1,23 +1,24 @@
 #include <limits.h>
 #include <boost/filesystem.hpp>
 
+#include "GMVersion.h"
 #include "GMLib.h"
 #include "GMTexture.h"
 #include "GMSprites.h"
 #include "RESLib.h"
 #include "GMUI.h"
-
-using namespace boost::filesystem;
+#include "GMData.h"
 
 /* Global State */
 static SDL_Window* g_window = nullptr;
 static SDL_Renderer* g_renderer = nullptr;
 static SDL_GLContext g_glcontext = nullptr;
-static config* g_config = nullptr;
 static timer* g_frame_timer = nullptr;
 static timer* g_fps_timer = nullptr;
 static uint32_t g_counted_frames = 0;
 static uint32_t g_screen_ticks_per_frame = 0;
+
+static bool gframe_calculate_fps = false;
 static float g_avg_fps = 0.0f;
 static texture g_fps;
 static color g_fps_color;
@@ -26,7 +27,7 @@ static TTF_Font* g_fps_font;
 /* Screens */
 static screen * g_screen_current;
 static screen * g_screen_next;
-static screen * g_screen_global;
+static screen * g_screen_ui;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
@@ -44,20 +45,27 @@ SDL_Renderer* GM_GetRenderer() {
   return g_renderer;
 }
 
-const config* GM_GetConfig() {
-  if (g_config == nullptr) {
-    SDLEx_LogError("GM_GetConfig: not initialized");
-    return nullptr;
-  }
-  return g_config;
-}
 
-int GM_Init(const char* name, config* conf) {
+int GM_Init(const char * cfg_path, const char* name) {
 
     //check if we're loaded up already
-    if ( g_config != nullptr || g_window != nullptr || g_renderer != nullptr ) {
+    if (g_window != nullptr || g_renderer != nullptr ) {
         return 0;
     }
+
+    //check cfg path is ok
+    if (cfg_path == nullptr) {
+      SDLEx_LogError("GM_Init: invalid config path");
+      return -1;
+    }
+    boost::filesystem::path p_path(cfg_path);
+    if (!boost::filesystem::exists(p_path)) {
+      SDLEx_LogError("GM_Init: config path does not exist");
+      return -1;
+    }
+    boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
+    config::load(abspath.string());
+    const config * cfg = GM_GetConfig();
 
     //init RND
     srand((int)time(NULL));
@@ -79,36 +87,40 @@ int GM_Init(const char* name, config* conf) {
     SDL_VERSION(&c_ver);
     SDL_version l_ver;
     SDL_GetVersion(&l_ver);
-    SDL_Log("Initalized SDL %d.%d.%d. Complied with %d.%d.%d",
-        l_ver.major, l_ver.minor, l_ver.patch,
-        c_ver.major, c_ver.minor, c_ver.patch);
+    SDL_Log("GM_Init: GMLib ver. %d.%d; SDL runtime ver. %d.%d.%d; complied with ver. %d.%d.%d",
+      GM_LIB_MAJOR, GM_LIB_MINOR,
+      l_ver.major, l_ver.minor, l_ver.patch,
+      c_ver.major, c_ver.minor, c_ver.patch);
 
     //setup random
     srand((unsigned int)time(NULL));
 
     //setup game state
-    g_config = conf;
     g_frame_timer = new timer();
-    g_screen_ticks_per_frame = 1000 / conf->fps_cap;
+    g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
     g_fps_timer = new timer();
     
     //setup screens
+    bool fps_state = cfg->calculate_fps();
+    GM_SetFPS(fps_state);
     g_screen_current = nullptr;
     g_screen_next = nullptr;
-    g_screen_global = new screen();
+    g_screen_ui = new screen();
     
     //init SDL window & renderer
+    const rect screen = cfg->screen_rect();
     g_window = SDL_CreateWindow(name, 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-        conf->display_width, conf->display_height, conf->window_flags | SDL_WINDOW_OPENGL);
+        screen.w, screen.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
         SDLEx_LogError("GM_Init: Failed to system window. SDL Error: %s", SDL_GetError());
         return -1;
     }
     // setup renderer
-    g_renderer = SDL_CreateRenderer(g_window, conf->driver_index, conf->renderer_flags);
+    uint32_t didx = cfg->driver_index();
+    g_renderer = SDL_CreateRenderer(g_window, didx, cfg->renderer_flags());
     if ( g_renderer == nullptr ) {
-        SDLEx_LogError("GM_Init: Failed to create renderer driver_index=%d", conf->driver_index);
+        SDLEx_LogError("GM_Init: Failed to create renderer driver_index=%d", didx);
         return -1;
     }
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
@@ -116,20 +128,28 @@ int GM_Init(const char* name, config* conf) {
     // log renderer info
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
-    SDL_Log("Screen ready size=%dx%d, fullscreen=%d, driver=%s", conf->display_width, conf->display_height, conf->fullscreen, renderer_info.name);
+    SDL_Log("GM_Init: screen ready: %s; fullscreen: %s; driver: %s", 
+      screen.tostr().c_str(), 
+      ( cfg->fullscreen() ? "yes" : "no" ), 
+      renderer_info.name);
     
     // resources cache
-    RES_Init(conf->assets_path);
+    RES_Init(GM_GetConfigData().get<std::string>
+      ("assets_path",
+      "resources")
+    );
 
     // init UI
     rect display = GM_GetDisplayRect();
-    ui::manager::initialize(display, g_config->ui_flags);
-    g_screen_global->add_component(ui::manager::instance());
+    uint32_t flags = GM_GetConfigData().get<uint32_t>("ui_flags", 0);
+    ui::manager::initialize(display, flags);
+    g_screen_ui->add_component(ui::manager::instance());
 
     //fps counter
     g_fps_color = color( 0, 255, 0, 255 );
     g_fps_font = GM_LoadFont("fonts/terminus.ttf", 12);
 
+    SDL_Log("GM_Init: done.");
     return 0;
 }
 
@@ -138,9 +158,15 @@ uint32_t GM_GetFrameTicks()
   return g_frame_timer->get_ticks();
 }
 
-float GM_GetAvgFps()
+float GM_GetAvgFPS()
 {
   return g_avg_fps;
+}
+
+void GM_SetFPS(bool state)
+{
+  SDL_Log("GM_SetFPS: fps calc is %s", ( state ? "on" : "off"));
+  gframe_calculate_fps = state;
 }
 
 void GM_Quit() 
@@ -151,7 +177,7 @@ void GM_Quit()
 void GM_StartFrame()
 {
   //init fps timer first on first frame
-  if (g_config->calculate_fps && !g_fps_timer->is_started()) {
+  if (gframe_calculate_fps && !g_fps_timer->is_started()) {
     g_fps_timer->start();
   }
 
@@ -182,7 +208,7 @@ void GM_UpdateFrame()
   if (g_screen_current != nullptr) {
     g_screen_current->update();  
   }
-  g_screen_global->update();
+  g_screen_ui->update();
 }
 
 void GM_RenderFrame()
@@ -193,13 +219,17 @@ void GM_RenderFrame()
     throw std::exception("No active screen to update");
   }
   SDL_Renderer * r = GM_GetRenderer();
+  
+  g_screen_current->activate();
   g_screen_current->render(r);
-  g_screen_global->render(r);
+  
+  g_screen_ui->activate();
+  g_screen_ui->render(r);
 
   // render avg fps
-  if (g_config->calculate_fps) {
-    g_fps.load_text_solid( std::string("fps: ") + std::to_string(float_to_sint32(GM_GetAvgFps())), g_fps_font, g_fps_color);
-    g_fps.render(GM_GetRenderer(), point(g_config->display_width - g_fps.width() - 5, 5));
+  if (gframe_calculate_fps) {
+    g_fps.load_text_solid( std::string("fps: ") + std::to_string(float_to_sint32(GM_GetAvgFPS())), g_fps_font, g_fps_color);
+    g_fps.render(GM_GetRenderer(), point(5, 5));
   }
 
   //re-start frame timer
@@ -230,7 +260,16 @@ static int GM_ScreenEventHandler(void* ptr, SDL_Event* ev)
   return 0;
 }
 
-screen::screen()
+screen::screen():
+  _wnd(GM_GetWindow()),
+  _glctx(SDL_GL_CreateContext(_wnd))
+{
+  SDL_AddEventWatch(GM_ScreenEventHandler, this);
+}
+
+screen::screen(SDL_Window* wnd):
+  _wnd(wnd),
+  _glctx(SDL_GL_CreateContext(_wnd))
 {
   SDL_AddEventWatch(GM_ScreenEventHandler, this);
 }
@@ -339,12 +378,12 @@ void EnumPathEx(const std::string& folder, const std::string& ext, std::vector<s
 
 void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive)
 {
-  path dir(folder);
+  boost::filesystem::path dir(folder);
   if (recursive) {
-    EnumPathEx<recursive_directory_iterator>(folder, ext, files);
+    EnumPathEx<boost::filesystem::recursive_directory_iterator>(folder, ext, files);
   }
   else {
-    EnumPathEx<directory_iterator>(folder, ext, files);
+    EnumPathEx<boost::filesystem::directory_iterator>(folder, ext, files);
   }
 }
 

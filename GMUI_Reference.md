@@ -4,13 +4,21 @@
 Description: Colors are represented as array of 4 ints or as a constant string of known name
 List of values:
  * [r, g, b, a] array of 4 ints as color
-constants:
+
+Constants:
  * red
  * green
  * blue
+ * dark_red
+ * dark_green
+ * dark_blue
  * black
  * white
-theme constants:
+ * dark_gray
+ * gray
+ * light_gray
+
+Theme Constants:
  * front
  * back
  * highlight

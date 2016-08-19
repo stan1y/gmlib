@@ -5,6 +5,7 @@
 #include "GMUIButton.h"
 #include "GMUITextInput.h"
 #include "GMUICombo.h"
+#include "GMData.h"
 
 /** User Idle Counter **/
 
@@ -27,6 +28,7 @@ static mutex g_message_mx;
 
 void manager::initialize(rect & available_rect, uint32_t flags)
 {
+  SDL_Log("manager::initialize - ui flags: %d", flags);
   if (g_manager == NULL) {
     g_manager = new manager(available_rect, flags);
   }
@@ -55,8 +57,11 @@ manager::manager(rect & available_rect, uint32_t flags):
   control(),
   screen::component(NULL),
   _flags(flags),
-  _theme(GM_GetConfig()->default_ui),
   _cur_event(NULL),
+  _theme(GM_GetConfigData().get<std::string>(
+    "default_ui",     // key name
+    "ui/default" )    // default value
+  ),
   _focused_cnt(NULL),
   _hovered_cnt(NULL)
 {

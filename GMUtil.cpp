@@ -163,19 +163,34 @@ color color::from_string(const std::string & sclr)
     return th.color_toolbox;
   }
   if (sclr == std::string("red")) {
-    return color(255, 0, 0, 255);
+    return color::red();
   }
   if (sclr == std::string("green")) {
-    return color(0, 255, 0, 255);
+    return color::green();
   }
   if (sclr == std::string("blue")) {
-    return color(0, 0, 255, 255);
+    return color::blue();
   }
   if (sclr == std::string("white")) {
-    return color(255, 255, 255, 255);
+    return color::white();
   }
   if (sclr == std::string("black")) {
-    return color(0, 0, 0, 255);
+    return color::black();
+  }
+  if (sclr == std::string("dark_red")) {
+    return color::dark_red();
+  }
+  if (sclr == std::string("dark_blue")) {
+    return color::dark_blue();
+  }
+  if (sclr == std::string("dark_gray")) {
+    return color::dark_gray();
+  }
+  if (sclr == std::string("gray")) {
+    return color::gray();
+  }
+  if (sclr == std::string("light_gray")) {
+    return color::light_gray();
   }
 
   SDLEx_LogError("color::from_string - unknown name %s", sclr.c_str());

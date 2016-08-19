@@ -44,12 +44,11 @@ void texture::blank(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode)
 {
   release();
   _texture = GM_CreateTexture(w, h, access);
-  SDL_SetTextureBlendMode(_texture, bmode);
-  
   if (_texture == NULL) {
-    SDLEx_LogError("texture::blank - Failed to create blank texture.");
+    SDLEx_LogError("texture::blank - Failed to create blank texture. %s", SDL_GetError());
     throw std::exception("Failed to create blank texture");
   }
+  SDL_SetTextureBlendMode(_texture, bmode);
   _width = w; _height = h;
 }
 
@@ -67,6 +66,7 @@ texture::~texture()
 
 void texture::load(const std::string& path)
 {
+  _resource = path;
   SDL_Surface* src = GM_LoadSurface(path);
   load_surface(src, SDL_TEXTUREACCESS_STREAMING, SDL_BLENDMODE_BLEND);
   

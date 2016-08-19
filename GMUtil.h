@@ -23,6 +23,9 @@
 #include <algorithm>
 #include <exception>
 
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -31,7 +34,65 @@
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
-#include <boost/foreach.hpp>
+/** Utility convertors */
+
+inline uint8_t uint32_to_uint8(uint32_t i) {
+    if (i > _UI8_MAX) {
+        return _UI8_MAX;
+    }
+    return (uint8_t)i;
+}
+
+inline int32_t uint32_to_int32(uint32_t i) {
+    if (i > _I32_MAX) {
+        return _I32_MAX;
+    }
+    return (int32_t)i;
+}
+
+inline uint8_t int32_to_uint8(int32_t i) {
+    if (i > _UI8_MAX) {
+        return _UI8_MAX;
+    }
+    return (uint8_t)i;
+}
+
+inline int32_t int32_to_uint32(int32_t i) {
+    if (i > _UI32_MAX) {
+        return _UI32_MAX;
+    }
+    return (int32_t)i;
+}
+
+inline int8_t int32_to_int8(int32_t i) {
+    if (i > _I8_MAX) {
+        return _I8_MAX;
+    }
+    return (int8_t)i;
+}
+
+inline uint8_t int32_to_uint8(uint32_t i) {
+  if (i > _I8_MAX) {
+        return _I8_MAX;
+    }
+    return (int8_t)i;
+}
+
+inline int32_t str_to_sint32(const char* str) {
+    long l = std::strtol(str, nullptr, 10);
+    if (l > _I32_MAX) {
+        return _I32_MAX;
+    }
+    return (int32_t)l;
+}
+
+inline int32_t double_to_sint32(double d) {
+  return d >= 0.0 ? (int32_t)(d+0.5) : (int32_t)(d-0.5);
+}
+
+inline int32_t float_to_sint32(float f) {
+  return f >= 0.0 ? (int32_t)(f+0.5) : (int32_t)(f-0.5);
+}
 
 /* SDL_Color wrapper */
 struct color : SDL_Color {
@@ -44,11 +105,20 @@ struct color : SDL_Color {
 
   static color from_string(const std::string & sclr);
 
-  static color red() { return color(196, 0, 0, 255); }
-  static color green() { return color(0, 196, 0, 255); }
-  static color blue() { return color(0, 0, 196, 255); }
+  static color red() { return color(255, 0, 0, 255); }
+  static color dark_red() { return color(196, 0, 0, 255); }
+  static color green() { return color(0, 255, 0, 255); }
+  static color dark_green() { return color(0, 196, 0, 255); }
+  static color blue() { return color(0, 0, 255, 255); }
+  static color dark_blue() { return color(0, 0, 196, 255); }
   static color black() { return color(0, 0, 0, 255); }
   static color white() { return color(255, 255, 255, 255); }
+  static color gray() { return color(127, 127, 127, 255); }
+  static color light_gray() { return color(205, 205, 205, 255); }
+  static color dark_gray() { return color(64, 64, 64, 255); }
+  static color yellow() { return color(255, 255, 0, 255); }
+  static color magenta() { return color(255, 255, 255, 255); }
+  static color cyan() { return color(255, 255, 255, 255); }
 };
 
 /* SDL_Point wrapper */
@@ -56,12 +126,20 @@ struct point : SDL_Point {
   point() { x = 0; y = 0; }
   point(int _x, int _y) { x = _x; y = _y; }
   point(const point& copy) { x = copy.x; y = copy.y; }
+  point(const SDL_Point& copy) { x = copy.x; y = copy.y; }
 
   std::string tostr() const
   { 
     std::stringstream ss;
     ss << "point<" << x << ", " << y << ">";
     return ss.str();
+  }
+
+  static point current_mouse_pos()
+  {
+    point p;
+    SDL_GetMouseState(&p.x, &p.y);
+    return p;
   }
 };
 
@@ -88,14 +166,26 @@ struct rect : SDL_Rect {
   {
     rect res;
     res.x = max(x, other.x);
-    res.w = min(x + w, other.x + other.w) - x;
+    res.w = min(x + w - other.x, other.x + other.w - x);
     res.y = max(y, other.y);
-    res.h = min(y + h, other.y + other.h) - y;
+    res.h = min(y + h - other.y, other.y + other.h - y);
 
     if (w <= 0 || h <= 0) {
       res.w = 0; res.h = 0;
     }
     return res;
+  }
+
+  rect scale(const float & fw, const float & fh) const
+  {
+    rect r(*this);
+    int dx = double_to_sint32(((w * fw) - w) / 2.0);
+    int dy = double_to_sint32(((h * fh) - h) / 2.0);
+    r.x += dx;
+    r.y += dy;
+    r.w -= 2 * dx;
+    r.h -= 2 * dy;
+    return r;
   }
 
   /** Check this rect collides with another rect */
@@ -113,15 +203,14 @@ struct rect : SDL_Rect {
             pnt.x < x + w && \
             pnt.y < y + h;
   }
-
-
 };
 
-/** Check point in rect
-    Returns SDL_TRUE or SDL_FALSE
-*/
-inline SDL_bool IsPointInRect(SDL_Rect* rect, int x, int y) {
-    return x >= rect->x && x <= rect->x + rect->w && y >= rect->y && y <= rect->y + rect->h ? SDL_TRUE : SDL_FALSE;
+/* test collision of point and circle */
+inline bool collide_circle(const point & center, const int radius, const point & pnt ) 
+{
+  int square_dist = double_to_sint32(std::pow(center.x - pnt.x, 2)) + 
+    double_to_sint32(std::pow(center.y - pnt.y, 2));
+  return (square_dist <= double_to_sint32(std::pow(radius, 2)));
 }
 
 /** Default log category */
@@ -276,66 +365,6 @@ private:
   std::vector<T> _v;
 };
 
-/** Utility convertors */
-
-inline uint8_t uint32_to_uint8(uint32_t i) {
-    if (i > _UI8_MAX) {
-        return _UI8_MAX;
-    }
-    return (uint8_t)i;
-}
-
-inline int32_t uint32_to_int32(uint32_t i) {
-    if (i > _I32_MAX) {
-        return _I32_MAX;
-    }
-    return (int32_t)i;
-}
-
-inline uint8_t int32_to_uint8(int32_t i) {
-    if (i > _UI8_MAX) {
-        return _UI8_MAX;
-    }
-    return (uint8_t)i;
-}
-
-inline int32_t int32_to_uint32(int32_t i) {
-    if (i > _UI32_MAX) {
-        return _UI32_MAX;
-    }
-    return (int32_t)i;
-}
-
-inline int8_t int32_to_int8(int32_t i) {
-    if (i > _I8_MAX) {
-        return _I8_MAX;
-    }
-    return (int8_t)i;
-}
-
-inline uint8_t int32_to_uint8(uint32_t i) {
-  if (i > _I8_MAX) {
-        return _I8_MAX;
-    }
-    return (int8_t)i;
-}
-
-inline int32_t str_to_sint32(const char* str) {
-    long l = std::strtol(str, nullptr, 10);
-    if (l > _I32_MAX) {
-        return _I32_MAX;
-    }
-    return (int32_t)l;
-}
-
-inline int32_t double_to_sint32(double d) {
-	return d >= 0.0 ? (int32_t)(d+0.5) : (int32_t)(d-0.5);
-}
-
-inline int32_t float_to_sint32(float f) {
-	return f >= 0.0 ? (int32_t)(f+0.5) : (int32_t)(f-0.5);
-}
-
 /* create a new raw string copy for a given */
 inline char* copy_string(const char* str, size_t l = 0)
 {
@@ -351,17 +380,42 @@ inline char* copy_string(const char* str, size_t l = 0)
 /* Get random interger in range */
 inline int rand_int(int min, int max) 
 {
-    int rc = min + (rand() % (int)(max - min + 1));
-    return rc;
+  int rc = min + (rand() % (int)(max - min + 1));
+  return rc;
+}
+
+inline double rand_double(double min, double max)
+{
+  double f = (double)rand() / RAND_MAX;
+  return min + f * (max - min);
 }
 
 /* Get random ASCII char */
 inline char rand_char()
 {
-    static int ascii_start = 97;
-    static int ascii_end = 122;
-    int r = rand_int(ascii_start, ascii_end);
-    return int32_to_int8(r);
+  static int ascii_start = 97;
+  static int ascii_end = 122;
+  int r = rand_int(ascii_start, ascii_end);
+  return int32_to_int8(r);
 }
+
+inline std::string rand_string(const size_t len)
+{
+  char * buf = (char*)malloc(sizeof(char) * (len + 1));
+  memset(buf, len + 1, 0);
+  for(size_t i = 0; i < len; ++i) {
+    buf[i] = rand_char();
+  }
+  // return a copy
+  std::string s(buf);
+  free(buf);
+
+  return s;
+}
+
+inline std::string sint32_tostr(const int32_t & i) { return boost::lexical_cast<std::string>(i); }
+inline std::string uint32_tostr(const uint32_t & i) { return boost::lexical_cast<std::string>(i); }
+inline std::string uint8_tostr(const uint8_t & i) { return boost::lexical_cast<std::string>(i); }
+inline std::string double_tostr(const double & d) { return boost::lexical_cast<std::string>(d); }
 
 #endif //GM_UTIL_H

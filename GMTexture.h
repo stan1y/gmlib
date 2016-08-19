@@ -104,7 +104,11 @@ public:
   void* get_pixels() { return _pixels; }
   void replace_color(const color & from, const color & to);
 
+  /* name of the loaded resource */
+  const std::string resource_name() const { return _resource; }
+
 private:
+  std::string _resource;
   SDL_Texture* _texture;
   int _width;
   int _height;

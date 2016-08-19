@@ -56,6 +56,13 @@ public:
   
   /* load from a resource */
   data(const std::string & json_res);
+
+  std::string tostr(int ident = 2) const
+  {
+    char * s = json_dumps(_p, JSON_INDENT(ident) );
+    return std::string(s); // return a copy
+  }
+
   virtual void load(const std::string & json_res);
 
   /* Unpack contained JSON with provided format */
@@ -198,8 +205,14 @@ public:
 
   template<> std::pair<int,int> as() const
   {
-    if (!json_is_array(_p)) throw std::exception("object is not a pair array");
-    if (length() != 2) throw std::exception("invalid object array length for a pair array");
+    if (!json_is_array(_p)) {
+      SDLEx_LogError("data::as() - instance is not a pair");
+      throw std::exception("instance is not a pair array");
+    }
+    if (length() != 2) {
+      throw std::exception("invalid array length for a pair");
+      SDLEx_LogError("data::as() - invalid array length for a pair");
+    }
     int f = 0, s = 0;
     unpack("[ii]", &f, &s);
     return std::make_pair(f, s);
@@ -212,15 +225,44 @@ public:
 
   bool is_true() const
   {
-    if (!json_is_boolean(_p)) throw std::exception("object is not a boolean");
+    if (!json_is_boolean(_p)) {
+      SDLEx_LogError("data::is_true - instance is not a boolean");
+      throw std::exception("instance is not a boolean");
+    }
     return json_is_true(_p);
   }
 
-  template<typename T>
-  T get(const char* key, T def_value) const
+  void set(const char* key, json_t * val)
   {
-    if (!is_object()) 
-      throw std::exception("data is not a object");
+    if (!is_object()) {
+      SDLEx_LogError("data::set - instance is not an object");
+      throw std::exception("instance is not an object");
+    }
+    json_object_set(_p, key, val);
+  }
+
+  template<typename T>
+  void set(const char* key, const T & val);
+
+  template<>
+  void set(const char* key, const std::string & val)
+  {
+    set(key, json_string(val.c_str()));
+  }
+
+  template<>
+  void set(const char* key, const int & val)
+  {
+    set(key, json_integer(val));
+  }
+
+  template<typename T>
+  T get(const char* key, T def_value = T()) const
+  {
+    if (!is_object()) {
+      SDLEx_LogError("data::get - instance is not an object");
+      throw std::exception("instance is not a object");
+    }
     json_t * p = json_object_get(_p, key);
     if (p == NULL) 
       return def_value;
@@ -229,8 +271,10 @@ public:
 
   data operator[](const std::string& key) const
   {
-    if (!is_object()) 
-      throw std::exception("data is not a object");
+    if (!is_object()) {
+      SDLEx_LogError("data::operator[std::string] - instance is not an object");
+      throw std::exception("instance is not a object");
+    }
 
     json_t * p = NULL;
     if (key.find(".") == UINT32_MAX) {
@@ -242,15 +286,23 @@ public:
         p = json_object_get(p == NULL ? _p : p, tokens[i].c_str());
       }
     }
-    if (p == NULL) 
+    if (p == NULL) {
+      SDLEx_LogError("data::operator[std::string] - object has no key ");
       throw std::exception("data object has no key");
+    }
     return data(p, GMDATA_PROXY);
   }
 
   data operator[](size_t idx) const
   {
-    if (!is_array()) throw std::exception("data is not an array");
-    if (idx >= json_array_size(_p)) throw std::exception("index out of data array range");
+    if (!is_array()) {
+      SDLEx_LogError("data::operator[size_t] - instance is not an array");
+      throw std::exception("data is not an array");
+    }
+    if (idx >= json_array_size(_p)) {
+      SDLEx_LogError("data::operator[size_t] - index is out of range");
+      throw std::exception("index out of data array range");
+    }
     return data(json_array_get(_p, idx), GMDATA_PROXY);
   }
   
@@ -260,5 +312,8 @@ private:
   json_t* _p;
   uint8_t _f;
 };
+
+/* Get config as data object */
+const data & GM_GetConfigData();
 
 #endif //_GM_DATA_H_

@@ -201,6 +201,7 @@ void label::update()
 
     if (_alpha < 0 ) _alpha = 0;
     if (_alpha > 255) _alpha = 255;
+    SDL_Log("label::update - fade in %d/%d", _alpha, _alpha_step);
   }
 }
 

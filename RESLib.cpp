@@ -10,9 +10,14 @@ static cache* _GM_Cache = NULL;
 
 void RES_Init(const std::string& assets_root)
 {
-  path cwd(GM_GetCurrentPath());
-  cwd /= assets_root;
-  _GM_AssetsRoot = new path(cwd);
+  if ( !path(assets_root).is_absolute() ) {
+    path cwd(GM_GetCurrentPath());
+    cwd /= assets_root;
+    _GM_AssetsRoot = new path(cwd);
+  }
+  else {
+    _GM_AssetsRoot = new path(assets_root);
+  }
   _GM_Cache = new cache();
   SDL_Log("RES_Init(): assets ready at [%s]", _GM_AssetsRoot->string().c_str());
 }

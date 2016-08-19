@@ -134,6 +134,14 @@ private:
   std::string _id; 
 };
 
+class ui_2d_screen: public screen {
+public:
+  virtual void activate()
+  {
+  }
+
+};
+
 /**************************************************************
   UI Manager. 
   */

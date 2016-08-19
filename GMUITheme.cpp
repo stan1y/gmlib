@@ -118,7 +118,6 @@ theme::theme(const std::string & res_folder):
     ptr.tx_select.load(slt);
     // disable SDL pointer rendering
     SDL_ShowCursor(SDL_DISABLE);
-    SDL_Log("theme: customer pointer loaded");
   }
 
   // load frames

@@ -9,7 +9,6 @@
 class sprites_sheet : public texture {
 public:
   sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_t sprite_h);
-  sprites_sheet();
 
   rect get_sprite_cliprect(size_t idx) const;
   uint32_t sprite_width() const { return width() / _cols; }

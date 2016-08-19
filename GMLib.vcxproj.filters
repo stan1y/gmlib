@@ -46,6 +46,9 @@
     <ClInclude Include="GMUIPushButton.h">
       <Filter>inlcude</Filter>
     </ClInclude>
+    <ClInclude Include="GMVersion.h">
+      <Filter>inlcude</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GMLib.cpp" />
@@ -71,5 +74,8 @@
     <Filter Include="inlcude">
       <UniqueIdentifier>{9e8035ef-6f9b-4fe1-a0e7-c37e05a82e92}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GMUI_Reference.md" />
   </ItemGroup>
 </Project>
