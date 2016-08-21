@@ -22,9 +22,9 @@ box::box(rect pos, box_type t, box_style s, int margin):
 void box::update()
 {
   if (_scroll != NULL) {
-    const point & pnt = manager::instance()->get_pointer();
-    rect scrollbar_rect = _scroll->pos() + get_absolute_pos().topleft();
-    if (!scrollbar_rect.collide_point(pnt) && _scroll->get_state() == scrollbar::cursor_drag_state::moving) {
+    const point & pointer = manager::instance()->get_pointer();
+    rect scrollbar_rect = _scroll->get_absolute_pos();
+    if (!scrollbar_rect.collide_point(pointer) && _scroll->get_state() == scrollbar::cursor_drag_state::moving) {
       _scroll->set_state(scrollbar::cursor_drag_state::stop);
     }
   }
@@ -33,11 +33,11 @@ void box::update()
 
 void box::on_mouse_move(control * target)
 {
-  if (sbar() == scrollbar_type::hidden)
+  if (sbar() == scrollbar_type::scrollbar_hidden)
     return;
   
   const point & pnt = manager::instance()->get_pointer();
-  rect scrollbar_rect = _scroll->pos() + get_absolute_pos().topleft();
+  rect scrollbar_rect = _scroll->get_absolute_pos();
   
   if (_scroll->get_state() == scrollbar::cursor_drag_state::start) {
     _scroll->set_state(scrollbar::cursor_drag_state::moving);
@@ -49,7 +49,7 @@ void box::on_mouse_move(control * target)
 
 void box::on_mouse_up(control * target)
 {
-  if (sbar() == scrollbar_type::hidden)
+  if (sbar() == scrollbar_type::scrollbar_hidden)
     return;
 
   if (_scroll->get_state() == scrollbar::cursor_drag_state::moving) {
@@ -74,19 +74,19 @@ void box::scroll_to_point(const point & pnt)
 
 void box::on_mouse_down(control * target)
 {
-  if (sbar() == scrollbar_type::hidden)
+  if (sbar() == scrollbar_type::scrollbar_hidden)
     return;
-  const point & pnt = manager::instance()->get_pointer();
+  const point & pointer = manager::instance()->get_pointer();
   rect scrollbar_rect = _scroll->pos() + get_absolute_pos().topleft();
-  rect cursor_rect = _scroll->get_cursor_rect(_children_rect) + scrollbar_rect.topleft();
-  if (cursor_rect.collide_point(pnt)) {
+  rect scrollbar_cursor_rect = _scroll->get_cursor_rect(_children_rect) + scrollbar_rect.topleft();
+  if (scrollbar_cursor_rect.collide_point(pointer)) {
     _scroll->set_state(scrollbar::cursor_drag_state::start);
   }
 }
 
 void box::on_mouse_wheel(control * target)
 {
-  if (sbar() == scrollbar_type::hidden)
+  if (sbar() == scrollbar_type::scrollbar_hidden)
     return;
   const SDL_Event* sdl_ev = manager::instance()->current_event();
   do_scroll(
@@ -98,15 +98,22 @@ void box::on_mouse_wheel(control * target)
 void box::set_sbar(scrollbar_type t, uint32_t ssize) 
 {
   if (_scroll != NULL) {
-    delete _scroll;
+    remove_child(_scroll);
+    ui::destroy(_scroll);
+    _scroll = NULL;
   }
 
   switch (t) {
-  case scrollbar_type::right:
+  case scrollbar_right:
     _scroll = new scrollbar(this, rect(_pos.w - ssize, 0, ssize, _pos.h), t);
     break;
+  // FIXME: Add support for scrollbar_bottom type too
   };
-    
+  
+  // display new type of scrollbar if configured now
+  if (_scroll) {
+    add_child(_scroll);
+  }
 }
 
 void box::render(SDL_Renderer * r, const rect & dst)
@@ -131,7 +138,7 @@ void box::render(SDL_Renderer * r, const rect & dst)
     // render pre-made children
     _body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
     // render scrollbar
-    _scroll->render(r, dst);
+    //_scroll->render(r, dst);
   }
   else {
     // direct children rendering
@@ -154,10 +161,11 @@ void box::add_child(control* c)
   c->hovered += boost::bind( &box::on_child_hover_changed, this, _1 );
   c->hover_lost += boost::bind( &box::on_child_hover_changed, this, _1 );
   c->mouse_wheel += boost::bind( &box::on_mouse_wheel, this, _1 );
+  
   //c->set_offscreen(true);
-  // add and update children
+
   control::add_child(c);
-  update_children();  
+  update_children();
 }
 
 void box::on_child_hover_changed(control * target)
@@ -223,12 +231,12 @@ void box::load(const data & d)
 
   if (d.has_key("scroll")) {
     if (d["scroll"].is_string()) {
-      scrollbar_type stype = scrollbar_type::hidden;
+      scrollbar_type stype = scrollbar_type::scrollbar_hidden;
       std::string scroll = d["scroll"].as<std::string>();
       if (scroll == "right")
-        stype = scrollbar_type::right;
+        stype = scrollbar_type::scrollbar_right;
       if (scroll == "bottom")
-        stype = scrollbar_type::bottom;
+        stype = scrollbar_type::scrollbar_bottom;
     
       int ssize = 16;
       if (d.has_key("scrollbar_size")) {
@@ -242,7 +250,7 @@ void box::load(const data & d)
   }
   else {
     set_sbar(
-      scrollbar_type::hidden,
+      scrollbar_type::scrollbar_hidden,
       d.get("scrollbar_size", 0)
     );
   }
@@ -270,7 +278,7 @@ void box::do_scroll(int dx, int dy)
   if (_scroll == NULL)
     return;
 
-  if (_scroll->type() == scrollbar_type::right) {
+  if (_scroll->type() == scrollbar_type::scrollbar_right) {
     float step = _scroll->pos().h / (float)_children_rect.h;
     _scrolled_rect.y += float_to_sint32(step * dy);
     if (_scrolled_rect.y < 0) 
@@ -278,7 +286,7 @@ void box::do_scroll(int dx, int dy)
     if (_scrolled_rect.y > _children_rect.h - _scrolled_rect.h)
       _scrolled_rect.y = _children_rect.h - _scrolled_rect.h;
   }
-  if (_scroll->type() == scrollbar_type::bottom) {
+  if (_scroll->type() == scrollbar_type::scrollbar_bottom) {
     throw std::exception("not implemented");
   }
 }
@@ -292,6 +300,10 @@ void box::update_children()
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control* child = (*it);
+    // skip scrollbar of this box if exist
+    if (_scroll != NULL && child == _scroll)
+      continue;
+    // skip hidden
     if (!child->visible())
       continue;
     rect pos = child->pos();
@@ -375,6 +387,14 @@ void box::update_children()
   // normalize children rect
   _children_rect.w = max(_children_rect.w, _scrolled_rect.w);
   _children_rect.h = max(_children_rect.h, _scrolled_rect.h);
+  
+
+  if (_scroll) {
+    control_list::iterator it = find_child(_scroll);
+    _children.erase(it);
+    _children.push_back(_scroll);
+  }
+  
   // rebuild on children add/remove/show/hide/reorder
   _dirty = true;
 }

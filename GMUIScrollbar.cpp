@@ -5,9 +5,9 @@ namespace ui {
 /* UI scrollbar */
 
 box::scrollbar::scrollbar(box * container, 
-                          rect pos,
+                          rect relpos,
                           scrollbar_type type):
-  _pos(pos),
+  control(relpos),
   _type(type),
   _container(container)
 {
@@ -18,10 +18,10 @@ box::scrollbar::scrollbar(box * container,
 /* rect for cursor, position relative to (inside) the scrollbar's pos */
 rect box::scrollbar::get_cursor_rect(const rect & children_rect) const
 {
-  if (_type == scrollbar_type::hidden) 
+  if (_type == scrollbar_type::scrollbar_hidden) 
     return rect();
 
-  if (_type == scrollbar_type::right) {
+  if (_type == scrollbar_type::scrollbar_right) {
     rect avail = _container->get_scrolled_rect();
     float step = _pos.h / (float)children_rect.h;
     int cursor_h = float_to_sint32(avail.h * step);
@@ -31,15 +31,14 @@ rect box::scrollbar::get_cursor_rect(const rect & children_rect) const
       2 + float_to_sint32(avail.y * step), 
       _pos.w - 4, cursor_h);
   }
-  if (_type == scrollbar_type::bottom) {
+  if (_type == scrollbar_type::scrollbar_bottom) {
   }
   throw std::exception("not implemented");
 }
 
-void box::scrollbar::render(SDL_Renderer * r, const rect & parent_dst)
+void box::scrollbar::render(SDL_Renderer * r, const rect & dst)
 {
   const theme & th = UI_GetTheme();
-  rect dst = _pos + parent_dst.topleft();
 
   // draw border
   th.color_front.apply(r);
@@ -57,8 +56,8 @@ void box::scrollbar::render(SDL_Renderer * r, const rect & parent_dst)
   }
   SDL_RenderFillRect(r, &cursor_rect);
 
-  const point & pnt = manager::instance()->get_pointer();
-  if (cursor_rect.collide_point(pnt)) {
+  const point & pointer = manager::instance()->get_pointer();
+  if (get_absolute_pos().collide_point(pointer)) {
     // hovered scrollbar rect -> hightlight
     th.color_highlight.apply(r);
   }

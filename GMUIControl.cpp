@@ -135,18 +135,13 @@ control * control::find_child_at(uint32_t x, uint32_t y)
 
 control_list::iterator control::find_child(control* child)
 {
-  control_list::iterator it = _children.begin();
-  for(; it != _children.end(); ++it) {
-    if ( (*it) == child) {
-      break;
-    }
-  }
-  return it;
+  return std::find(_children.begin(), _children.end(), child);
 }
 
 void control::add_child(control* child)
 {
   if (find_child(child) == _children.end()) {
+    // append childen at the bottom of the list
     _children.push_back(child);
     if (child->parent()) {
       child->parent()->remove_child(child);
@@ -161,6 +156,11 @@ void control::remove_child(control* child)
   if (it != _children.end()) {
     _children.erase(it);
   }
+}
+
+void control::insert_child(size_t idx, control * c)
+{
+  _children.insert(_children.begin() + idx, c);
 }
 
 void control::render(SDL_Renderer* r, const rect & dst)

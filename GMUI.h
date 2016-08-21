@@ -98,12 +98,16 @@ public:
      directly into the frame at determined position. The position is specified 
      by the parent control as "dst" argument to control::render method. In case 
      parent performes offscreen rendering the argument to the control::render 
-     would be relative position on the offscreen texture. 
+     would be relative position on the offscreen texture.
+     Visible part of this offset texture is returned by the get_scrolled_rect() method
   */
   virtual rect get_absolute_pos();
 
   /* UI Control offscreen rendering support for
-     children controls
+     children controls. If this control is a host 
+     of children rendered to the offset texture then 
+     this rect effectively is the visible part of the
+     offset texture.
   */
   virtual rect get_scrolled_rect() { return _scrolled_rect; }
 
@@ -113,17 +117,23 @@ public:
 
   /** Children Protocol */
 
-  /* returns a box of children of this control */
+  /* returns const list of children of this control */
   const control_list& children() const { return _children; }
+  
   virtual void add_child(control* child);
   virtual void remove_child(control* child);
 
 protected:
   control();
+  // parent control
   control* _parent;
+  // own position relative to the parent's position
+  rect _pos;
+
+  // own children
+  void insert_child(size_t idx, control* child);
   control_list _children;
   rect _scrolled_rect;
-  rect _pos;
 
   /* control state */
   bool _visible;
@@ -143,7 +153,29 @@ public:
 };
 
 /**************************************************************
-  UI Manager. 
+  UI Manager.
+  UI Manager acts as a root control of the visible UI and hosts
+  all other visibile top-level controls as childern.
+  These children are usually panels with their own children
+  controls representing required UI.
+  
+  Manager instance's most used methods have shortcuts in the ui:: namespace:
+  * ui::destroy(control *)
+  * T * ui::build<T>(const data &)
+  * void ui::pop_front(control *)
+  * void ui::push_back(control *
+  * T get_hovered_control<?>()
+  * set_pointer(theme::pointer::pointer_type)
+  * theme::pointer::pointer_type get_pointer_type()
+
+  Example:
+    ui::manager::initialze(rect(0, 0, 640, 480));
+    data d("ui/example.ui.json");
+    ui::panel * my_panel = ui::manager::instance()->build<ui::panel>(d);
+
+  Example:
+    ui::manager::initialze(rect(0, 0, 640, 480));
+    ui::panel * my_panel = ui::build<ui::panel>("ui/example.ui.json");
   */
 class manager: public control, public screen::component {
 public:

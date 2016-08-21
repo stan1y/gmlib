@@ -31,12 +31,12 @@ public:
     Box scrollbar
   */
   typedef enum {
-    hidden = 0,
-    right  = 1,
-    bottom = 2,
+    scrollbar_hidden = 0,
+    scrollbar_right  = 1,
+    scrollbar_bottom = 2,
   } scrollbar_type;
 
-  class scrollbar {
+  class scrollbar : public control {
   public:
     static const int scroll_speed = 20;
     typedef enum {
@@ -51,10 +51,6 @@ public:
 
     void set_type(scrollbar_type t) { _type = t; }
     scrollbar_type type() const { return _type; }
-
-    // get/set position of the scrollbar
-    const rect & pos() { return _pos; }
-    void set_pos(const rect & p) { _pos = p; }
     
     // get/set state of the scrollbar cursor
     const cursor_drag_state get_state() { return _drag; }
@@ -64,12 +60,11 @@ public:
     // with relation to the scrolled area and total size of children_rect
     rect get_cursor_rect(const rect & children_rect) const;
 
-    virtual void render(SDL_Renderer * r, const rect & parent_dst);
+    virtual void render(SDL_Renderer * r, const rect & dst);
 
   private:
 
     scrollbar_type _type;
-    rect _pos;
     cursor_drag_state _drag;
     box * _container; /* a parent of box class */
   };
@@ -87,10 +82,10 @@ public:
 
   bool is_scrollbar_visible() 
   { 
-    return (sbar() != scrollbar_type::hidden);
+    return (sbar() != scrollbar_type::scrollbar_hidden);
   }
 
-  scrollbar_type sbar() { return (_scroll == NULL ? scrollbar_type::hidden : _scroll->type()); }
+  scrollbar_type sbar() { return (_scroll == NULL ? scrollbar_type::scrollbar_hidden : _scroll->type()); }
   void set_sbar(scrollbar_type t, uint32_t ssize);
 
   /** Control protocol overrides */

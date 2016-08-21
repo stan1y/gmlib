@@ -53,7 +53,7 @@ void combo::resize_area()
   }
   else {
     // enable scrolls
-    _area->set_sbar(box::scrollbar_type::right, 10);
+    _area->set_sbar(box::scrollbar_right, 10);
   }
 }
   
