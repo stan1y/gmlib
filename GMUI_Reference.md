@@ -69,7 +69,7 @@ JSON Properties:
                   * dialog (default)
                   * toolbox
                   * group
-* background    - [r, g, b, a] array of 4 ints with color
+* background    - ui::color for background area
 
 -- ui::label --
 Inherits: ui::control
