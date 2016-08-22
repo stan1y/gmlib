@@ -11,57 +11,7 @@ box::box(rect pos, box_type t, box_style s, int margin):
   _children_rect = rect(0, 0, _margin, _margin);
   _selected_ctl = NULL;
   _dirty = false;
-
-  // add box scrolling support
-  mouse_up += boost::bind(&box::on_mouse_up, this, _1);
-  mouse_down += boost::bind(&box::on_mouse_down, this, _1);
-  mouse_wheel += boost::bind(&box::on_mouse_wheel, this, _1);
-  mouse_move += boost::bind(&box::on_mouse_move, this, _1);
-}
-
-void box::update()
-{
-  if (_scroll != NULL) {
-    const point & pointer = manager::instance()->get_pointer();
-    rect scrollbar_rect = _scroll->get_absolute_pos();
-    if (!scrollbar_rect.collide_point(pointer) && _scroll->get_state() == scrollbar::cursor_drag_state::moving) {
-      _scroll->set_state(scrollbar::cursor_drag_state::stop);
-    }
-  }
-  control::update();
-}
-
-void box::on_mouse_move(control * target)
-{
-  if (sbar() == scrollbar_type::scrollbar_hidden)
-    return;
-  
-  const point & pnt = manager::instance()->get_pointer();
-  rect scrollbar_rect = _scroll->get_absolute_pos();
-  
-  if (_scroll->get_state() == scrollbar::cursor_drag_state::start) {
-    _scroll->set_state(scrollbar::cursor_drag_state::moving);
-  }
-  if (_scroll->get_state() == scrollbar::cursor_drag_state::moving) {
-    scroll_to_point(pnt - scrollbar_rect.topleft());
-  }
-}
-
-void box::on_mouse_up(control * target)
-{
-  if (sbar() == scrollbar_type::scrollbar_hidden)
-    return;
-
-  if (_scroll->get_state() == scrollbar::cursor_drag_state::moving) {
-    _scroll->set_state(scrollbar::cursor_drag_state::stop);
-  }
-
-  const point & pnt = manager::instance()->get_pointer();
-  rect scrollbar_rect = _scroll->pos() + get_absolute_pos().topleft();
-  if (scrollbar_rect.collide_point(pnt)) {
-    // user clicked and holds button while hovering over scrollbar
-    scroll_to_point(pnt - scrollbar_rect.topleft());
-  }
+  mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
 }
 
 void box::scroll_to_point(const point & pnt)
@@ -70,29 +20,6 @@ void box::scroll_to_point(const point & pnt)
   int cursor_center_x = cursor_rect.x + cursor_rect.w / 2;
   int cursor_center_y = cursor_rect.y + cursor_rect.h / 2;
   do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
-}
-
-void box::on_mouse_down(control * target)
-{
-  if (sbar() == scrollbar_type::scrollbar_hidden)
-    return;
-  const point & pointer = manager::instance()->get_pointer();
-  rect scrollbar_rect = _scroll->pos() + get_absolute_pos().topleft();
-  rect scrollbar_cursor_rect = _scroll->get_cursor_rect(_children_rect) + scrollbar_rect.topleft();
-  if (scrollbar_cursor_rect.collide_point(pointer)) {
-    _scroll->set_state(scrollbar::cursor_drag_state::start);
-  }
-}
-
-void box::on_mouse_wheel(control * target)
-{
-  if (sbar() == scrollbar_type::scrollbar_hidden)
-    return;
-  const SDL_Event* sdl_ev = manager::instance()->current_event();
-  do_scroll(
-    sdl_ev->wheel.x * scrollbar::scroll_speed, 
-    sdl_ev->wheel.y * scrollbar::scroll_speed
-  );
 }
 
 void box::set_sbar(scrollbar_type t, uint32_t ssize) 
@@ -130,6 +57,8 @@ void box::render(SDL_Renderer * r, const rect & dst)
           control * c = *it;
           // render control with it's relative position
           // to the target of the render_context 
+          // skip scrollbar since, it rendered separetly on top
+          if (c == _scroll) continue;
           c->render(r, c->pos());
         }
       }
@@ -138,7 +67,8 @@ void box::render(SDL_Renderer * r, const rect & dst)
     // render pre-made children
     _body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
     // render scrollbar
-    //_scroll->render(r, dst);
+    rect scrollbar_rect = _scroll->pos() + dst.topleft();
+    _scroll->render(r, scrollbar_rect);
   }
   else {
     // direct children rendering
@@ -160,12 +90,24 @@ void box::add_child(control* c)
   c->mouse_up += boost::bind( &box::on_child_click, this, _1 );
   c->hovered += boost::bind( &box::on_child_hover_changed, this, _1 );
   c->hover_lost += boost::bind( &box::on_child_hover_changed, this, _1 );
-  c->mouse_wheel += boost::bind( &box::on_mouse_wheel, this, _1 );
+  c->mouse_wheel += boost::bind( &box::on_child_wheel, this, _1 );
   
   //c->set_offscreen(true);
 
   control::add_child(c);
   update_children();
+}
+
+void box::on_box_wheel(control * target)
+{
+  SDL_Log("box::on_box_wheel");
+  const SDL_Event* sdl_ev = manager::instance()->current_event();
+}
+
+void box::on_child_wheel(control * target)
+{
+  SDL_Log("box::on_child_wheel");
+  const SDL_Event* sdl_ev = manager::instance()->current_event();
 }
 
 void box::on_child_hover_changed(control * target)
@@ -184,7 +126,6 @@ void box::on_child_click(control * target)
     switch_selection(NULL);
   }
 }
-
 
 void box::load(const data & d)
 {
@@ -289,6 +230,8 @@ void box::do_scroll(int dx, int dy)
   if (_scroll->type() == scrollbar_type::scrollbar_bottom) {
     throw std::exception("not implemented");
   }
+  SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
+    _scrolled_rect.tostr().c_str(), dx, dy);
 }
 
 void box::update_children()
@@ -326,7 +269,7 @@ void box::update_children()
       _children_rect.w += last_pos;
       break;
     default:
-      SDLEx_LogError("box: unknown box type value = %d", _type);
+      SDLEx_LogError("box::update_children unknown box type value = %d", _type);
       throw std::exception("unknown box type value");
       break;
     };
@@ -372,12 +315,12 @@ void box::update_children()
     case box::no_style:
       break;
     default:
-      SDLEx_LogError("box: unknown box type value = %d", _type);
+      SDLEx_LogError("box::update_children unknown box type value = %d", _type);
       throw std::exception("unknown box type value");
       break;
     };
     //update child position (rect)
-    SDL_Log("box: {%s} type(%d) style(%d) - place child {%s} at %s",
+    if (UI_Debug()) SDL_Log("box::update_children {%s} type(%d) style(%d) - place child {%s} at %s",
       identifier().c_str(), _type, _style,
       child->identifier().c_str(),
       pos.tostr().c_str());

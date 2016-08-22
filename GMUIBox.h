@@ -54,15 +54,21 @@ public:
     
     // get/set state of the scrollbar cursor
     const cursor_drag_state get_state() { return _drag; }
-    void set_state(cursor_drag_state s) { _drag = s; }
+    void set_state(cursor_drag_state s);
 
     // returns position of the scrollbar cursor rect on the box
     // with relation to the scrolled area and total size of children_rect
     rect get_cursor_rect(const rect & children_rect) const;
 
     virtual void render(SDL_Renderer * r, const rect & dst);
+    virtual void update();
 
   private:
+    // scrollbar event handlers
+    void on_mouse_up(control * target);
+    void on_mouse_down(control * target);
+    void on_mouse_move(control * target);
+    void on_mouse_wheel(control * target);
 
     scrollbar_type _type;
     cursor_drag_state _drag;
@@ -93,13 +99,11 @@ public:
   virtual void add_child(control* child);
   virtual void remove_child(control* child);
 
-  /* Offscreen chidlren rendering */
+  /* Returns a size of the offscreen texture used to rendered all children */
   virtual rect get_children_rect() { return _children_rect; }
 
   /* Setup box settings from data */
   virtual void load(const data &);
-
-  virtual void update();
 
   /* returns scrolled position for children of this control to draw */
   virtual rect get_scrolled_rect() { return _scrolled_rect; }
@@ -118,14 +122,12 @@ protected:
   // update selection on the box
   void switch_selection(control * target);
 
-  // box event handlers
-  void on_mouse_up(control * target);
-  void on_mouse_down(control * target);
-  void on_mouse_move(control * target);
-  void on_mouse_wheel(control * target);
+  
   /* box need to handle events from it's children */
   void on_child_click(control * target);
   void on_child_hover_changed(control * target);
+  void on_child_wheel(control * target);
+  void on_box_wheel(control * target);
 
   // box settings
   int _margin;
