@@ -46,6 +46,12 @@ public:
   control(rect pos);
   control(rect pos, const std::string id);
   virtual ~control();
+  
+  /* Returns string name of this control type */
+  std::string get_type_name();
+
+  /* Returns string description of this control instance */
+  virtual std::string tostr();
 
   /** UI Control protocol */
   const std::string & identifier() const { return _id; }
@@ -231,6 +237,9 @@ public:
   virtual void on_event(SDL_Event* ev, screen * src);
   virtual void render(SDL_Renderer* r, screen * src);
 
+  /* Customize string representation for the manager */
+  virtual std::string tostr();
+
 private:
   manager(rect &  available_rect, uint32_t flags);
   void set_hovered_control(control * target);
@@ -355,5 +364,8 @@ inline const ui::theme & UI_GetTheme() { return ui::manager::instance()->get_the
 
 /* Get miliseconds since last user input (kbd, mouse, touch) */
 uint32_t UI_GetUserIdle();
+
+/* Get debug mode state for the UI manager */
+inline bool UI_Debug() { return ui::manager::instance()->get_flags() & ui::manager::ui_debug; }
 
 #endif _GMUI_H_

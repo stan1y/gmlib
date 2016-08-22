@@ -224,7 +224,7 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
     th.draw_button_frame(th.input, r, dst);
   }
   // debug blue frame for text input rect
-  if (manager::instance()->get_flags() & manager::ui_debug && \
+  if (UI_Debug() && \
     manager::instance()->get_focused_control() == this) 
   {
     static color blue(0, 0, 255, 255);

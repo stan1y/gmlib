@@ -74,6 +74,17 @@ void manager::destroy(control* child)
   g_graveyard.push_back(child);
 }
 
+std::string manager::tostr()
+{
+  std::stringstream ss;
+  ss << "{manager " \
+     << " rect: " << _pos.tostr() \
+     << " flags: " << _flags \
+     << " children: " << _children.size()
+     << "}";
+  return ss.str();
+}
+
 void manager::set_focused_control(control * target)
 {
   if (target == _focused_cnt)
@@ -81,12 +92,12 @@ void manager::set_focused_control(control * target)
   if (target == NULL)
     target = this;
   if (_focused_cnt != NULL) {
-    SDL_Log("manager: focus lost {%s}", _focused_cnt->identifier().c_str());
+    if (UI_Debug()) SDL_Log("manager: focus lost {%s}", _focused_cnt->identifier().c_str());
     _focused_cnt->focus_lost(_focused_cnt);
   }
   _focused_cnt = target;
   if (_focused_cnt != NULL) {
-    SDL_Log("manager: focus gain {%s}", _focused_cnt->identifier().c_str());
+    if (UI_Debug()) SDL_Log("manager: focus gain {%s}", _focused_cnt->identifier().c_str());
     _focused_cnt->focus(_focused_cnt);
   }
 }
@@ -99,7 +110,7 @@ void manager::set_hovered_control(control * target)
   control * prev = _hovered_cnt;
   _hovered_cnt = target;
   if (prev != NULL) {
-    SDL_Log("manager: hover lost {%s} - %s left %s", 
+    if (UI_Debug()) SDL_Log("manager: hover lost {%s} - %s left %s", 
       prev->identifier().c_str(),
       _pointer.tostr().c_str(),
       prev->get_absolute_pos().tostr().c_str());
@@ -107,7 +118,7 @@ void manager::set_hovered_control(control * target)
   }
   // setup new
   if (_hovered_cnt != NULL) {
-    SDL_Log("manager: hover gain {%s} - at %s", 
+    if (UI_Debug()) SDL_Log("manager: hover gain {%s} - at %s", 
       _hovered_cnt->identifier().c_str(),
       _hovered_cnt->get_absolute_pos().tostr().c_str()
     );
@@ -185,6 +196,8 @@ void manager::on_event(SDL_Event* ev, screen * src)
   control * target = g_manager;
   if (_hovered_cnt != NULL && _hovered_cnt->visible() && !_hovered_cnt->proxy()) 
     target = _hovered_cnt;
+
+  SDL_Log("manager::on_event - event type: %d, target: %s", ev->type, target->tostr().c_str());
   
   // find and call a handler for event
   switch(ev->type)
