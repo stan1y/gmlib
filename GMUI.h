@@ -16,10 +16,10 @@ typedef std::vector<control*> control_list;
 /* Define control-based event_handler */
 typedef ::event_handler<control*> event_handler;
 
-/* Forward UI manager class */
+/* Forward UI manager class, subclass of the control */
 class manager;
 
-/****************************************************************
+/*
  * Core UI Control
  * Basic events and protocols
  */
@@ -167,7 +167,7 @@ public:
 
 };
 
-/**************************************************************
+/*
   UI Manager.
   UI Manager acts as a root control of the visible UI and hosts
   all other visibile top-level controls as childern.
@@ -198,7 +198,7 @@ public:
   static const int ui_debug = 1;
 
   /* Initialize UI subsystem*/
-  static void initialize(rect & available_rect, uint32_t flags = 0);
+  static void initialize(rect & available_rect, bool debug = false);
 
   /* Pointer to a currently processed event (during event handlers execution) */
   static const SDL_Event* current_event();
@@ -237,10 +237,6 @@ public:
   /** UI Theme reference */
   const theme & get_theme() { return _theme; }
 
-  /* Get/Set UI flags */
-  const uint32_t & get_flags() { return _flags; }
-  void set_flags(uint32_t f) { _flags = f; }
-
   /* Control overrides */
   virtual void update(screen * src);
   virtual void on_event(SDL_Event* ev, screen * src);
@@ -249,16 +245,21 @@ public:
   /* Customize string representation for the manager */
   virtual std::string tostr();
 
+  /* Get/set debug mode for UI manager */
+  bool is_debug() { return _debug_mode; }
+  void set_debug(bool s) { _debug_mode = s; }
+
 private:
-  manager(rect &  available_rect, uint32_t flags);
+  manager(rect &  available_rect, bool debug = false);
   void set_hovered_control(control * target);
   void set_focused_control(control * target);
 
   // forbid manager::load calls
   virtual void load(data&) {};
 
-  // ui flags
-  uint32_t _flags;
+  // render UI with debug info
+  // log UI events to the console
+  bool _debug_mode;
 
   // global pointer position
   point _pointer;
@@ -278,7 +279,11 @@ private:
   theme _theme;
 };
 
-/******************* UI Namespace global functions **********/
+
+/* 
+ * UI Namespace global functions 
+ */
+
 
 // void ui::destroy(control *)
 // shortcut to manager's destroy method
@@ -337,9 +342,12 @@ static theme::pointer::pointer_type get_pointer_type()
 }
 
 
-/******************** Core Controls ***************************/
+/*
+ * Core Controls 
+ */
 
-/**
+
+/*
   UI Message control.
   Fade-out top level alert with text
   */
@@ -364,7 +372,11 @@ private:
 
 } //namespace ui
 
-/******************** Utils ***********************************/
+
+/* 
+ * Utils
+ */
+
 
 /** Return abs path to resources folder for theme */
 std::string UI_GetThemeRoot(const std::string & theme_path);
@@ -375,6 +387,6 @@ inline const ui::theme & UI_GetTheme() { return ui::manager::instance()->get_the
 uint32_t UI_GetUserIdle();
 
 /* Get debug mode state for the UI manager */
-inline bool UI_Debug() { return ui::manager::instance()->get_flags() & ui::manager::ui_debug; }
+inline bool UI_Debug() { return ui::manager::instance()->is_debug(); }
 
 #endif _GMUI_H_

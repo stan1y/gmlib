@@ -26,15 +26,14 @@ static mutex g_message_mx;
 
 /** Manager **/
 
-void manager::initialize(rect & available_rect, uint32_t flags)
+void manager::initialize(rect & available_rect, bool debug)
 {
-  SDL_Log("manager::initialize - ui flags: %d", flags);
+  SDL_Log("manager::initialize - available: %s", available_rect.tostr().c_str());
   if (g_manager == NULL) {
-    g_manager = new manager(available_rect, flags);
+    g_manager = new manager(available_rect, debug);
   }
   else {
     g_manager->set_pos(available_rect);
-    g_manager->set_flags(flags);
   }
 }
 
@@ -53,10 +52,10 @@ const SDL_Event* manager::current_event()
   return NULL;
 }
 
-manager::manager(rect & available_rect, uint32_t flags):
+manager::manager(rect & available_rect, bool debug):
   control(),
   screen::component(NULL),
-  _flags(flags),
+  _debug_mode(debug),
   _cur_event(NULL),
   _theme(GM_GetConfigData().get<std::string>(
     "default_ui",     // key name
@@ -79,7 +78,7 @@ std::string manager::tostr()
   std::stringstream ss;
   ss << "{manager " \
      << " rect: " << _pos.tostr() \
-     << " flags: " << _flags \
+     << " debug: " << YES_NO(_debug_mode) \
      << " children: " << _children.size()
      << "}";
   return ss.str();
@@ -92,12 +91,12 @@ void manager::set_focused_control(control * target)
   if (target == NULL)
     target = this;
   if (_focused_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager: focus lost {%s}", _focused_cnt->identifier().c_str());
+    if (UI_Debug()) SDL_Log("manager::set_focused_control - focus lost id: %s", _focused_cnt->identifier().c_str());
     _focused_cnt->focus_lost(_focused_cnt);
   }
   _focused_cnt = target;
   if (_focused_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager: focus gain {%s}", _focused_cnt->identifier().c_str());
+    if (UI_Debug()) SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
     _focused_cnt->focus(_focused_cnt);
   }
 }
@@ -110,7 +109,7 @@ void manager::set_hovered_control(control * target)
   control * prev = _hovered_cnt;
   _hovered_cnt = target;
   if (prev != NULL) {
-    if (UI_Debug()) SDL_Log("manager: hover lost {%s} - %s left %s", 
+    if (UI_Debug()) SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s", 
       prev->identifier().c_str(),
       _pointer.tostr().c_str(),
       prev->get_absolute_pos().tostr().c_str());
@@ -118,7 +117,7 @@ void manager::set_hovered_control(control * target)
   }
   // setup new
   if (_hovered_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager: hover gain {%s} - at %s", 
+    if (UI_Debug()) SDL_Log("manager::set_hovered_control - hover gain id: %s at %s", 
       _hovered_cnt->identifier().c_str(),
       _hovered_cnt->get_absolute_pos().tostr().c_str()
     );
@@ -412,11 +411,11 @@ void message::update()
 
   g_message_mx.lock();
   uint32_t ticked = _timer.get_ticks();
-  //deplect 1 alpha every 10 ms
+  //deplete 1 alpha every 10 ms
   uint32_t depleted = ticked / 10;
   if (depleted >= 255) {
     _timer.stop();
-    SDL_Log("message: self-destruct");
+    SDL_Log("message::update() - self-destruct");
     //self-destruct when alpha depleted
     manager::instance()->destroy(this);
     g_message = NULL;

@@ -46,7 +46,7 @@ SDL_Renderer* GM_GetRenderer() {
 }
 
 
-int GM_Init(const char * cfg_path, const char* name) {
+int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //check if we're loaded up already
     if (g_window != nullptr || g_renderer != nullptr ) {
@@ -54,7 +54,7 @@ int GM_Init(const char * cfg_path, const char* name) {
     }
 
     //check cfg path is ok
-    if (cfg_path == nullptr) {
+    if (cfg_path.empty()) {
       SDLEx_LogError("GM_Init: invalid config path");
       return -1;
     }
@@ -109,7 +109,7 @@ int GM_Init(const char * cfg_path, const char* name) {
     
     //init SDL window & renderer
     const rect screen = cfg->screen_rect();
-    g_window = SDL_CreateWindow(name, 
+    g_window = SDL_CreateWindow(name.c_str(), 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         screen.w, screen.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
@@ -141,8 +141,7 @@ int GM_Init(const char * cfg_path, const char* name) {
 
     // init UI
     rect display = GM_GetDisplayRect();
-    uint32_t flags = GM_GetConfigData().get<uint32_t>("ui_flags", 0);
-    ui::manager::initialize(display, flags);
+    ui::manager::initialize(display);
     g_screen_ui->add_component(ui::manager::instance());
 
     //fps counter

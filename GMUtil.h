@@ -26,6 +26,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
+/* Define min/max funcs as expected */
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -33,6 +34,9 @@
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
+
+/* Convert booleans to string */
+#define YES_NO(val) (val == true ? "yes" : "no")
 
 /** Utility convertors */
 

@@ -62,8 +62,8 @@ private:
 };
 
 /* Init GMLib */
-int GM_Init(const char* cfg_path, 
-            const char* name = "SDL App");
+int GM_Init(const std::string & cfg_path, 
+            const std::string & name = "GMLib App");
 
 /* Shutdown GMLib */
 void GM_Quit();

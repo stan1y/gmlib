@@ -2,7 +2,6 @@
 
 namespace ui {
 
-#define YES_NO(val) (val == true ? "yes" : "no")
 #define CONTROL_ID_LEN 5
 
 /** Control **/
@@ -13,7 +12,7 @@ control::control(rect pos):
   _visible(true), _proxy(false), _locked(false),
   _pos(pos), _parent(NULL), _id(newid())
 {
-  if (UI_Debug()) SDL_Log("control: {%s} created", identifier().c_str());
+  if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
   manager::instance()->add_child(this);
 }
 
@@ -23,7 +22,7 @@ control::control(rect pos, const std::string id):
   _scrolled_rect(0, 0, pos.w, pos.h),
   _pos(pos), _parent(NULL), _id(id)
 {
-  if (UI_Debug()) SDL_Log("control: {%s} created", identifier().c_str());
+  if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
   manager::instance()->add_child(this);
 }
 
@@ -47,7 +46,7 @@ std::string control::newid()
 
 control::~control()
 {
-  if (UI_Debug()) SDL_Log("control: {%s} destroyed", identifier().c_str());
+  if (UI_Debug()) SDL_Log("control::~control - destroyed id: %s", identifier().c_str());
 }
 
 std::string control::get_type_name()
@@ -88,11 +87,9 @@ void control::load(const data & d)
   _visible = d.get("visible", true);
   _proxy = d.get("proxy", false);
 
-  if (UI_Debug()) SDL_Log("control: {%s} reloaded as {%s} proxy: %s, visible: %s",
+  if (UI_Debug()) SDL_Log("control::load id: %s reloaded as %s",
     old_id.c_str(),
-    _id.c_str(),
-    YES_NO(_proxy),
-    YES_NO(_visible)
+    tostr().c_str()
   );
 }
 
@@ -116,7 +113,7 @@ void control::set_parent(control* parent)
 {
   manager * mgr = manager::instance();
   std::string s;
-  if (UI_Debug()) SDL_Log("control: {%s} changed owner from %s to %s", 
+  if (UI_Debug()) SDL_Log("control::set_parent id: %s changed parent from %s to %s", 
     identifier().c_str(), 
     _parent == NULL ? "<nobody>" : _parent->identifier().c_str(), 
     parent == NULL ? "<nobody>" : parent->identifier().c_str()
