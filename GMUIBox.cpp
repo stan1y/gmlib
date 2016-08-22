@@ -33,6 +33,7 @@ void box::set_sbar(scrollbar_type t, uint32_t ssize)
   switch (t) {
   case scrollbar_right:
     _scroll = new scrollbar(this, rect(_pos.w - ssize, 0, ssize, _pos.h), t);
+    _scroll->set_locked(true);
     break;
   // FIXME: Add support for scrollbar_bottom type too
   };
@@ -120,7 +121,7 @@ void box::on_child_click(control * target)
 {
   // update selected control
   if (_selected_ctl != target) {
-    switch_selection(dynamic_cast<control*>(target));
+    switch_selection(target);
   }
   else if (_selected_ctl != NULL) {
     switch_selection(NULL);
@@ -243,8 +244,8 @@ void box::update_children()
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control* child = (*it);
-    // skip scrollbar of this box if exist
-    if (_scroll != NULL && child == _scroll)
+    // skip locked children of this box
+    if (child->is_locked())
       continue;
     // skip hidden
     if (!child->visible())

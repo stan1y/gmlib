@@ -41,7 +41,7 @@ rect box::scrollbar::get_cursor_rect(const rect & children_rect) const
     return rect(
       2,
       2 + float_to_sint32(avail.y * step), 
-      _pos.w - 4, cursor_h);
+      _pos.w - 4, cursor_h - 4);
   }
   if (_type == scrollbar_type::scrollbar_bottom) {
   }
