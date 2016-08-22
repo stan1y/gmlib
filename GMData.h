@@ -29,26 +29,21 @@ inline uint8_t jint_to_uint8(json_int_t i) {
     return (uint8_t)i;
 }
 
-/** JSON data_t - based opaque data storage **/
-const uint8_t GMDATA_OWNER = 0;
-const uint8_t GMDATA_PROXY = 1;
-
+/** pebble::data
+    A JSON json_t opaque data storage for 
+    structured data in files and memory.
+**/
 class data {
 public:
 
   bool valid() { return (_p != NULL); }
 
-  data():_p(NULL), _f(GMDATA_PROXY)
+  data():_p(NULL)
   {}
 
-  data(json_t* p) 
+  data(json_t* p):_p(NULL)
   {
-    set_owner_of(p, GMDATA_PROXY);
-  }
-
-  data(json_t* p, uint8_t flags) 
-  {
-    set_owner_of(p, flags);
+    set_owner_of(p);
   }
 
   /* parse json string */
@@ -57,32 +52,34 @@ public:
   /* load from a resource */
   data(const std::string & json_res);
 
+  /* returns string representation of the
   std::string tostr(int ident = 2) const
   {
     char * s = json_dumps(_p, JSON_INDENT(ident) );
     return std::string(s); // return a copy
   }
 
-  virtual void load(const std::string & json_res);
+  /* Load json data from a file given by path */
+  virtual void load(const std::string & json_file);
 
   /* Unpack contained JSON with provided format */
   virtual void unpack(const char *fmt, ...) const;
 
-  /* change from proxy to owner */
-  void hold();
-
-  void set_owner_of(json_t* p , uint8_t flags = GMDATA_OWNER)
+  /* Set this instance of data a owner of ref to the 
+     specified json_t by incref-ing it */
+  void set_owner_of(json_t* p)
   {
-    if (p != NULL) {
-      _p = p;
-      _f = flags;
+    if (p == NULL) return;
+    if (_p != NULL) {
+      json_decref(_p);
     }
+    _p = p;
+    json_incref(_p);
   }
 
   ~data()
   {
-    if (_p != NULL && _f == GMDATA_OWNER)
-      json_decref(_p);
+    if (_p != NULL) json_decref(_p);
   }
 
   bool is_object() const
@@ -266,7 +263,7 @@ public:
     json_t * p = json_object_get(_p, key);
     if (p == NULL) 
       return def_value;
-    return data(p, GMDATA_PROXY).as<T>();
+    return data(p).as<T>();
   }
 
   data operator[](const std::string& key) const
@@ -290,7 +287,7 @@ public:
       SDLEx_LogError("data::operator[std::string] - object has no key ");
       throw std::exception("data object has no key");
     }
-    return data(p, GMDATA_PROXY);
+    return data(p);
   }
 
   data operator[](size_t idx) const
@@ -303,7 +300,7 @@ public:
       SDLEx_LogError("data::operator[size_t] - index is out of range");
       throw std::exception("index out of data array range");
     }
-    return data(json_array_get(_p, idx), GMDATA_PROXY);
+    return data(json_array_get(_p, idx));
   }
   
   json_t * ptr() const { return _p; }

@@ -24,7 +24,6 @@ data::data(const std::string & json, uint32_t parser_flags)
     SDLEx_LogError("data: failed to parse. %s", jerr.text);
     throw std::exception("failed to parse data");
   }
-  _f = GMDATA_OWNER;
 }
 
 data::data(const std::string & json_file)
@@ -37,18 +36,8 @@ void data::load(const std::string & json_file)
   SDL_Log("data::load - reading %s\n", json_file.c_str()); 
   json_t * p = GM_LoadJSON(json_file);
   if (p == NULL) throw std::exception("failed to load data");
-  set_owner_of(p, GMDATA_OWNER);
-}
-
-void data::hold()
-{
-  if (_f == GMDATA_PROXY) {
-    json_incref(_p);
-    _f = GMDATA_OWNER;
-  }
-  else {
-    SDLEx_LogError("data:hold() already holding reference. refcount=%d", _p->refcount);
-  }
+  set_owner_of(p);
+  json_decref(p);
 }
 
 void data::unpack(const char *fmt, ...) const
