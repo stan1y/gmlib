@@ -10,8 +10,7 @@ namespace ui {
 // regular control constructor. manager is a parent by default
 control::control(rect pos):
   _scrolled_rect(0, 0, pos.w, pos.h),
-  _visible(true), _proxy(false),
-  
+  _visible(true), _proxy(false), _locked(false),
   _pos(pos), _parent(NULL), _id(newid())
 {
   if (UI_Debug()) SDL_Log("control: {%s} created", identifier().c_str());
@@ -20,7 +19,7 @@ control::control(rect pos):
 
 // regular control constructor. manager is a parent by default with custom ID
 control::control(rect pos, const std::string id):
-  _visible(true), _proxy(false),
+  _visible(true), _proxy(false), _locked(false),
   _scrolled_rect(0, 0, pos.w, pos.h),
   _pos(pos), _parent(NULL), _id(id)
 {
@@ -102,8 +101,10 @@ rect control::get_absolute_pos()
   if (_parent != NULL) {
     rect parent_rect = _parent->get_absolute_pos();
     rect pos = _pos + parent_rect.topleft();
-    // offscreen controls are affected by scrolled_rect
-    pos = pos - _parent->get_scrolled_rect().topleft();
+    // offscreen rendered controls are affected by scrolled_rect
+    // unless they are locked in position
+    if (!is_locked())
+      pos = pos - _parent->get_scrolled_rect().topleft();
     // absolute pos is a visible part of the control (within parent's rect)
     pos.clip(parent_rect);
     return pos;
@@ -138,7 +139,11 @@ size_t control::zlevel()
 
 control * control::find_child_at(uint32_t x, uint32_t y)
 {
-  point at(x, y);
+  return find_child_at(point(x, y));
+}
+
+control * control::find_child_at(const point & at)
+{
   // search children
   if (_children.size() > 0) {
     // iterate children in reverse order, because the
@@ -147,7 +152,7 @@ control * control::find_child_at(uint32_t x, uint32_t y)
     for(; it != _children.rend(); ++it) {
       control * child = *it;
       if (child->visible() && child->get_absolute_pos().collide_point(at) )
-        return child->find_child_at(x, y);
+        return child->find_child_at(at);
     }
   }
 

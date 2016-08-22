@@ -177,20 +177,6 @@ void manager::on_event(SDL_Event* ev, screen * src)
     g_usr_idle_cnt = 0;
   }
 
-  // update hovered control if pointer was moved
-  if (ev->type == SDL_MOUSEMOTION) {
-    control * found = find_child_at(ev->motion.x, ev->motion.y);
-    // reset found to NULL if actual control is hidden or proxy
-    if (found != NULL && !found->visible() )
-      found = NULL;
-    set_hovered_control(found);
-  }
-
-  // update focused control before callbacks
-  if (ev->type == SDL_MOUSEBUTTONUP) {
-    set_focused_control(_hovered_cnt);
-  }
-
   // check event has a target or point at manager
   // check target is acceptable
   control * target = g_manager;
@@ -201,26 +187,37 @@ void manager::on_event(SDL_Event* ev, screen * src)
   
   // find and call a handler for event
   switch(ev->type)
-  {
-  case SDL_MOUSEWHEEL:
-    target->mouse_wheel(target);
-    break;
+  {  
   case SDL_MOUSEMOTION:
+    {
+      // update hovered control if pointer was moved before callback
+      // reset found to NULL if actual control is hidden or proxy
+      control * found = find_child_at(ev->motion.x, ev->motion.y);
+      if (found != NULL && !found->visible()) {
+        found = NULL;
+      }
+      set_hovered_control(found);
+    }
     target->mouse_move(target);
     break;
   case SDL_MOUSEBUTTONUP:
+    {
+      // update focused control before callbacks
+      set_focused_control(_hovered_cnt);
+    }
     target->mouse_up(target);
     break;
   case SDL_MOUSEBUTTONDOWN:
     target->mouse_down(target);
     break;
   case SDL_KEYUP:
-    if (_focused_cnt)
-      _focused_cnt->kbd_up(_focused_cnt);
+    if (_focused_cnt) _focused_cnt->kbd_up(_focused_cnt);
     break;
   case SDL_KEYDOWN:
-    if (_focused_cnt)
-      _focused_cnt->kbd_down(_focused_cnt);
+    if (_focused_cnt) _focused_cnt->kbd_down(_focused_cnt);
+    break;
+  case SDL_MOUSEWHEEL:
+    target->mouse_wheel(target);
     break;
   };
 
@@ -230,10 +227,10 @@ void manager::on_event(SDL_Event* ev, screen * src)
   // update hovered again becase callback might
   // had changed state of other controls (hidden/deleted)
   {
-    control * found = find_child_at(ev->motion.x, ev->motion.y);
+    point pointer = manager::instance()->get_pointer();
+    control * found = find_child_at(pointer);
     // reset found to NULL if actual control is hidden or proxy
-    if (found != NULL && !found->visible() )
-      found = NULL;
+    if (found != NULL && !found->visible() ) found = NULL;
     set_hovered_control(found);
   }
 }

@@ -64,12 +64,6 @@ public:
   /* load properties from data */
   virtual void load(const data &);
 
-  bool visible() const { return _visible; } 
-  void set_visible(bool v) { _visible = v; }
-
-  bool proxy() const { return _proxy; } 
-  void set_proxy(bool d) { _proxy = d; }
-
   /* returns an iterator corresponding to a direct child control of this control */
   control_list::iterator find_child(control* child);
   /* returns index of the child control */
@@ -89,10 +83,11 @@ public:
 
   /* returns child control at the given screen coordinates. 
      otherwise:
-     returns NULL if this control is top levelor parent control 
+     returns NULL if this control is top level or parent control 
      returns this if not (assumes that find_child_at call is made when x, y are in contor's rect)
   */
   control* find_child_at(uint32_t x, uint32_t y);
+  control* find_child_at(const point & at);
 
   /* Get/Set parent control */
   virtual void set_parent(control* parent);
@@ -113,13 +108,26 @@ public:
      children controls. If this control is a host 
      of children rendered to the offset texture then 
      this rect effectively is the visible part of the
-     offset texture.
+     offset texture. Children with enabled scroll lock
+     are not affected by the 
   */
   virtual rect get_scrolled_rect() { return _scrolled_rect; }
-
+  
   /* Get/Set control relative position on parent */
   const rect& pos() const { return _pos; }
   void set_pos(rect& r) { _pos = r; }
+
+  /* Get/set visibility of the control */
+  bool visible() const { return _visible; } 
+  void set_visible(bool v) { _visible = v; }
+
+  /* Get/set event transparency flag for the control */
+  bool proxy() const { return _proxy; } 
+  void set_proxy(bool d) { _proxy = d; }
+
+  /* Get/set position lock flag for the control */
+  bool is_locked() { return _locked; }
+  void set_locked(bool s) { _locked = s; }
 
   /** Children Protocol */
 
@@ -144,6 +152,7 @@ protected:
   /* control state */
   bool _visible;
   bool _proxy;
+  bool _locked;
 
 private:
   /* control unique id */
