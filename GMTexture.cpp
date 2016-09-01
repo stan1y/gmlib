@@ -90,8 +90,8 @@ rect texture::get_string_rect(const std::string& text, TTF_Font* font)
 void texture::convert_surface(SDL_Surface * s)
 {
   if (s == NULL) {
-    SDLEx_LogError("texture::load_text Failed to render text: %s", TTF_GetError());
-    throw std::exception("Failed to render text");
+    SDLEx_LogError("texture::convert_surface - NULL surface to convert");
+    throw std::exception("NULL surface to convert");
   }
   SDL_Surface* converted = SDL_ConvertSurfaceFormat(s, SDL_PIXELFORMAT_RGBA8888, 0);
   load_surface(converted, SDL_TEXTUREACCESS_STREAMING, SDL_BLENDMODE_BLEND);
@@ -206,12 +206,12 @@ void texture::set_color_mod(const color & rgb)
 
 color texture::get_color_mod()
 {
-	color clr;
-	clr.a = 255;
-	if (SDL_GetTextureColorMod(_texture, &clr.r, &clr.g, &clr.b) != 0) {
-		throw sdl_exception();
-	}
-	return clr;
+  color clr;
+  clr.a = 255;
+  if (SDL_GetTextureColorMod(_texture, &clr.r, &clr.g, &clr.b) != 0) {
+    throw sdl_exception();
+  }
+  return clr;
 }
 
 void texture::set_color_mod(uint8_t red, uint8_t green, uint8_t blue)
