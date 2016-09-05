@@ -36,12 +36,12 @@ inline uint8_t jint_to_uint8(json_int_t i) {
 class data {
 public:
 
-  bool valid() { return (_p != NULL); }
+  bool valid() { return (_p != nullptr); }
 
-  data():_p(NULL)
+  data():_p(nullptr), _f(0)
   {}
 
-  data(json_t* p):_p(NULL)
+  data(json_t* p):_p(nullptr), _f(0)
   {
     set_owner_of(p);
   }
@@ -72,6 +72,7 @@ public:
     if (p == NULL) return;
     if (_p != NULL) {
       json_decref(_p);
+      _p = NULL;
     }
     _p = p;
     json_incref(_p);
@@ -79,7 +80,10 @@ public:
 
   ~data()
   {
-    if (_p != NULL) json_decref(_p);
+    if (_p != NULL) {
+      json_decref(_p);
+      _p = NULL;
+    }
   }
 
   bool is_object() const
@@ -307,7 +311,7 @@ public:
 
 private:
   json_t* _p;
-  uint8_t _f;
+  uint32_t _f;
 };
 
 /* Get config as data object */

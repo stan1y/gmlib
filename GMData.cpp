@@ -9,14 +9,18 @@ json_t* GM_LoadJSON(const std::string& file)
     std::string path = RES_GetFullPath(file);
     json_data = json_load_file(path.c_str(), 0, &jerr);
     if (json_data == nullptr) {
-        SDLEx_LogError("GM_LoadJson: failed to load %s. %s", path.c_str(), jerr.text);
+        SDLEx_LogError("GM_LoadJSON: failed to load %s. %s. line: %d, column: %d, position: %d",
+          path.c_str(), jerr.text,
+          jerr.line, jerr.column, jerr.position);
         return NULL;
     }
 
     return json_data;
 }
 
-data::data(const std::string & json, uint32_t parser_flags)
+data::data(const std::string & json, uint32_t parser_flags):
+  _p(nullptr),
+  _f(parser_flags)
 {
   json_error_t jerr;
   _p = json_loadb(json.c_str(), json.length(), parser_flags, &jerr);
@@ -26,7 +30,9 @@ data::data(const std::string & json, uint32_t parser_flags)
   }
 }
 
-data::data(const std::string & json_file)
+data::data(const std::string & json_file):
+  _p(nullptr),
+  _f(0)
 {
   load(json_file);
 }
