@@ -18,11 +18,11 @@ uint32_t UI_GetUserIdle()
 namespace ui {
 
 static manager* g_manager = NULL;
-typedef locked_vector<control*> dead_list;
+typedef uvector<control*> dead_list;
 static dead_list g_graveyard;
 
 static message * g_message = NULL;
-static mutex g_message_mx;
+static std::mutex g_message_mx;
 
 /** Manager **/
 
@@ -147,8 +147,8 @@ void manager::update(screen * scr)
   SDL_GetMouseState(&_pointer.x, &_pointer.y);
 
   // process graveyard
-  g_graveyard.lock();
   {
+    mutex_lock guard(g_graveyard.mutex());
     dead_list::iterator it = g_graveyard.begin();
     for(; it != g_graveyard.end(); ++it) {
       control* child = *it;
@@ -157,7 +157,6 @@ void manager::update(screen * scr)
     }
     g_graveyard.clear();
   }
-  g_graveyard.unlock();
 
   // call UI protocol's update
   control::update();
@@ -165,7 +164,7 @@ void manager::update(screen * scr)
 
 void manager::on_event(SDL_Event* ev, screen * src)
 {
-  _cur_event_mx.lock();
+  mutex_lock lock(_cur_event_mx);
   _cur_event = ev;
 
   // reset user idle timer
@@ -255,6 +254,9 @@ control* create_control(const std::string type_id, rect & pos)
   if (type_id == "sbtn") {
     return new sbtn(pos);
   }
+  if (type_id == "lbtn") {
+    return new lbtn(pos);
+  }
   if (type_id == "input") {
     return new text_input(pos);
   }
@@ -283,6 +285,7 @@ control * control::find_child(const std::string & id)
 
 void manager::pop_front(control * c)
 {
+  lock_vector(_children);
   size_t idx = find_child_index(c);
   if (idx == MAXSIZE_T) {
     return;
@@ -295,6 +298,7 @@ void manager::pop_front(control * c)
 
 void manager::push_back(control * c)
 {
+  lock_vector(_children);
   size_t idx = find_child_index(c);
   if (idx == MAXSIZE_T) {
     return;
@@ -325,8 +329,7 @@ control* manager::build(const data & d)
       pos.h = size.second;
     }
     else {
-      SDLEx_LogError("manager::build - failed to parse control");
-      throw std::exception("failed to parse control data");
+      pos = rect(0, 0, 0, 0);
     }
 
     // check position property

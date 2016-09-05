@@ -11,7 +11,7 @@ namespace ui {
 
 /* Forward declare control and control_list */
 class control;
-typedef std::vector<control*> control_list;
+typedef uvector<control*> control_list;
 
 /* Define control-based event_handler */
 typedef ::event_handler<control*> event_handler;
@@ -133,8 +133,14 @@ public:
 
   /* returns const list of children of this control */
   const control_list& children() const { return _children; }
+  /* returns pointer to child at index without lock on children */
+  control * get_child_at_index(size_t idx);
   
+  /* Add remove child by pointer. sub-classes can override these.
+     See ui::box for offset children rendering example.
+  */
   virtual void add_child(control* child);
+  /* Remove child by pointer */
   virtual void remove_child(control* child);
 
 protected:
@@ -273,7 +279,7 @@ private:
 
   // current processed event
   SDL_Event* _cur_event;
-  mutex _cur_event_mx;
+  sdl_mutex _cur_event_mx;
 
   // theme setup
   theme _theme;

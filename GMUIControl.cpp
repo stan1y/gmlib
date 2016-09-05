@@ -71,11 +71,11 @@ std::string control::tostr()
 {
   std::stringstream ss;
   ss << "{" << get_type_name() \
-     << " id: " << _id \
-     << " pos: " << _pos.tostr() \
-     << " visible: " << YES_NO(_visible) \
-     << " proxy: " << YES_NO(_proxy) \
-     << " children: " << _children.size()
+     << " id=" << _id \
+     << ", pos=" << _pos.tostr() \
+     << ", visible=" << YES_NO(_visible) \
+     << ", proxy=" << YES_NO(_proxy) \
+     << ", children=" << _children.size()
      << "}";
   return ss.str();
 }
@@ -172,6 +172,7 @@ control_list::iterator control::find_child(control* child)
 
 void control::add_child(control* child)
 {
+  lock_vector(_children);
   if (find_child(child) == _children.end()) {
     // append childen at the bottom of the list
     _children.push_back(child);
@@ -184,19 +185,31 @@ void control::add_child(control* child)
 
 void control::remove_child(control* child)
 {
+  lock_vector(_children);
   control_list::iterator it = find_child(child);
   if (it != _children.end()) {
     _children.erase(it);
   }
 }
 
+control * control::get_child_at_index(size_t idx)
+{
+  if (idx < 0 || idx >= _children.size()) {
+    SDLEx_LogError("control::get_child_at_index - invalid index: %d", idx);
+    throw std::exception("invalid child index to get");
+  }
+  return _children[idx];
+}
+
 void control::insert_child(size_t idx, control * c)
 {
+  lock_vector(_children);
   _children.insert(_children.begin() + idx, c);
 }
 
 void control::render(SDL_Renderer* r, const rect & dst)
 {
+  lock_vector(_children);
   control_list::iterator it = _children.begin();
   
   for(; it != _children.end(); ++it) {
@@ -225,6 +238,7 @@ void control::render(SDL_Renderer* r, const rect & dst)
 
 void control::update()
 {
+  lock_vector(_children);
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     (*it)->update();
