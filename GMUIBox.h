@@ -118,6 +118,12 @@ public:
   // children can override to implement more layouting options
   virtual void update_children();
 
+  // remove all children of this box
+  void clear_children();
+
+  const box_style get_box_style() const { return _style; }
+  void set_box_style(const box_style & s);
+
 protected:
   // update selection on the box
   void switch_selection(control * target);

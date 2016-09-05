@@ -22,6 +22,12 @@ void box::scroll_to_point(const point & pnt)
   do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
 }
 
+void box::set_box_style(const box_style & s)
+{
+  _style = s;
+  update_children();
+}
+
 void box::set_sbar(scrollbar_type t, uint32_t ssize) 
 {
   if (_scroll != NULL) {
@@ -75,6 +81,17 @@ void box::render(SDL_Renderer * r, const rect & dst)
     // direct children rendering
     control::render(r, dst);
   }
+}
+
+void box::clear_children()
+{
+  control_list::iterator it = _children.begin();
+  for(; it != _children.end(); ++it) {
+    ui::control * child = *it;
+    if (child != _scroll) ui::destroy(*it);
+  }
+  _children.clear();
+  update_children();
 }
 
 void box::remove_child(control * c)
@@ -335,7 +352,8 @@ void box::update_children()
 
   if (_scroll) {
     control_list::iterator it = find_child(_scroll);
-    _children.erase(it);
+    if (it != _children.end())
+      _children.erase(it);
     _children.push_back(_scroll);
   }
   
@@ -374,6 +392,7 @@ void panel::load(const data & d)
     }
   }
   else {
+    // dialog by default
     _ps = panel_style::dialog;
   }
 
