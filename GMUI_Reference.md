@@ -66,9 +66,9 @@ JSON Name: panel
 Description: The panel class is a box that can render a frame of several types.
 JSON Properties:
 * panel_style   - the frame style selector in the current theme
-                  * dialog (default)
-                  * toolbox
-                  * group
+                  * dialog (default) - regular frame for normal windows
+                  * toolbox - smaller frame for tool windows
+                  * group - tiny frame for control groups
 * background    - ui::color for background area
 
 -- ui::label --
