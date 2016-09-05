@@ -92,12 +92,16 @@ public:
   void set_font_hover_color(const color & c)
   {
     _font_hover_color = c;
+    if (this == ui::get_hovered_control())
+      set_font_color(_font_hover_color);
   }
   color get_font_hover_color() { return _font_hover_color; }
 
   void set_font_idle_color(const color & c)
   {
     _font_idle_color = c;
+    if (this != ui::get_hovered_control())
+      set_font_color(_font_idle_color);
   }
   color get_font_idle_color() { return _font_idle_color; }
 
@@ -119,6 +123,12 @@ public:
   /* Show-Hide animation */
   virtual void update();
   void toggle(int step = 25);
+
+  const h_align get_halign() const { return _ha; }
+  const v_align get_valign() const { return _va; }
+
+  void set_halign(const h_align & ha) { _ha = ha; }
+  void set_valign(const v_align & va) { _va = va; }
   
 protected:
   void paint(SDL_Renderer * r);
