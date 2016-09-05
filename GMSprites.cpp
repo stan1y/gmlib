@@ -123,9 +123,9 @@ void sprite::render(SDL_Renderer * r, const rect & dsrc, const rect & dst) const
 */
 
 /* static list of running animations */
-locked_vector<anim*> anim::running = locked_vector<anim*>();
-static locked_vector<anim*> _GM_anim_tostop = locked_vector<anim*>();
-static locked_vector<anim*> _GM_anim_tostart = locked_vector<anim*>();
+uvector<anim*> anim::running = uvector<anim*>();
+static uvector<anim*> g_anim_tostop = uvector<anim*>();
+static uvector<anim*> g_anim_tostart = uvector<anim*>();
 
 /* init new animation item */
 
@@ -142,32 +142,26 @@ anim::anim(size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _perio
 
 void anim::start(uint32_t repeat)
 {
-    _GM_anim_tostart.lock();
-    {
-        if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms &&
-          ( (from == 0 && to == 0) || from != to) ) {
-            is_running = true;
-            repeats = repeat;
-            _GM_anim_tostart.push_back(this);
-        }
+    if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms &&
+      ( (from == 0 && to == 0) || from != to) ) {
+        lock_vector(g_anim_tostart);
+        is_running = true;
+        repeats = repeat;
+        g_anim_tostart.push_back(this);
     }
-    _GM_anim_tostart.unlock();
 }
 
 void anim::stop()
 {
-    _GM_anim_tostop.lock();
-    {
-        if (is_running) {
-            is_running = false;
-            if(_GM_anim_tostop.find(this) != _GM_anim_tostop.end()) {
-                //already pending
-                return;
-            }
-            _GM_anim_tostop.push_back(this);
-        }
+    if (is_running) {
+      lock_vector(g_anim_tostop);
+      is_running = false;
+      if(g_anim_tostop.find(this) != g_anim_tostop.end()) {
+        //already pending
+        return;
+      }
+      g_anim_tostop.push_back(this);
     }
-    _GM_anim_tostop.unlock();
 }
 
 void anim::update()
@@ -242,30 +236,28 @@ void anim::update()
 
 void anim::update_running()
 {
-    //stop pending
-    _GM_anim_tostop.lock();
+    // stop pending
     {
-      for(size_t i = 0; i < _GM_anim_tostop.size(); ++i) {
-        _GM_anim_tostop[i]->reset();
-        running.remove(_GM_anim_tostop[i]);
+      mutex_lock guard(g_anim_tostop.mutex());
+      for(size_t i = 0; i < g_anim_tostop.size(); ++i) {
+        g_anim_tostop[i]->reset();
+        running.remove(g_anim_tostop[i]);
       }
-      _GM_anim_tostop.clear();
+      g_anim_tostop.clear();
     }
-    _GM_anim_tostop.unlock();
 
-    //run newly added
-    _GM_anim_tostart.lock();
+    // run newly added
     {
-      for(size_t i = 0; i < _GM_anim_tostart.size(); ++i) {
-        running.push_back(_GM_anim_tostart[i]);
+      mutex_lock guard(g_anim_tostart.mutex());
+      for(size_t i = 0; i < g_anim_tostart.size(); ++i) {
+        running.push_back(g_anim_tostart[i]);
       }
-      _GM_anim_tostart.clear();
+      g_anim_tostart.clear();
     }
-    _GM_anim_tostart.unlock();
 
-    //update running
-    running.lock();
+    // update running
     {
+      mutex_lock guard(running.mutex());
       uint32_t ms = SDL_GetTicks();
       for(size_t i = 0; i < running.size(); ++i) {
         //check if time to run
@@ -276,7 +268,6 @@ void anim::update_running()
         }
       }
     }
-    running.unlock();
 }
 
 /**
