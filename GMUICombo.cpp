@@ -16,6 +16,7 @@ combo::combo(rect pos,
 { 
   _area->set_identifier( identifier() + std::string("_area") );
   _area->set_visible(false);
+  set_readonly(true);
   
   focus += boost::bind(&combo::on_focus, this, _1);
   focus_lost += boost::bind(&combo::on_focus_lost, this, _1);
@@ -34,7 +35,7 @@ label * combo::get_item(size_t item)
     throw std::exception("invalid combo item index");
   }
 
-  return dynamic_cast<label*>(_area->children()[item]);
+  return dynamic_cast<label*>(_area->get_child_at_index(item));
 }
 
 void combo::resize_area()
@@ -80,10 +81,8 @@ void combo::delete_item(size_t item)
     throw std::exception("invalid combo item index");
   }
 
-  control * child = _area->children()[item];
-  _area->remove_child(child);
-  ui::destroy(child);
-
+  control * child = _area->get_child_at_index(item);
+  remove_child(child);
   resize_area();
 }
   
