@@ -115,7 +115,7 @@ TTF_Font*    GM_LoadFont(const std::string& font, int ptsize);
 
 class screen {
 
-  
+  /* Screen private handles */
   SDL_Window * _wnd;
   SDL_GLContext _glctx;
 
@@ -157,32 +157,29 @@ public:
 
   /* Screen Update */
   virtual void update() {
-    _components.lock();
-    locked_vector<screen::component*>::iterator it = _components.begin();
+    lock_vector(_components);
+    uvector<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
       (*it)->update(this);
     }
-    _components.unlock();
   };
   
   /* Screen Render */
   virtual void render(SDL_Renderer * r) {
-    _components.lock();
-    locked_vector<screen::component*>::iterator it = _components.begin();
+    lock_vector(_components);
+    uvector<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
       (*it)->render(r, this);
     }
-    _components.unlock();
   };
 
   /* Screen On Event Callback */
   virtual void on_event(SDL_Event* ev) {
-    _components.lock();
-    locked_vector<screen::component*>::iterator it = _components.begin();
+    lock_vector(_components);
+    uvector<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
       (*it)->on_event(ev,this);
     }
-    _components.unlock();
   };
 
   void add_component(screen::component* c) {
@@ -192,22 +189,21 @@ public:
   template<class T>
   T* get_component()
   {
-    SDL_Log("get_component - lookup [%s]\n", typeid(T).name());
+    lock_vector(_components);
+    SDL_Log("get_component - lookup by type [%s]\n", typeid(T).name());
     T * res = NULL;
-    _components.lock();
-    locked_vector<screen::component*>::iterator it = _components.begin();
+    uvector<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
       screen::component* c = *it;
       res = dynamic_cast<T*> (c);
       if (res != NULL) break;
     }
-    _components.unlock();
-    SDL_Log("get_component<%s>() - return [%p]\n", typeid(T).name(), res);
+    SDL_Log("get_component<%s>() - found instance [%p]\n", typeid(T).name(), res);
     return res;
   }
 
 private:
-  locked_vector<component*> _components;
+  uvector<component*> _components;
 };
 
 #endif //GM_LIB_H
