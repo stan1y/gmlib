@@ -17,4 +17,32 @@ void button::render_as(const theme & th, const theme::button_frame & f, SDL_Rend
   label::render(r, dst);
 }
 
-};
+void lbtn::load(const data &d) 
+{
+  button::load(d);
+
+  // lbtn has several styles of renderering
+  if (d.has_key("btn_style")) {
+    if (d["btn_style"].is_number()) {
+      lbtn::btn_style s = (lbtn::btn_style)d["btn_style"].as<int>();
+      set_btn_style(s);
+    }
+    if (d["btn_style"].is_string()) {
+      std::string s = d["btn_style"].as<std::string>();
+      if (s == "rectangle") {
+        set_btn_style(lbtn::rectangle);
+      }
+      if (s == "roundede") {
+        set_btn_style(lbtn::rounded);
+      }
+      if (s == "prism") {
+        set_btn_style(lbtn::prism);
+      }
+    }
+  }
+  else {
+    set_btn_style(lbtn::rectangle);
+  }
+}
+
+}
