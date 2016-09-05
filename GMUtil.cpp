@@ -97,6 +97,20 @@ rect operator+ (const rect& a, const rect& b) {
   return rect(a.x + b.x, a.y + b.y, a.w + b.w, a.h + b.h);
 }
 
+rect operator- (const rect& a, const rect& b) {
+  return rect(a.x - b.x, a.y - b.y, a.w - b.w, a.h - b.h);
+}
+
+rect operator+= (rect& a, const rect& b) {
+  a.x += b.x; a.y += b.y; a.w += b.w; a.h += b.h;
+  return a;
+}
+
+rect operator-= (rect& a, const rect& b) {
+  a.x -= b.x; a.y -= b.y; a.w -= b.w; a.h -= b.h;
+  return a;
+}
+
 rect operator+ (const rect& r, const point& p) {
   return rect(r.x + p.x, r.y + p.y, r.w, r.h);
 }

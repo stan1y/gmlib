@@ -22,6 +22,7 @@
 #include <memory>
 #include <algorithm>
 #include <exception>
+#include <mutex>
 
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -121,8 +122,8 @@ struct color : SDL_Color {
   static color light_gray() { return color(205, 205, 205, 255); }
   static color dark_gray() { return color(64, 64, 64, 255); }
   static color yellow() { return color(255, 255, 0, 255); }
-  static color magenta() { return color(255, 255, 255, 255); }
-  static color cyan() { return color(255, 255, 255, 255); }
+  static color magenta() { return color(255, 0, 255, 255); }
+  static color cyan() { return color(0, 255, 255, 255); }
 };
 
 /* SDL_Point wrapper */
@@ -207,6 +208,8 @@ struct rect : SDL_Rect {
             pnt.x < x + w && \
             pnt.y < y + h;
   }
+
+
 };
 
 /* test collision of point and circle */
@@ -236,8 +239,12 @@ void RenderVerticalGradient(SDL_Renderer* renderer,  const color & from, const c
 /* SDL_Rect & SDL_Point utils */
 bool operator== (rect& a, rect& b);
 bool operator!= (rect& a, rect& b);
+
 rect operator+ (const rect& a, const rect& b);
 rect operator- (const rect& a, const rect& b);
+
+rect operator+= (rect& a, const rect& b);
+rect operator-= (rect& a, const rect& b);
 
 rect operator+ (const rect& r, const point& p);
 rect operator- (const rect& r, const point& p);
@@ -293,7 +300,7 @@ public:
     std::exception(),
     _msg(SDL_GetError())
   {
-    SDLEx_LogError("SDL Error: %s", SDL_GetError());
+    SDLEx_LogError("SDL Error: %s", _msg);
   }
 
   virtual const char * what() const
@@ -306,13 +313,13 @@ public:
     SDL_Mutex wrapper
 */
 
-class mutex {
+class sdl_mutex {
 public:
-    mutex() {
+    sdl_mutex() {
         mtx = SDL_CreateMutex();
     }
     
-    virtual ~mutex() {
+    virtual ~sdl_mutex() {
         SDL_DestroyMutex(mtx);
     }
 
@@ -324,49 +331,97 @@ private:
     SDL_mutex* mtx;
 };
 
+typedef std::lock_guard<sdl_mutex> mutex_lock;
+
 /*
     Mutex based std::vector
 */
-template<class T> class locked_vector: public mutex {
+template<class T> class uvector {
 public:
+  typedef typename std::vector<T>::const_iterator const_iterator;
   typedef typename std::vector<T>::iterator iterator;
+  typedef typename std::vector<T>::reverse_iterator reverse_iterator;
 
-  locked_vector()
+  uvector()
   {}
 
-  virtual ~locked_vector() 
+  virtual ~uvector() 
   {}
 
   void push_back(const T & s) {
-    lock();   
+    mutex_lock guard(_m);
     _v.push_back(s);
-    unlock();
   }
 
   void remove(const T & s) {
-    lock();
-    std::vector<T>::iterator it = std::find(_v.begin(), _v.end(), s);
+    mutex_lock guard(_m);
+    iterator it = find(s);
     if (it != _v.end()) {
-        _v.erase(it);
+      _v.erase(it);
     }
-    unlock();
   }
 
-  typename std::vector<T>::iterator erase(typename std::vector<T>::iterator it) {
+  iterator erase(iterator it) {
+    mutex_lock guard(_m);
     return _v.erase(it);
   }
 
-  typename std::vector<T>::iterator begin() { return _v.begin(); }
-  typename std::vector<T>::iterator end() { return _v.end(); }
-  T& operator[](size_t pos) { return _v[pos]; }
-  typename std::vector<T>::iterator find(const T& val) { return std::find(_v.begin(), _v.end(), val); }
+  iterator insert(iterator where_it, T & val) {
+    mutex_lock guard(_m);
+    return _v.insert(where_it, val);
+  }
 
-  size_t size() { return _v.size(); }
+  iterator begin() { return _v.begin(); }
+  iterator end() { return _v.end(); }
+
+  const_iterator begin() const { return _v.begin(); }
+  const_iterator end() const { return _v.end(); }
+
+  reverse_iterator rbegin() { return _v.rbegin(); }
+  reverse_iterator rend() { return _v.rend(); }
+
+  T& operator[](size_t pos) { return _v[pos]; }
+  iterator find(const T& val) { return std::find(_v.begin(), _v.end(), val); }
+
+  size_t size() const { return _v.size(); }
   void clear() { _v.clear(); }
-  std::vector<T>& get() { return _v; }
+  uvector<T>& get() { return _v; }
+
+  sdl_mutex & mutex() { return _m; }
 
 private:
   std::vector<T> _v;
+  sdl_mutex _m;
+};
+
+/* Define lock helper */
+#define lock_vector(uv) mutex_lock uv_lock(uv.mutex())
+
+/* Safe 2D array */
+template<class T> 
+class safe_array2
+{
+private:
+  T** _arr;
+
+public:
+  safe_array2(size_t sz, T & init_value = T()) 
+  {
+      for (size_t i = 0; i < SIZE; i++)
+      {
+        _arr[i] = init_value;
+      }
+  }
+
+  int &operator[](size_t idx)
+  {
+      if (idx > SIZE)
+      {
+        SDLEx_LogError("safe_array::operator[] index %d out of bounds", idx); 
+        throw std::exception("index out of bounds");
+      }
+      return arr[i];
+  }
 };
 
 /* create a new raw string copy for a given */
