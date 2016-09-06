@@ -7,20 +7,22 @@ namespace ui {
 /** Control **/
 
 // regular control constructor. manager is a parent by default
-control::control(rect pos):
-  _scrolled_rect(0, 0, pos.w, pos.h),
-  _visible(true), _proxy(false), _locked(false),
-  _pos(pos), _parent(NULL), _id(newid())
+control::control(const std::string & type_name, rect pos):
+  _type(type_name),
+  _visible(true), _proxy(false), _locked(false), _destroyed(false),
+  _pos(pos), _parent(NULL), _id(newid()),
+  _scrolled_rect(0, 0, pos.w, pos.h)
 {
   if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
   manager::instance()->add_child(this);
 }
 
 // regular control constructor. manager is a parent by default with custom ID
-control::control(rect pos, const std::string id):
-  _visible(true), _proxy(false), _locked(false),
-  _scrolled_rect(0, 0, pos.w, pos.h),
-  _pos(pos), _parent(NULL), _id(id)
+control::control(const std::string & type_name, rect pos, const std::string id):
+  _type(type_name),
+  _visible(true), _proxy(false), _locked(false), _destroyed(false),
+  _pos(pos), _parent(NULL), _id(id),
+  _scrolled_rect(0, 0, pos.w, pos.h)
 {
   if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
   manager::instance()->add_child(this);
@@ -28,12 +30,12 @@ control::control(rect pos, const std::string id):
 
 // manager's constructor
 control::control():
-  _visible(true), _proxy(false),
+  _type("ui-manager"), _id("root"), _parent(NULL), 
+  _visible(true), _proxy(false),  _destroyed(false),
   _pos(rect(GM_GetDisplayRect())), 
-  _scrolled_rect(0, 0, _pos.w, _pos.h),
-  _parent(NULL), _id("root")
+  _scrolled_rect(0, 0, _pos.w, _pos.h)
 {
-  SDL_Log("manager: ui ready");
+  SDL_Log("manager: intialized %s", _pos.tostr().c_str());
 }
 
 
@@ -49,24 +51,6 @@ control::~control()
   if (UI_Debug()) SDL_Log("control::~control - destroyed id: %s", identifier().c_str());
 }
 
-std::string control::get_type_name()
-{
-  static char * class_prefix = "class ";
-  static size_t class_prefix_len = strlen(class_prefix);
-
-  std::string n = typeid(this).name();
-  if (n.find(class_prefix) == 0) {
-    size_t next = n.find(" ", class_prefix_len);
-    if (next == n.npos)
-      next = n.size() - 1;
-    
-    std::string s = n.substr(class_prefix_len, next - class_prefix_len); 
-    return s;
-  }
-
-  return n;
-}
-
 std::string control::tostr()
 {
   std::stringstream ss;
@@ -75,7 +59,8 @@ std::string control::tostr()
      << ", pos=" << _pos.tostr() \
      << ", visible=" << YES_NO(_visible) \
      << ", proxy=" << YES_NO(_proxy) \
-     << ", children=" << _children.size()
+     << ", destroyed=" << YES_NO(_destroyed) \
+     << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str())
      << "}";
   return ss.str();
 }
@@ -141,6 +126,7 @@ control * control::find_child_at(uint32_t x, uint32_t y)
 
 control * control::find_child_at(const point & at)
 {
+  lock_vector(_children);
   // search children
   if (_children.size() > 0) {
     // iterate children in reverse order, because the
@@ -148,7 +134,7 @@ control * control::find_child_at(const point & at)
     control_list::reverse_iterator it = _children.rbegin();
     for(; it != _children.rend(); ++it) {
       control * child = *it;
-      if (child->visible() && child->get_absolute_pos().collide_point(at) )
+      if (!child->destroyed() && child->visible() && child->get_absolute_pos().collide_point(at) )
         return child->find_child_at(at);
     }
   }
@@ -207,6 +193,23 @@ void control::insert_child(size_t idx, control * c)
   _children.insert(_children.begin() + idx, c);
 }
 
+void control::render_debug_frame(SDL_Renderer* r, const rect & dst)
+{
+  if (manager::instance()->get_hovered_control() == this) {
+    static color red(255, 0, 0, 255);
+    static color green(0, 255, 0, 255);
+    red.apply(r);
+      
+    SDL_RenderDrawRect(r, &dst);
+    if (_parent) {
+      rect pdst = _parent->get_absolute_pos();
+      pdst = pdst + rect(-1, -1, 2, 2);
+      green.apply(r);
+      SDL_RenderDrawRect(r, &pdst);
+    }
+  }
+}
+
 void control::render(SDL_Renderer* r, const rect & dst)
 {
   lock_vector(_children);
@@ -214,26 +217,13 @@ void control::render(SDL_Renderer* r, const rect & dst)
   
   for(; it != _children.end(); ++it) {
     control * c = *it;
-    if (!c->visible()) continue;
+    if (c->destroyed() || !c->visible()) continue;
     rect control_dst = c->get_absolute_pos();
     c->render(r, control_dst);
   }
   
-  if (UI_Debug()) {
-    if (manager::instance()->get_hovered_control() == this) {
-      static color red(255, 0, 0, 255);
-      static color green(0, 255, 0, 255);
-      red.apply(r);
-      
-      SDL_RenderDrawRect(r, &dst);
-      if (_parent) {
-        rect pdst = _parent->get_absolute_pos();
-        pdst = pdst + rect(-1, -1, 2, 2);
-        green.apply(r);
-        SDL_RenderDrawRect(r, &pdst);
-      }
-    }
-  }
+  if (UI_Debug())
+    render_debug_frame(r, dst);
 }
 
 void control::update()
@@ -241,7 +231,10 @@ void control::update()
   lock_vector(_children);
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
-    (*it)->update();
+    control * child = *it;
+    if (!child->destroyed() && !child->proxy()) {
+      child->update();
+    }
   }
 }
 
