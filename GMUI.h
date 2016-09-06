@@ -43,12 +43,12 @@ public:
   static std::string newid();
 
   /* Create new control */
-  control(rect pos);
-  control(rect pos, const std::string id);
+  control(const std::string & type_name, rect pos);
+  control(const std::string & type_name, rect pos, const std::string id);
   virtual ~control();
   
   /* Returns string name of this control type */
-  std::string get_type_name();
+  std::string get_type_name() { return _type; }
 
   /* Returns string description of this control instance */
   virtual std::string tostr();
@@ -118,8 +118,12 @@ public:
   void set_pos(rect& r) { _pos = r; }
 
   /* Get/set visibility of the control */
-  bool visible() const { return _visible; } 
+  bool visible() const { return _visible; }
   void set_visible(bool v) { _visible = v; }
+
+  /* Get/set flag to harvest this control on the next cycle */
+  bool destroyed() const { return _destroyed; }
+  void set_destroyed(bool d) { _destroyed = d; }
 
   /* Get/set event transparency flag for the control */
   bool proxy() const { return _proxy; } 
@@ -150,6 +154,8 @@ protected:
   // own position relative to the parent's position
   rect _pos;
 
+  void render_debug_frame(SDL_Renderer* r, const rect & dst);
+
   // own children
   void insert_child(size_t idx, control* child);
   control_list _children;
@@ -159,6 +165,8 @@ protected:
   bool _visible;
   bool _proxy;
   bool _locked;
+  bool _destroyed;
+  std::string _type;
 
 private:
   /* control unique id */
@@ -359,7 +367,7 @@ static theme::pointer::pointer_type get_pointer_type()
   */
 class message: public control {
 public:
-  message(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
+  
   virtual ~message();
   virtual void render(SDL_Renderer * r, const rect & dst);
   virtual void update();
@@ -368,6 +376,10 @@ public:
   /* show global alert */
   static void alert_ex(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
   static void alert(const std::string & text, uint32_t timeout_ms);
+
+protected:
+  /* use static methods to create new instances of global message alert */
+  message(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
 
 private:
   void reset(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);

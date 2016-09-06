@@ -70,7 +70,12 @@ manager::manager(rect & available_rect, bool debug):
 void manager::destroy(control* child)
 {
   child->set_visible(false);
-  g_graveyard.push_back(child);
+  child->set_destroyed(true);
+
+  {
+    mutex_lock guard(g_graveyard.mutex());
+    g_graveyard.push_back(child);
+  }
 }
 
 std::string manager::tostr()
@@ -91,12 +96,16 @@ void manager::set_focused_control(control * target)
   if (target == NULL)
     target = this;
   if (_focused_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager::set_focused_control - focus lost id: %s", _focused_cnt->identifier().c_str());
+#ifdef UI_DEBUG_HOVER
+    SDL_Log("manager::set_focused_control - focus lost id: %s", _focused_cnt->identifier().c_str());
+#endif
     _focused_cnt->focus_lost(_focused_cnt);
   }
   _focused_cnt = target;
   if (_focused_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
+#ifdef UI_DEBUG_HOVER
+    SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
+#endif
     _focused_cnt->focus(_focused_cnt);
   }
 }
@@ -109,18 +118,22 @@ void manager::set_hovered_control(control * target)
   control * prev = _hovered_cnt;
   _hovered_cnt = target;
   if (prev != NULL) {
-    if (UI_Debug()) SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s", 
+#ifdef UI_DEBUG_HOVER
+      SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s", 
       prev->identifier().c_str(),
       _pointer.tostr().c_str(),
       prev->get_absolute_pos().tostr().c_str());
+#endif
     prev->hover_lost(prev);
   }
   // setup new
   if (_hovered_cnt != NULL) {
-    if (UI_Debug()) SDL_Log("manager::set_hovered_control - hover gain id: %s at %s", 
+#ifdef UI_DEBUG_HOVER
+    SDL_Log("manager::set_hovered_control - hover gain id: %s at %s", 
       _hovered_cnt->identifier().c_str(),
       _hovered_cnt->get_absolute_pos().tostr().c_str()
     );
+#endif
     _hovered_cnt->hovered(_hovered_cnt);
   }
 }
@@ -152,7 +165,16 @@ void manager::update(screen * scr)
     dead_list::iterator it = g_graveyard.begin();
     for(; it != g_graveyard.end(); ++it) {
       control* child = *it;
-      child->parent()->remove_child(child);
+      if (child->parent() == nullptr) {
+        SDLEx_LogError("manager::update - g_graveyard has zombie %s", child->tostr().c_str());
+        throw std::exception("zombie control found in graveyard");
+      }
+      else {
+        // unlink child from parent's tree
+        child->parent()->remove_child(child);
+        child->set_parent(nullptr);
+      }
+
       delete child;
     }
     g_graveyard.clear();
@@ -181,8 +203,6 @@ void manager::on_event(SDL_Event* ev, screen * src)
   if (_hovered_cnt != NULL && _hovered_cnt->visible() && !_hovered_cnt->proxy()) 
     target = _hovered_cnt;
 
-  SDL_Log("manager::on_event - event type: %d, target: %s", ev->type, target->tostr().c_str());
-  
   // find and call a handler for event
   switch(ev->type)
   {  
@@ -387,7 +407,7 @@ theme::pointer::pointer_type manager::get_pointer_type()
   */
 message::message(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms):
   _timeout_ms(timeout_ms),
-  control(texture::get_string_rect(text, f))
+  control("message", texture::get_string_rect(text, f))
 {
   reset(text, f, c, timeout_ms);
 }
@@ -420,7 +440,7 @@ void message::update()
     _timer.stop();
     SDL_Log("message::update() - self-destruct");
     //self-destruct when alpha depleted
-    manager::instance()->destroy(this);
+    ui::destroy(this);
     g_message = NULL;
   }
   
@@ -461,7 +481,9 @@ message::~message()
 
 void message::render(SDL_Renderer * r, const rect & dst)
 {
+  g_message_mx.lock();
   _tx.render(r, dst);
+  g_message_mx.unlock();
 }
 
 } //namespace ui
