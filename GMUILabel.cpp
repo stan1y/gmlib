@@ -11,7 +11,22 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _dirty(true),
   _animating(false),
   _alpha(255),
-  control(pos)
+  control("label", pos)
+{
+  hovered += boost::bind( &label::on_hovered, this, _1 );
+  hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
+}
+
+label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
+  _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
+  _font(&UI_GetTheme().font_text_norm),
+  _font_idle_color(UI_GetTheme().color_text),
+  _font_hover_color(UI_GetTheme().color_text),
+  _font_color(UI_GetTheme().color_text),
+  _dirty(true),
+  _animating(false),
+  _alpha(255),
+  control(type_name, pos)
 {
   hovered += boost::bind( &label::on_hovered, this, _1 );
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );

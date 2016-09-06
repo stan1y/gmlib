@@ -14,7 +14,7 @@ namespace ui {
 box::scrollbar::scrollbar(box * container, 
                           rect relpos,
                           scrollbar_type type):
-  control(relpos),
+  control("scrollbar", relpos),
   _type(type),
   _container(container)
 {

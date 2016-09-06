@@ -17,6 +17,7 @@ public:
   static const int alphanum = (input_validation::alpha | input_validation::numbers);
   static const int everything = (input_validation::alpha | input_validation::numbers | input_validation::whitespace);
 
+  /* Public constructor for text_input controls */
   text_input(rect pos,
     input_validation valid = (input_validation)alphanum,
     margin pad = margin(),
@@ -43,6 +44,17 @@ public:
   bool get_draw_frame() { return _draw_frame; }
 
 protected:
+
+  /* Private constructor for sub-classes to specify different type_name */
+  text_input(
+    const std::string & type_name,
+    rect pos,
+    input_validation valid = (input_validation)alphanum,
+    margin pad = margin(),
+    icon_pos ip = icon_pos::icon_left,
+    h_align ha = label::left, 
+    v_align va = label::middle);
+
   void blink_cursor();
   point get_cursor_pos(const rect & dst);
   void erase_at(size_t c);

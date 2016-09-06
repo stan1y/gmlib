@@ -12,12 +12,6 @@ namespace ui {
 */
 class button : public label {
 public:
-  button(rect pos, 
-    margin pad = margin_t(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top);
-
   virtual ~button() {}
 
   bool checked() { return _checked; }
@@ -28,6 +22,17 @@ public:
   virtual void load(const data &d) { label::load(d); }
 
 protected:
+  /* Private constructor for button sub-classes. 
+     No direct 'button' instances allowed'
+  */
+  button(
+    const std::string & button_subtype_name,
+    rect pos, 
+    margin pad = margin_t(),
+    icon_pos ip = icon_pos::icon_left,
+    h_align ha = label::left, 
+    v_align va = label::top);
+
   bool _checked;
 };
 
@@ -42,11 +47,11 @@ public:
     icon_pos ip = icon_pos::icon_left,
     h_align ha = label::left, 
     v_align va = label::top):
-  button(pos, pad, ip, ha, va)
+  button("btn", pos, pad, ip, ha, va)
   {
     set_font(&UI_GetTheme().font_text_bold);
     set_font_idle_color(UI_GetTheme().color_front);
-    set_font_color(get_font_idle_color());
+    set_font_hover_color(UI_GetTheme().color_highlight);
   }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
@@ -67,11 +72,11 @@ public:
     icon_pos ip = icon_pos::icon_left,
     h_align ha = label::left, 
     v_align va = label::top):
-  button(pos, pad, ip, ha, va)
+  button("sbtn", pos, pad, ip, ha, va)
   {
     set_font(&UI_GetTheme().font_text_norm);
-    set_font_idle_color(UI_GetTheme().color_highlight);
-    set_font_color(get_font_idle_color());
+    set_font_idle_color(UI_GetTheme().color_front);
+    set_font_hover_color(UI_GetTheme().color_highlight);
   }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
@@ -98,11 +103,11 @@ public:
     icon_pos ip = icon_pos::icon_left,
     h_align ha = label::left, 
     v_align va = label::top):
-  button(pos, pad, ip, ha, va)
+  button("lbtn", pos, pad, ip, ha, va)
   {
     set_font(&UI_GetTheme().font_text_norm);
-    set_font_idle_color(UI_GetTheme().color_highlight);
-    set_font_color(get_font_idle_color());
+    set_font_idle_color(UI_GetTheme().color_front);
+    set_font_hover_color(UI_GetTheme().color_toolbox);
   }
 
   void set_btn_style(btn_style s) { _btn_style = s; }
@@ -110,7 +115,6 @@ public:
 
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
-    label::render(r, dst);
     get_font_color().apply(r);
     switch(_btn_style) {
       case lbtn::rectangle:
@@ -124,15 +128,7 @@ public:
       case lbtn::prism:
         break;
     }
-
-    if (UI_Debug()) {
-      // debug red frame on hover
-      if (this == ui::get_hovered_control()) {
-        rect debug_frame = dst + rect(1, 1, -2, -2);
-        color::red().apply(r);
-        SDL_RenderDrawRect(r, &debug_frame);
-      }
-    }
+    label::render(r, dst);
   }
 
   virtual void load(const data &);

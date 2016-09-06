@@ -2,11 +2,11 @@
 
 namespace ui {
 
-button::button(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
-  label(pos, pad, ip, ha, va),
+button::button(const std::string & button_subtype_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
+  label(button_subtype_name, pos, pad, ip, ha, va),
   _checked(false)
 {
-  set_font_hover_color(UI_GetTheme().color_highlight);
+  set_font_hover_color(UI_GetTheme().color_highlight); 
 }
 
 void button::render_as(const theme & th, const theme::button_frame & f, SDL_Renderer * r, const rect & dst)

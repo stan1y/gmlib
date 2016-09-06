@@ -22,6 +22,26 @@ label(pos, pad, ip, ha, va),
   focus += boost::bind(&text_input::on_focus, this, _1);
 }
 
+text_input::text_input(const std::string & type_name, 
+                       rect pos,
+                       input_validation valid,
+                       margin pad,
+                       icon_pos ip,
+                       h_align ha, 
+                       v_align va):
+label(type_name, pos, pad, ip, ha, va),
+  _valid(valid),
+  _cursor(0),
+  _cursor_alpha(255),
+  _blink_phase(-1),
+  _readonly(false),
+  _draw_frame(true),
+  _timer()
+{
+  kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
+  focus += boost::bind(&text_input::on_focus, this, _1);
+}
+
 text_input::~text_input()
 {
   

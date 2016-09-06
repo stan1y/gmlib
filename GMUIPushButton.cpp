@@ -3,7 +3,7 @@
 namespace ui {
 
 push_button::push_button(rect pos, std::string idle, std::string hovered, std::string pressed):
-  control(pos),
+  control("pushbtn", pos),
   _pressed(false),
   _sticky(false)
 {

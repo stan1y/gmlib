@@ -48,6 +48,7 @@ public:
     }
   } margin;
 
+  /* Public constructor for labels */
   label(rect pos, 
     margin pad = margin(),
     icon_pos ip = icon_pos::icon_left,
@@ -131,6 +132,14 @@ public:
   void set_valign(const v_align & va) { _va = va; }
   
 protected:
+  /* Private contructor for sub-classes to specify different type_name */
+  label(const std::string & type_name,
+    rect pos, 
+    margin pad = margin(),
+    icon_pos ip = icon_pos::icon_left,
+    h_align ha = label::left, 
+    v_align va = label::top);
+
   void paint(SDL_Renderer * r);
 
   void on_hovered(control * target);
