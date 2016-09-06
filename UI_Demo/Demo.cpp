@@ -55,11 +55,11 @@ public:
 
   void on_btn_clicked(ui::control * target)
   {
-    ui::btn * clicked = dynamic_cast<ui::btn*>(target);
+    ui::button * clicked = dynamic_cast<ui::button*>(target);
     if (clicked == nullptr) return;
     std::stringstream msg;
     msg << "You've clicked " << clicked->get_text();
-    ui::message(msg.str(), UI_GetTheme().font_text_norm.ptr(), color::white(), 30);
+    ui::message::alert(msg.str(), 30);
   }
 };
 
