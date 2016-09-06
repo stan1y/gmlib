@@ -75,10 +75,10 @@ public:
     box * _container; /* a parent of box class */
   };
 
-  /**
-    Constructs new box container of given type
-  */
-  box(rect pos, box_type t = box::vbox, box_style s = box::no_style, int margin = 0);
+  /* Public constructor of a new box container of given type */
+  box(rect pos, box_type t = box::vbox, 
+    box_style s = box::no_style, int margin = 0);
+
   virtual ~box() 
   {
     if (_scroll != NULL) {
@@ -125,6 +125,11 @@ public:
   void set_box_style(const box_style & s);
 
 protected:
+  /* Public constructor of a new box container of given type */
+  box(const std::string & type_name,
+    rect pos, box_type t = box::vbox, 
+    box_style s = box::no_style, int margin = 0);
+
   // update selection on the box
   void switch_selection(control * target);
 

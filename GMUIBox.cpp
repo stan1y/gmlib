@@ -5,7 +5,17 @@ namespace ui {
 /** UI BOX Container Implementation **/
 
 box::box(rect pos, box_type t, box_style s, int margin):
-    control(pos), _margin(margin), _type(t), _style(s),
+    control("box", pos), _margin(margin), _type(t), _style(s),
+    _scroll(NULL)
+{
+  _children_rect = rect(0, 0, _margin, _margin);
+  _selected_ctl = NULL;
+  _dirty = false;
+  mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
+}
+
+box::box(const std::string & type_name, rect pos, box_type t, box_style s, int margin):
+    control(type_name, pos), _margin(margin), _type(t), _style(s),
     _scroll(NULL)
 {
   _children_rect = rect(0, 0, _margin, _margin);
@@ -31,7 +41,6 @@ void box::set_box_style(const box_style & s)
 void box::set_sbar(scrollbar_type t, uint32_t ssize) 
 {
   if (_scroll != NULL) {
-    remove_child(_scroll);
     ui::destroy(_scroll);
     _scroll = NULL;
   }
@@ -53,7 +62,8 @@ void box::set_sbar(scrollbar_type t, uint32_t ssize)
 void box::render(SDL_Renderer * r, const rect & dst)
 {
   if (is_scrollbar_visible()) {
-    // offscreen children rendering 
+    
+    /** offscreen children rendering **/
     if (_dirty) {
       //create render target
       _body.blank(_children_rect.w, _children_rect.h, SDL_TEXTUREACCESS_TARGET);
@@ -76,6 +86,10 @@ void box::render(SDL_Renderer * r, const rect & dst)
     // render scrollbar
     rect scrollbar_rect = _scroll->pos() + dst.topleft();
     _scroll->render(r, scrollbar_rect);
+
+    // debug rendering on top of offset texture
+    if (UI_Debug())
+      render_debug_frame(r, dst);
   }
   else {
     // direct children rendering
@@ -85,12 +99,21 @@ void box::render(SDL_Renderer * r, const rect & dst)
 
 void box::clear_children()
 {
-  control_list::iterator it = _children.begin();
-  for(; it != _children.end(); ++it) {
-    ui::control * child = *it;
-    if (child != _scroll) ui::destroy(*it);
+  // take snapshot of childrens state under lock
+  {
+    lock_vector(_children);
+    std::vector<control*> children_copy(_children.get());
+    // iterate over copy
+    control_list::iterator it = children_copy.begin();
+    for(; it != children_copy.end(); ++it) {
+      ui::control * child = *it;
+      if (child != _scroll) {
+        ui::destroy(*it);
+      }
+    }
+    // clear the source list
+    _children.clear();
   }
-  _children.clear();
   update_children();
 }
 
@@ -98,7 +121,6 @@ void box::remove_child(control * c)
 {
   // remove and update children
   control::remove_child(c);
-  //c->set_offscreen(false);
   update_children();
 }
 
@@ -110,8 +132,6 @@ void box::add_child(control* c)
   c->hover_lost += boost::bind( &box::on_child_hover_changed, this, _1 );
   c->mouse_wheel += boost::bind( &box::on_child_wheel, this, _1 );
   
-  //c->set_offscreen(true);
-
   control::add_child(c);
   update_children();
 }
@@ -254,6 +274,7 @@ void box::do_scroll(int dx, int dy)
 
 void box::update_children()
 {
+  lock_vector(_children);
   //std::sort(_children.begin(), _children.end());
   int last_pos = _margin;
   _children_rect.w = last_pos;
@@ -366,7 +387,7 @@ void box::update_children()
   */
 
 panel::panel(rect pos, panel_style ps, box_type t, box_style s, int margin):
-  box(pos, t, s, margin)
+  box("panel", pos, t, s, margin)
 {
   set_panel_style(ps);
 }
