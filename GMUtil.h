@@ -385,7 +385,12 @@ public:
 
   size_t size() const { return _v.size(); }
   void clear() { _v.clear(); }
-  uvector<T>& get() { return _v; }
+  std::vector<T> & get() { return _v; }
+  
+  template <class T>
+  void copy_to(std::vector<T> & output, size_t from = 0, size_t to = -1) {
+    std::copy(_v.begin() + from, _v.begin() + (to >= 0 ? to : size() - 1), output);
+  }
 
   sdl_mutex & mutex() { return _m; }
 
