@@ -10,6 +10,7 @@ struct config_private : public data {
   uint32_t fps_cap;
   std::string driver_name;
   std::string assets_path;
+  std::string python_home;
   bool fullscreen;
   bool calculate_fps;
 
@@ -92,6 +93,11 @@ const uint32_t config::renderer_flags() const
   return g_config->renderer_flags;
 }
 
+const std::string config::python_home() const
+{
+  return g_config->python_home;
+}
+
 /** Private Interface **/
 
 config_private::config_private()
@@ -128,19 +134,20 @@ int config::load(const std::string& cfg_file)
     
     char* assets = NULL;
     char* driver = NULL;
-    g_config->unpack("{s:i s:i s:b s:b s:s s:s}",
+    char* python_home = NULL;
+    g_config->unpack("{s:i s:i s:b s:b s:s s:s s:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
         "fullscreen",       &g_config->fullscreen,
         "calculate_fps",    &g_config->calculate_fps,
         "driver",           &driver,
+        "python_home",      &python_home,
         "assets_path",      &assets);
-        //"default_ui",       &g_config->theme,
-        //"ui_flags",         &g_config->ui_flags);
     
     //copy strings
     g_config->driver_name = std::string(driver);
     g_config->assets_path = std::string(assets);
+    g_config->python_home = std::string(python_home);
 
     //select driver
     if (driver) {

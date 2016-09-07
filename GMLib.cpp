@@ -8,6 +8,7 @@
 #include "RESLib.h"
 #include "GMUI.h"
 #include "GMData.h"
+#include "Python.h"
 
 /* Global State */
 static SDL_Window* g_window = nullptr;
@@ -45,6 +46,21 @@ SDL_Renderer* GM_GetRenderer() {
   return g_renderer;
 }
 
+static void GM_InitPython(const config * cfg) 
+{
+  auto python_home = boost::filesystem::current_path();
+  wchar_t * wpython_home = Py_DecodeLocale(python_home.string().c_str(), NULL);
+  Py_SetPythonHome(wpython_home);
+
+  auto python_lib = python_home / "lib";
+  wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
+  Py_SetPath(wpython_lib);
+
+  Py_SetStandardStreamEncoding("utf-8", "utf-8");
+  Py_Initialize();
+
+  SDL_Log("GM_InitPython: initialized %s", Py_GetVersion());
+}
 
 int GM_Init(const std::string & cfg_path, const std::string & name) {
 
@@ -91,27 +107,12 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
       GM_LIB_MAJOR, GM_LIB_MINOR,
       l_ver.major, l_ver.minor, l_ver.patch,
       c_ver.major, c_ver.minor, c_ver.patch);
-
-    //setup random
-    srand((unsigned int)time(NULL));
-
-    //setup game state
-    g_frame_timer = new timer();
-    g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
-    g_fps_timer = new timer();
-    
-    //setup screens
-    bool fps_state = cfg->calculate_fps();
-    GM_SetFPS(fps_state);
-    g_screen_current = nullptr;
-    g_screen_next = nullptr;
-    g_screen_ui = new screen();
     
     //init SDL window & renderer
-    const rect screen = cfg->screen_rect();
+    const rect srect = cfg->screen_rect();
     g_window = SDL_CreateWindow(name.c_str(), 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-        screen.w, screen.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
+        srect.w, srect.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
         SDLEx_LogError("GM_Init: Failed to system window. SDL Error: %s", SDL_GetError());
         return -1;
@@ -129,7 +130,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
     SDL_Log("GM_Init: screen ready: %s; fullscreen: %s; driver: %s", 
-      screen.tostr().c_str(), 
+      srect.tostr().c_str(), 
       ( cfg->fullscreen() ? "yes" : "no" ), 
       renderer_info.name);
     
@@ -138,6 +139,24 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
       ("assets_path",
       "resources")
     );
+
+    //setup random
+    srand((unsigned int)time(NULL));
+
+    // init python
+    GM_InitPython(cfg);
+
+    //setup game state
+    g_frame_timer = new timer();
+    g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
+    g_fps_timer = new timer();
+    
+    //setup screens
+    bool fps_state = cfg->calculate_fps();
+    GM_SetFPS(fps_state);
+    g_screen_current = nullptr;
+    g_screen_next = nullptr;
+    g_screen_ui = new screen();
 
     // init UI
     rect display = GM_GetDisplayRect();
@@ -170,6 +189,7 @@ void GM_SetFPS(bool state)
 
 void GM_Quit() 
 {
+  Py_Finalize();
   SDL_Quit();
 }
 

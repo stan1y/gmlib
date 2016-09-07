@@ -37,6 +37,7 @@ public:
   const int           fps_cap() const;
   const uint32_t      window_flags() const;
   const uint32_t      renderer_flags() const;
+  const std::string   python_home() const;
 
   static int load(const std::string & cfg_file);
 };

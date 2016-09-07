@@ -56,9 +56,9 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\GMLib;$(SolutionDir)\..\boost_1_58_0;$(SolutionDir)\CPython33\Include\PC;$(SolutionDir)\CPython33\Include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\CPython33\PCBuild;$(SolutionDir)\bin\$(Configuration)\;$(SolutionDir)\libboost</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\cpython\PCBuild\$(Platform);$(SolutionDir)\bin\$(Configuration)\;$(SolutionDir)\libboost</AdditionalLibraryDirectories>
       <AdditionalDependencies>libboost_filesystem-vc110-mt-gd-1_58.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDLEx.lib;GMLib.lib;libjansson.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -86,7 +86,9 @@
     <ClCompile Include="Demo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\resources\ui\demo.ui.json" />
+    <None Include="..\..\resources\ui\demo.ui.json">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

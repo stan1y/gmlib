@@ -35,7 +35,7 @@ control::control():
   _pos(rect(GM_GetDisplayRect())), 
   _scrolled_rect(0, 0, _pos.w, _pos.h)
 {
-  SDL_Log("manager: intialized %s", _pos.tostr().c_str());
+  SDL_Log("manager::manager - intialized with %s", _pos.tostr().c_str());
 }
 
 

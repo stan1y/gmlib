@@ -28,7 +28,6 @@ static std::mutex g_message_mx;
 
 void manager::initialize(rect & available_rect, bool debug)
 {
-  SDL_Log("manager::initialize - available: %s", available_rect.tostr().c_str());
   if (g_manager == NULL) {
     g_manager = new manager(available_rect, debug);
   }
