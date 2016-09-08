@@ -96,7 +96,7 @@ public:
   uint32_t repeats; // 0 = repeat forever if mode != once
 
   /* list of running animations */
-  static uvector<anim*> running;
+  static container<anim*> running;
   /* animate running items */
   static void update_running();
 

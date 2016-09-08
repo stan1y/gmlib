@@ -3,11 +3,11 @@
 #include "GMData.h"
 
 #include <boost/filesystem.hpp>
-using namespace boost::filesystem;
+using namespace boost;
 
 std::string UI_GetThemeRoot(const std::string & theme_path)
 {
-  path root(RES_GetAssetsRoot());
+  filesystem::path root(resources::root_path());
   std::string t(theme_path);
   root /= t;
   return root.string();
@@ -15,28 +15,10 @@ std::string UI_GetThemeRoot(const std::string & theme_path)
 
 namespace ui {
 
-theme::font::font()
+theme::font::font(const std::string & file_path, size_t pt_size, font_style st)
 {
-  _f = NULL;
-}
-
-theme::font::font(const std::string & font_res, uint32_t pt_size, font_style st)
-{
-  load(font_res, pt_size, st);
-}
-
-void theme::font::load(const std::string & font_res, uint32_t pt_size, font_style st)
-{
-  _f = GM_LoadFont(font_res, pt_size);
+  load(file_path, pt_size);
   _fs = st;
-}
-
-void theme::font::load(const std::string & font_res, uint32_t pt_size, const std::string str)
-{
-  font_style st;
-  if (str == std::string("blended")) st = font_style::blended;
-  if (str == std::string("solid")) st = font_style::solid;
-  load(font_res, pt_size, st);
 }
 
 void theme::font::print(texture & target,  const std::string & text, const color & c) const
@@ -47,46 +29,52 @@ void theme::font::print(texture & target,  const std::string & text, const color
 
 void theme::container_frame::load(theme * t, const std::string & frame_name)
 {
-  corner_top_left.load(t->get_theme_respath(frame_name, "corner_top_left.png"));
-  corner_top_right.load(t->get_theme_respath(frame_name, "corner_top_right.png"));
-  corner_bottom_left.load(t->get_theme_respath(frame_name, "corner_bottom_left.png"));
-  corner_bottom_right.load(t->get_theme_respath(frame_name, "corner_bottom_right.png"));
+  corner_top_left.load(t->get_frame_resource(frame_name, "corner_top_left.png"));
+  corner_top_right.load(t->get_frame_resource(frame_name, "corner_top_right.png"));
+  corner_bottom_left.load(t->get_frame_resource(frame_name, "corner_bottom_left.png"));
+  corner_bottom_right.load(t->get_frame_resource(frame_name, "corner_bottom_right.png"));
 
-  border_top.load(t->get_theme_respath(frame_name, "border_top.png"));
-  border_bottom.load(t->get_theme_respath(frame_name, "border_bottom.png"));
-  border_left.load(t->get_theme_respath(frame_name, "border_left.png"));
-  border_right.load(t->get_theme_respath(frame_name, "border_right.png"));
+  border_top.load(t->get_frame_resource(frame_name, "border_top.png"));
+  border_bottom.load(t->get_frame_resource(frame_name, "border_bottom.png"));
+  border_left.load(t->get_frame_resource(frame_name, "border_left.png"));
+  border_right.load(t->get_frame_resource(frame_name, "border_right.png"));
 }
 
 void theme::button_frame::load(theme * t, const std::string & frame_name)
 {
-  left.load(t->get_theme_respath(frame_name, "left.png"));
-  right.load(t->get_theme_respath(frame_name, "right.png"));
-  center.load(t->get_theme_respath(frame_name, "center.png"));
+  left.load(t->get_frame_resource(frame_name, "left.png"));
+  right.load(t->get_frame_resource(frame_name, "right.png"));
+  center.load(t->get_frame_resource(frame_name, "center.png"));
   // try loading optional hover
-  if (t->theme_respath_exists(frame_name, "left_hover.png")) {
-    left_hover.load(t->get_theme_respath(frame_name, "left_hover.png"));
-    right_hover.load(t->get_theme_respath(frame_name, "right_hover.png"));
-    center_hover.load(t->get_theme_respath(frame_name, "center_hover.png"));
+  if (t->frame_resource_exists(frame_name, "left_hover.png")) {
+    left_hover.load(t->get_frame_resource(frame_name, "left_hover.png"));
+    right_hover.load(t->get_frame_resource(frame_name, "right_hover.png"));
+    center_hover.load(t->get_frame_resource(frame_name, "center_hover.png"));
   }
 }
 
 void theme::push_button_frame::load(theme * t, const std::string & frame_name)
 {
-  idle.load(t->get_theme_respath(frame_name, "idle.png"));
-  hovered.load(t->get_theme_respath(frame_name, "hovered.png"));
-  if (t->theme_respath_exists(frame_name, "pressed.png")) {
-    pressed.load(t->get_theme_respath(frame_name, "pressed.png"));
+  idle.load(t->get_frame_resource(frame_name, "idle.png"));
+  hovered.load(t->get_frame_resource(frame_name, "hovered.png"));
+  if (t->frame_resource_exists(frame_name, "pressed.png")) {
+    pressed.load(t->get_frame_resource(frame_name, "pressed.png"));
   }
 }
 
-theme::theme(const std::string & res_folder):
+theme::theme(const std::string & theme_name):
   ptr_type(pointer::normal),
-  _res_root( UI_GetThemeRoot(res_folder) )
+  _name(theme_name)
 {
-  path p(_res_root);
-  p /= "theme.json";
-  _desc.load(p.string());
+  auto theme_root = filesystem::path(get_root());
+  auto theme_descriptor = theme_root / "theme.json";
+  if (!filesystem::exists(theme_descriptor) || !filesystem::is_regular_file(theme_descriptor)) {
+    SDLEx_LogError("theme::theme - invalid theme name, descriptor is missing. '%s'",
+      theme_descriptor.string().c_str());
+    throw std::exception("Invalid theme name, descriptor is missing.");
+  }
+  SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.c_str());
+  _desc.load(theme_descriptor.string());
 
   // load colors
 
@@ -96,26 +84,26 @@ theme::theme(const std::string & res_folder):
   color_text = _desc["color_text"].as<color>();
   color_toolbox = _desc["color_toolbox"].as<color>();
   font_text_norm.load(
-    _desc["font_norm"]["face"].as<std::string>(),
-    _desc["font_norm"]["size"].as<uint32_t>(),
-    _desc["font_norm"]["style"].as<std::string>() );
+    (theme_root /_desc["font_norm"]["face"].as<std::string>()).string(),
+    _desc["font_norm"]["size"].as<uint32_t>());
+  font_text_norm.set_style(_desc["font_norm"]["style"].as<std::string>());
   font_text_bold.load(
-    _desc["font_bold"]["face"].as<std::string>(),
-    _desc["font_bold"]["size"].as<uint32_t>(),
-    _desc["font_bold"]["style"].as<std::string>());
+    (theme_root /_desc["font_bold"]["face"].as<std::string>()).string(),
+    _desc["font_bold"]["size"].as<uint32_t>());
+  font_text_bold.set_style(_desc["font_bold"]["style"].as<std::string>());
   font_text_ital.load(
-    _desc["font_ital"]["face"].as<std::string>(),
-    _desc["font_ital"]["size"].as<uint32_t>(),
-    _desc["font_ital"]["style"].as<std::string>());
+    (theme_root /_desc["font_ital"]["face"].as<std::string>()).string(),
+    _desc["font_ital"]["size"].as<uint32_t>());
+  font_text_ital.set_style(_desc["font_ital"]["style"].as<std::string>());
 
   // load pointer
   if (_desc.has_key("pointer") && _desc["pointer"].is_object()) {
     char *norm = NULL, *rsz = NULL, *slt = NULL;
     _desc["pointer"].unpack("{s:s s:s s:s}", 
       "normal", &norm, "resize", &rsz, "select", &slt);
-    ptr.tx_normal.load(norm);
-    ptr.tx_resize.load(rsz);
-    ptr.tx_select.load(slt);
+    ptr.tx_normal.load( (theme_root / filesystem::path(norm)).string() );
+    ptr.tx_resize.load( (theme_root / filesystem::path(rsz)).string() );
+    ptr.tx_select.load( (theme_root / filesystem::path(slt)).string() );
     // disable SDL pointer rendering
     SDL_ShowCursor(SDL_DISABLE);
   }
@@ -131,21 +119,29 @@ theme::theme(const std::string & res_folder):
   input.load(this, "input");
 }
 
-std::string theme::get_theme_respath(const std::string & frame_name, const std::string & frame_res) const
+std::string theme::get_root() const
 {
-  path p(_res_root);
+  filesystem::path theme_root(resources::root_path());
+  theme_root /= "ui";
+  theme_root /= _name;
+  return theme_root.string();
+}
+
+std::string theme::get_frame_resource(const std::string & frame_name, const std::string & frame_res) const
+{
+  filesystem::path p(get_root());
   p /= frame_name;
   p /= frame_res;
   if (!exists(p)) {
-    SDLEx_LogError("theme:get_theme_respath - resource not found at [%s]", p.string().c_str());
+    SDLEx_LogError("theme:get_frame_resource - resource not found at [%s]", p.string().c_str());
     throw std::exception("theme: resource does not exists");
   }
   return p.string();
 }
 
-bool theme::theme_respath_exists(const std::string & frame_name, const std::string & frame_res) const
+bool theme::frame_resource_exists(const std::string & frame_name, const std::string & frame_res) const
 {
-  path p(_res_root);
+  filesystem::path p(get_root());
   p /= frame_name;
   p /= frame_res;
   return exists(p);

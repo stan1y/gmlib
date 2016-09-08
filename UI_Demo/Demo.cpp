@@ -16,11 +16,11 @@ public:
     _panel_with_buttons(NULL),
     _panel_from_json(NULL)
   {
-    _back.load("start.png");
+    _back.load(resources::find("start.png"));
 
     _panel_with_buttons = build_panel();
 
-    _panel_from_json = ui::build<ui::panel>(data("ui/demo.ui.json"));
+    _panel_from_json = ui::build<ui::panel>(resources::get_data("demo.ui.json"));
     _panel_from_json->find_child("btn_one")->mouse_down \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     _panel_from_json->find_child("btn_two")->mouse_down \

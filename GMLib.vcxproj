@@ -87,6 +87,7 @@
     <ClInclude Include="GMData.h" />
     <ClInclude Include="GMEventHandler.h" />
     <ClInclude Include="GMLib.h" />
+    <ClInclude Include="GMPython.h" />
     <ClInclude Include="GMSprites.h" />
     <ClInclude Include="GMTexture.h" />
     <ClInclude Include="GMUIBox.h" />
@@ -97,7 +98,6 @@
     <ClInclude Include="GMUITextInput.h" />
     <ClInclude Include="GMUITheme.h" />
     <ClInclude Include="GMUtil.h" />
-    <ClInclude Include="GMVersion.h" />
     <ClInclude Include="RESLib.h" />
     <ClInclude Include="GMUI.h" />
   </ItemGroup>
@@ -105,6 +105,7 @@
     <ClCompile Include="GMConfig.cpp" />
     <ClCompile Include="GMData.cpp" />
     <ClCompile Include="GMLib.cpp" />
+    <ClCompile Include="GMPython.cpp" />
     <ClCompile Include="GMTexture.cpp" />
     <ClCompile Include="GMUI.cpp" />
     <ClCompile Include="GMUIButton.cpp" />

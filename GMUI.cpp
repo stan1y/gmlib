@@ -18,7 +18,7 @@ uint32_t UI_GetUserIdle()
 namespace ui {
 
 static manager* g_manager = NULL;
-typedef uvector<control*> dead_list;
+typedef container<control*> dead_list;
 static dead_list g_graveyard;
 
 static message * g_message = NULL;
@@ -57,8 +57,8 @@ manager::manager(rect & available_rect, bool debug):
   _debug_mode(debug),
   _cur_event(NULL),
   _theme(GM_GetConfigData().get<std::string>(
-    "default_ui",     // key name
-    "ui/default" )    // default value
+    "ui_theme",    // key name
+    "default" )    // default value
   ),
   _focused_cnt(NULL),
   _hovered_cnt(NULL)
@@ -304,7 +304,7 @@ control * control::find_child(const std::string & id)
 
 void manager::pop_front(control * c)
 {
-  lock_vector(_children);
+  lock_container(_children);
   size_t idx = find_child_index(c);
   if (idx == MAXSIZE_T) {
     return;
@@ -317,7 +317,7 @@ void manager::pop_front(control * c)
 
 void manager::push_back(control * c)
 {
-  lock_vector(_children);
+  lock_container(_children);
   size_t idx = find_child_index(c);
   if (idx == MAXSIZE_T) {
     return;
@@ -404,18 +404,18 @@ theme::pointer::pointer_type manager::get_pointer_type()
 /**
   UI Message implementation
   */
-message::message(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms):
+message::message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms):
   _timeout_ms(timeout_ms),
-  control("message", texture::get_string_rect(text, f))
+  control("message", texture::get_string_rect(text, f.fnt()))
 {
   reset(text, f, c, timeout_ms);
 }
 
-void message::reset(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms)
+void message::reset(const std::string & text,  const ttf_font & f, const color & c, uint32_t timeout_ms)
 {
   _timer.stop();
   set_visible(false);
-  _tx.load_text_solid(text, f, c);
+  _tx.load_text_solid(text, f.fnt(), c);
   rect display = GM_GetDisplayRect();
 
   _pos.w = _tx.width();
@@ -458,12 +458,12 @@ void message::alert(const std::string & text, uint32_t timeout_ms)
 {
   const theme & th = UI_GetTheme();
   alert_ex(text, 
-    th.font_text_bold.ptr(), 
+    th.font_text_bold, 
     th.color_highlight, 
     timeout_ms);
 }
 
-void message::alert_ex(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms)
+void message::alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms)
 {
   g_message_mx.lock();
   if (g_message == NULL)

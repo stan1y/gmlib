@@ -8,7 +8,7 @@
   with SDL_TEXTUREACCESS_STREAMING access
   for pixel manipulations
 */
-class texture {
+class texture : public iresource {
 public:
 
   /** Texture render context
@@ -47,7 +47,7 @@ public:
   texture(SDL_Texture * tx);
   texture(int w, int h, SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
     SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
-  texture(const std::string & resource_path);
+  texture(const std::string & file_path);
   texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
   ~texture();
 
@@ -59,7 +59,7 @@ public:
     SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
 
   /* load texture from resource (see GM_LoadTexture) */
-  void load(const std::string& resource_path);
+  void load(const std::string& file_path);
   /* load texture data from surface */
   void load_surface(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
   void convert_surface(SDL_Surface * s);

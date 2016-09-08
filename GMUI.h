@@ -11,7 +11,7 @@ namespace ui {
 
 /* Forward declare control and control_list */
 class control;
-typedef uvector<control*> control_list;
+typedef container<control*> control_list;
 
 /* Define control-based event_handler */
 typedef ::event_handler<control*> event_handler;
@@ -374,15 +374,15 @@ public:
   void show();
 
   /* show global alert */
-  static void alert_ex(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
+  static void alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
   static void alert(const std::string & text, uint32_t timeout_ms);
 
 protected:
   /* use static methods to create new instances of global message alert */
-  message(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
+  message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
 
 private:
-  void reset(const std::string & text, TTF_Font * f, const color & c, uint32_t timeout_ms);
+  void reset(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
   uint32_t _timeout_ms;
   timer _timer;
   texture _tx;

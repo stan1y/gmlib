@@ -46,13 +46,13 @@ void label::set_text(const std::string& txt)
   _dirty = true;
 }
 
-void label::set_icon(const std::string& res)
+void label::set_icon(const std::string& icon_file)
 {
   if (_animating) {
     // ignore icon change during animation
     return;
   }
-  _icon_res = res;
+  _icon_file = icon_file;
   _dirty = true;
 }
 
@@ -62,7 +62,7 @@ void label::set_icon(SDL_Surface* icon)
     // ignore icon change during animation
     return;
   }
-  _icon_res.clear();
+  _icon_file.clear();
   _icon_tx.load_surface(icon, SDL_TEXTUREACCESS_STATIC, SDL_BLENDMODE_BLEND);
 }
 
@@ -72,7 +72,7 @@ void label::set_icon(SDL_Texture* icon)
     // ignore icon change during animation
     return;
   }
-  _icon_res.clear();
+  _icon_file.clear();
   _icon_tx = texture(icon);
 }
 
@@ -89,7 +89,7 @@ void label::on_hover_lost(control * target)
 void label::load(const data & d)
 {
   _text = d.get("text", "");
-  _icon_res = d.get("icon", "");
+  _icon_file = d.get("icon", "");
 
   if (d.has_key("v_align")) {
     if (d["v_align"].is_number()) {
@@ -258,8 +258,8 @@ void label::paint(SDL_Renderer * r)
   // render text, it can be empty string
   _font->print(_text_tx, _text.length() > 0 ? _text : " ", _font_color);
   // load icon as resource only if given
-  if (_icon_res.size() > 0) {
-    _icon_tx.load(_icon_res);
+  if (_icon_file.size() > 0) {
+    _icon_tx.load(_icon_file);
   }
   else {
     // assume that _icon_tx contains valid icon image

@@ -1,4 +1,5 @@
 #include "GMSprites.h"
+#include "GMUtil.h"
 
 /* helpers */
 
@@ -123,9 +124,9 @@ void sprite::render(SDL_Renderer * r, const rect & dsrc, const rect & dst) const
 */
 
 /* static list of running animations */
-uvector<anim*> anim::running = uvector<anim*>();
-static uvector<anim*> g_anim_tostop = uvector<anim*>();
-static uvector<anim*> g_anim_tostart = uvector<anim*>();
+container<anim*> anim::running = container<anim*>();
+static container<anim*> g_anim_tostop = container<anim*>();
+static container<anim*> g_anim_tostart = container<anim*>();
 
 /* init new animation item */
 
@@ -144,7 +145,7 @@ void anim::start(uint32_t repeat)
 {
     if (!is_running && from >= 0 && to >= 0 && modifier != 0 && period_ms &&
       ( (from == 0 && to == 0) || from != to) ) {
-        lock_vector(g_anim_tostart);
+        lock_container(g_anim_tostart);
         is_running = true;
         repeats = repeat;
         g_anim_tostart.push_back(this);
@@ -154,7 +155,7 @@ void anim::start(uint32_t repeat)
 void anim::stop()
 {
     if (is_running) {
-      lock_vector(g_anim_tostop);
+      lock_container(g_anim_tostop);
       is_running = false;
       if(g_anim_tostop.find(this) != g_anim_tostop.end()) {
         //already pending

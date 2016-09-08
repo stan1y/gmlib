@@ -13,7 +13,7 @@ namespace ui {
 class theme {
 private:
   data _desc;
-  std::string _res_root;
+  std::string _name;
 
 public:
 
@@ -33,24 +33,34 @@ public:
   };
 
   /* UI Theme's font cache */
-  class font {
+  class font : public ttf_font {
   public:
     typedef enum {
       solid = 0,
       blended = 1
     } font_style;
 
-    font();
-    font(const std::string & font_res, uint32_t pt_size, font_style st);
-    void load(const std::string & font_res, uint32_t pt_size, font_style st);
-    void load(const std::string & font_res, uint32_t pt_size, const std::string st);
+    font() {}
+    
+    font(const std::string & file_path, size_t pts, font_style st);
+    
     void print(texture & target, const std::string & text, const color & c) const;
-
-    TTF_Font* ptr() const { return _f; }
+    
     font_style style() const { return _fs; }
+    
+    void set_style(font_style & s) { _fs = s; }
+    
+    void set_style(const std::string & fs)
+    {
+      if (fs == "solid") {
+        _fs = font::solid;
+      }
+      if (fs == "blended") {
+        _fs = font::blended;
+      }
+    }
 
   private:
-    TTF_Font * _f;
     font_style _fs;
     texture _pointer;
     texture _pointer_resize;
@@ -120,11 +130,12 @@ public:
   pointer::pointer_type ptr_type;
 
   /* Create new frame based on resources folder */
-  theme(const std::string & res_folder);
+  theme(const std::string & theme_name);
 
   /* Get path to theme resource */
-  std::string get_theme_respath(const std::string & frame_name, const std::string & frame_res) const;
-  bool theme_respath_exists(const std::string & frame_name, const std::string & frame_res) const;
+  std::string get_root() const;
+  std::string get_frame_resource(const std::string & frame_name, const std::string & frame_res) const;
+  bool frame_resource_exists(const std::string & frame_name, const std::string & frame_res) const;
 
   /** Theme Drawing APIs */
   void draw_container_frame(const container_frame & f, SDL_Renderer * r, const rect & dst) const;

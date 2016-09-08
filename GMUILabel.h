@@ -107,7 +107,7 @@ public:
   color get_font_idle_color() { return _font_idle_color; }
 
   /* Label icon */
-  void set_icon(const std::string& res);
+  void set_icon(const std::string& icon_file);
   void set_icon(SDL_Surface* icon);
   void set_icon(SDL_Texture* icon);
   const texture & get_icon() { return _icon_tx; }
@@ -157,12 +157,13 @@ protected:
   point _icon_offset;
   uint32_t _icon_gap;
   texture _icon_tx;
+  std::string _icon_file;
+  color _icon_clr;
+  
   const theme::font * _font;
   color _font_color;
   color _font_hover_color;
   color _font_idle_color;
-  std::string _icon_res;
-  color _icon_clr;
   
   bool _dirty;
   bool _animating;

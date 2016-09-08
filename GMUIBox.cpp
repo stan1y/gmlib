@@ -101,7 +101,7 @@ void box::clear_children()
 {
   // take snapshot of childrens state under lock
   {
-    lock_vector(_children);
+    lock_container(_children);
     std::vector<control*> children_copy(_children.get());
     // iterate over copy
     control_list::iterator it = children_copy.begin();
@@ -274,7 +274,7 @@ void box::do_scroll(int dx, int dy)
 
 void box::update_children()
 {
-  lock_vector(_children);
+  lock_container(_children);
   //std::sort(_children.begin(), _children.end());
   int last_pos = _margin;
   _children_rect.w = last_pos;

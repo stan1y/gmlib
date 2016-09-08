@@ -16,9 +16,9 @@ texture::texture(SDL_Texture * tx)
   set_texture(tx);
 }
 
-texture::texture(const std::string & resource_path)
+texture::texture(const std::string & file_path)
 {
-  load(resource_path);
+  load(file_path);
 }
 
 texture::texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode)
@@ -64,13 +64,13 @@ texture::~texture()
   release();
 }
 
-void texture::load(const std::string& path)
+void texture::load(const std::string& file_path)
 {
-  _resource = path;
-  SDL_Surface* src = GM_LoadSurface(path);
+  _resource = file_path;
+  SDL_Surface* src = GM_LoadSurface(file_path);
   load_surface(src, SDL_TEXTUREACCESS_STREAMING, SDL_BLENDMODE_BLEND);
   
-  if (path.find(".png") == std::string::npos) {
+  if (file_path.find(".png") == std::string::npos) {
     uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
     uint8_t r = 0, g = 0, b = 0;
     SDL_GetRGB(pixel, src->format, &r, &g, &b);

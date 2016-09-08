@@ -2,15 +2,14 @@
 #include "GMUtil.h"
 #include "RESLib.h"
 
-json_t* GM_LoadJSON(const std::string& file)
+json_t* GM_LoadJSON(const std::string& file_path)
 {
     json_t* json_data = nullptr;
     json_error_t jerr;
-    std::string path = RES_GetFullPath(file);
-    json_data = json_load_file(path.c_str(), 0, &jerr);
+    json_data = json_load_file(file_path.c_str(), 0, &jerr);
     if (json_data == nullptr) {
         SDLEx_LogError("GM_LoadJSON: failed to load %s. %s. line: %d, column: %d, position: %d",
-          path.c_str(), jerr.text,
+          file_path.c_str(), jerr.text,
           jerr.line, jerr.column, jerr.position);
         return NULL;
     }

@@ -126,7 +126,7 @@ control * control::find_child_at(uint32_t x, uint32_t y)
 
 control * control::find_child_at(const point & at)
 {
-  lock_vector(_children);
+  lock_container(_children);
   // search children
   if (_children.size() > 0) {
     // iterate children in reverse order, because the
@@ -158,7 +158,7 @@ control_list::iterator control::find_child(control* child)
 
 void control::add_child(control* child)
 {
-  lock_vector(_children);
+  lock_container(_children);
   if (find_child(child) == _children.end()) {
     // append childen at the bottom of the list
     _children.push_back(child);
@@ -171,7 +171,7 @@ void control::add_child(control* child)
 
 void control::remove_child(control* child)
 {
-  lock_vector(_children);
+  lock_container(_children);
   control_list::iterator it = find_child(child);
   if (it != _children.end()) {
     _children.erase(it);
@@ -189,7 +189,7 @@ control * control::get_child_at_index(size_t idx)
 
 void control::insert_child(size_t idx, control * c)
 {
-  lock_vector(_children);
+  lock_container(_children);
   _children.insert(_children.begin() + idx, c);
 }
 
@@ -212,7 +212,7 @@ void control::render_debug_frame(SDL_Renderer* r, const rect & dst)
 
 void control::render(SDL_Renderer* r, const rect & dst)
 {
-  lock_vector(_children);
+  lock_container(_children);
   control_list::iterator it = _children.begin();
   
   for(; it != _children.end(); ++it) {
@@ -228,7 +228,7 @@ void control::render(SDL_Renderer* r, const rect & dst)
 
 void control::update()
 {
-  lock_vector(_children);
+  lock_container(_children);
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control * child = *it;

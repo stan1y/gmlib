@@ -1,8 +1,10 @@
 #ifndef _GM_DATA_H_
 #define _GM_DATA_H_
 
-#include "GMLib.h"
 #include <jansson.h>
+
+#include "GMLib.h"
+#include "GMUtil.h"
 
 /* Load json object from resources */
 json_t*      GM_LoadJSON(const std::string& file);
@@ -33,7 +35,7 @@ inline uint8_t jint_to_uint8(json_int_t i) {
     A JSON json_t opaque data storage for 
     structured data in files and memory.
 **/
-class data {
+class data: public iresource {
 public:
 
   bool valid() { return (_p != nullptr); }
@@ -183,12 +185,12 @@ public:
     if (!json_is_array(_p)) throw std::exception("object is not a color array");
     if (length() != 4) throw std::exception("invalid object array length for a color array");
     color c;
-    int r = 0, g = 0, b = 0, a = 0;
+    json_int_t r = 0, g = 0, b = 0, a = 0;
     unpack("[iiii]", &r, &g, &b, &a);
-    c.r = int32_to_uint8(r);
-    c.g = int32_to_uint8(g);
-    c.b = int32_to_uint8(b);
-    c.a = int32_to_uint8(a);
+    c.r = jint_to_uint8(r);
+    c.g = jint_to_uint8(g);
+    c.b = jint_to_uint8(b);
+    c.a = jint_to_uint8(a);
     return c;
   }
 
@@ -282,7 +284,7 @@ public:
       p = json_object_get(_p, key.c_str());
     }
     else {
-      std::vector < std::string> tokens = GM_StringSplit(key, '.');
+      std::vector < std::string> tokens = split_string(key, '.');
       for (size_t i = 0; i < tokens.size(); ++i) {
         p = json_object_get(p == NULL ? _p : p, tokens[i].c_str());
       }
