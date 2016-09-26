@@ -18,6 +18,8 @@ public:
     _panel_with_buttons(NULL),
     _panel_from_json(NULL)
   {
+    add_component(ui::manager::instance());
+
     _back.load(resources::find("start.png"));
 
     _panel_with_buttons = build_panel();

@@ -24,9 +24,9 @@ static color g_fps_color;
 static TTF_Font* g_fps_font;
 
 /* Screens */
+static sdl_mutex g_screen_lock;
 static screen * g_screen_current;
 static screen * g_screen_next;
-static screen * g_screen_ui;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
@@ -133,6 +133,9 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     g_frame_timer = new timer();
     g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
     
+    // init UI
+    rect display = GM_GetDisplayRect();
+    ui::manager::initialize(display);
     
     //setup screens
     if (cfg->calculate_fps()) {
@@ -140,18 +143,12 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     }
     g_screen_current = nullptr;
     g_screen_next = nullptr;
-    g_screen_ui = new screen();
-
-    // init UI
-    rect display = GM_GetDisplayRect();
-    ui::manager::initialize(display);
-    g_screen_ui->add_component(ui::manager::instance());
 
     //fps counter
     g_fps_color = color( 0, 255, 0, 255 );
     g_fps_font = GM_LoadFont(resources::find("terminus.ttf"), 12);
 
-    SDL_Log("GM_Init: done.");
+    SDL_Log("%s: ready", __METHOD_NAME__);
     return 0;
 }
 
@@ -194,36 +191,33 @@ void GM_StartFrame()
 void GM_UpdateFrame()
 {
   //update game state
-  if (g_screen_current != g_screen_current) {
-    g_screen_current = g_screen_next;
-    SDL_Log("Screen %p is now active", g_screen_current);
+  {
+    mutex_lock guard(g_screen_lock);
+    if (g_screen_current != g_screen_next) {
+      g_screen_current = g_screen_next;
+      SDL_Log("%s - screen %p is now active", 
+        __METHOD_NAME__, g_screen_current);
+    }
   }
-
-  // update running animations
-  anim::update_running();
     
   // update global & current screens
   if (g_screen_current != nullptr) {
     g_screen_current->update();  
   }
-  g_screen_ui->update();
 }
 
 void GM_RenderFrame()
 {
   // update current screen
   if (g_screen_current == NULL) {
-    SDLEx_LogError("Failed to render: no active screen");
-    throw std::exception("No active screen to update");
+    SDLEx_LogError("%s - failed to render: no active screen", 
+      __METHOD_NAME__);
+    throw std::exception("No active screen to render");
   }
   SDL_Renderer * r = GM_GetRenderer();
   
-  g_screen_current->activate();
   g_screen_current->render(r);
   
-  g_screen_ui->activate();
-  g_screen_ui->render(r);
-
   // render avg fps
   if (g_fps_timer) {
     g_fps.load_text_solid( std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())), g_fps_font, g_fps_color);
@@ -280,7 +274,8 @@ screen* screen::current()
 void screen::set_current(screen* s)
 {
   if (g_screen_current != s && g_screen_next != s) {
-        g_screen_current = s;
+      // requested screen becomes next one
+      g_screen_next = s;
     }
 }
 
