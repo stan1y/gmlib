@@ -32,7 +32,10 @@ texture::texture(const std::string & file_path):
   _pixels(nullptr),
   _pitch(0),
   _width(0),
-  _height(0)
+  _height(0),
+  _format(SDL_PIXELFORMAT_ABGR8888),
+  _access(SDL_TEXTUREACCESS_STATIC),
+  _bmode(SDL_BLENDMODE_BLEND)
 {
   load(file_path);
 }
@@ -121,7 +124,7 @@ rect texture::get_string_rect(const std::string& text, TTF_Font* font)
 void texture::convert_surface(SDL_Surface * s)
 {
   if (s == NULL) {
-    SDLEx_LogError("texture::convert_surface - NULL surface to convert");
+    SDLEx_LogError("%s - NULL surface to convert", __METHOD_NAME__);
     throw std::exception("NULL surface to convert");
   }
   SDL_Surface* converted = SDL_ConvertSurfaceFormat(s, _format, 0);
@@ -158,7 +161,8 @@ void texture::set_surface(SDL_Surface* src)
     set_texture(SDL_CreateTextureFromSurface(GM_GetRenderer(), src));
   }
   else if (_access == SDL_TEXTUREACCESS_TARGET) {
-    SDLEx_LogError("texture::load_texture - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface");
+    SDLEx_LogError("%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
+      __METHOD_NAME__);
     throw std::exception("Cannot load SDL_TEXTUREACCESS_TARGET texture from surface");
   }
 }
@@ -188,8 +192,16 @@ void texture::unlock()
 
 void texture::replace_color(const color & from, const color & to)
 {
+  if (_format != SDL_PIXELFORMAT_ABGR8888) {
+    SDLEx_LogError("%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
+      __METHOD_NAME__, _format);
+    throw std::exception("Unsupported pixel format for method");
+  }
+  // SDL_PIXELFORMAT_ABGR8888 is 8 bits long each
+  static const size_t pixel_size = 8;
+
   lock();
-  SDL_PixelFormat* fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+  SDL_PixelFormat* fmt = SDL_AllocFormat(_format);
   if (fmt == NULL)
     throw sdl_exception();
   uint32_t f = SDL_MapRGBA(fmt, from.r, from.g, from.b, from.a);
@@ -197,7 +209,7 @@ void texture::replace_color(const color & from, const color & to)
   SDL_FreeFormat(fmt);
 
   uint32_t* pixels = (uint32_t*)_pixels;
-  int pixel_count = ( _pitch / 4 ) * _height;
+  int pixel_count = ( _pitch / pixel_size ) * _height;
   for( int i = 0; i < pixel_count; ++i ) {
       if( pixels[i] == f ) {
           pixels[i] = t;

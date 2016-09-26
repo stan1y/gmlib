@@ -71,7 +71,7 @@ public:
 
   ~texture();
 
-  bool is_valid() { return (_texture != NULL); }
+  bool is_valid() const { return (_texture != NULL); }
   
   void release();
 
