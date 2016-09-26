@@ -1,3 +1,12 @@
+/* 
+ * GMLib - The GMLib library.
+ * Copyright Stanislav Yudin, 2014-2016
+ *
+ * This module implements sprites rendering via "texture" and
+ * its raw SDL_Texture representations. The module provides
+ * several classes for sprites and sprite sheets management.
+ */
+
 #ifndef _GM_SPRITES_H_
 #define _GM_SPRITES_H_
 

@@ -10,15 +10,20 @@ SDL_Surface* GM_CreateSurface(int width, int height)
   SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA8888, &bpp, &rmask, &gmask, &bmask, &amask);
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp, rmask, gmask, bmask, amask);
   if(surface == NULL) {
-    SDLEx_LogError("SDLEx_CreateSurface failed to create surface %dx%d", width, height);
-    throw std::exception(SDL_GetError());
+    SDLEx_LogError("GM_CreateSurface - failed to create surface %dx%d", width, height);
+    throw sdl_exception();
   }
   return surface;
 }
 
-SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access)
+SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access, uint32_t pixel_format)
 {
-  return SDL_CreateTexture(GM_GetRenderer(), SDL_PIXELFORMAT_RGBA8888, access, width, height);
+  SDL_Texture * tx = SDL_CreateTexture(GM_GetRenderer(), pixel_format, access, width, height);
+  if (tx == NULL) {
+    SDLEx_LogError("GM_CreateTexture - failed to create blank texture %dx%d.", width, height);
+    throw sdl_exception();
+  }
+  return tx;
 }
 
 /*

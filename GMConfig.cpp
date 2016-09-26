@@ -128,7 +128,6 @@ int config::load(const std::string& cfg_file)
    if (g_config != nullptr && g_config->_interface != nullptr) 
      return 0;
 
-    SDL_Log("config:load - loading %s", cfg_file.c_str());
     g_config = new config_private();
     g_config->load(cfg_file);
     

@@ -1,3 +1,13 @@
+/* 
+ * GMLib - The GMLib library.
+ * Copyright Stanislav Yudin, 2014-2016
+ *
+ * This header defines opaque data type used across the GMLib
+ * to represent various structured data, from config to ui and
+ * animations. The serialization is based on JSON via jansson
+ * library providing raw json_t type.
+ */
+
 #ifndef _GM_DATA_H_
 #define _GM_DATA_H_
 
@@ -93,16 +103,31 @@ public:
     return json_is_object(_p);
   }
 
-  bool has_key(const char* key) const
+  bool has_key(const std::string & key) const
   {
     if (!is_object()) throw std::exception("data is not a object");
-    json_t* j = json_object_get(_p, key);
+    json_t* j = json_object_get(_p, key.c_str());
     return (j != NULL);
   }
 
-  bool is_array() const
+  bool has_subkey(const std::string & key) const
   {
-    return json_is_array(_p);
+    if (!is_object()) throw std::exception("data is not a object");
+    std::vector<std::string> subkeys = split_string(key, '.');
+    auto ikey = subkeys.begin();
+    json_t* current = _p;
+    for(; ikey != subkeys.end(); ++ikey) {
+      current = json_object_get(current, ikey->c_str());
+      if (current == NULL) {
+        return false;
+      }
+    }
+    return (current != NULL && current != _p);
+  }
+
+  bool is_array(const size_t of_size = 0) const
+  {
+    return json_is_array(_p) && ( of_size == 0 ? true : json_array_size(_p) == of_size );
   }
 
   bool is_string() const

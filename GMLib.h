@@ -1,3 +1,11 @@
+/* 
+ * GMLib - The GMLib library.
+ * Copyright Stanislav Yudin, 2014-2016
+ *
+ * This is the main GMLib header file to be
+ * included by client applications.
+ */
+
 #ifndef GM_LIB_H
 #define GM_LIB_H
 
@@ -55,7 +63,9 @@
 
 /* create SDL resources */
 SDL_Surface* GM_CreateSurface(int width, int height);
-SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access);
+SDL_Texture* GM_CreateTexture(int width, int height, 
+                              SDL_TextureAccess access,
+                              uint32_t pixel_format);
 
 /* load SDL resource by file path */
 SDL_Surface* GM_LoadSurface(const std::string& file_path);
@@ -65,14 +75,8 @@ TTF_Font*    GM_LoadFont(const std::string& file_path, int ptsize);
 /* Resource Interface */
 struct iresource 
 {
-  // keep [optional] ref count of the resources
-  size_t refs;
-
-  iresource():refs(0) {}
+  iresource() {}
   virtual ~iresource() {}
-
-  void incref() { refs += 1; }
-  void decref() { refs -= 1; if (refs <= 0) delete this; }
 };
 
 /* Ticks Timer */
@@ -227,6 +231,7 @@ bool operator>= (rect& a, rect& b);
 class ttf_font : public iresource {
 
 protected:
+  std::string _fname;
   TTF_Font * _f;
   size_t _pts;
 
@@ -246,15 +251,25 @@ public:
       TTF_CloseFont(_f);
     _pts = pts;
     _f = GM_LoadFont(file_path, _pts);
+    _fname = file_path;
   }
 
   size_t pts() const { return _pts; }
   TTF_Font * fnt() const { return _f; }
-
-  virtual ~ttf_font() 
+  bool is_loaded() const { return (_f != nullptr); }
+  const std::string & filename() const { return _fname; }
+  virtual ~ttf_font()
   {
     if (_f != nullptr)
       TTF_CloseFont(_f);
+  }
+
+  std::string tostr()
+  {
+    std::stringstream ss;
+    ss << "font< " << _fname \
+       << ", pts=" << _pts << ">";
+    return ss.str();
   }
 };
 

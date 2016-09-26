@@ -51,20 +51,6 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         return 0;
     }
 
-    //check cfg path is ok
-    if (cfg_path.empty()) {
-      SDLEx_LogError("GM_Init: invalid config path");
-      return -1;
-    }
-    boost::filesystem::path p_path(cfg_path);
-    if (!boost::filesystem::exists(p_path)) {
-      SDLEx_LogError("GM_Init: config path does not exist");
-      return -1;
-    }
-    boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
-    config::load(abspath.string());
-    const config * cfg = GM_GetConfig();
-
     //init RND
     srand((int)time(NULL));
 
@@ -81,14 +67,31 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         SDLEx_LogError("GM_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
         return -1;;
     }
+
+    // get SDL versions
     SDL_version c_ver;
     SDL_VERSION(&c_ver);
     SDL_version l_ver;
     SDL_GetVersion(&l_ver);
-    SDL_Log("GM_Init: GMLib ver. %d.%d.%s.%d; SDL runtime ver. %d.%d.%d; complied with ver. %d.%d.%d",
-      GM_LIB_MAJOR, GM_LIB_MINOR, GM_LIB_RELESE, GM_LIB_PATCH,
-      l_ver.major, l_ver.minor, l_ver.patch,
-      c_ver.major, c_ver.minor, c_ver.patch);
+
+    printf("Starting...\n");
+    printf("GMLib        %d.%d.%s.%d\n", GM_LIB_MAJOR, GM_LIB_MINOR, GM_LIB_RELESE, GM_LIB_PATCH);
+    printf("SDL runtime  %d.%d.%d\n", l_ver.major, l_ver.minor, l_ver.patch);
+    printf("SDL compiled %d.%d.%d\n", c_ver.major, c_ver.minor, c_ver.patch);
+
+    //check cfg path is ok
+    if (cfg_path.empty()) {
+      SDLEx_LogError("GM_Init: invalid config path");
+      return -1;
+    }
+    boost::filesystem::path p_path(cfg_path);
+    if (!boost::filesystem::exists(p_path)) {
+      SDLEx_LogError("GM_Init: config path does not exist");
+      return -1;
+    }
+    boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
+    config::load(abspath.string());
+    const config * cfg = GM_GetConfig();
     
     //init SDL window & renderer
     const rect srect = cfg->screen_rect();
@@ -318,66 +321,6 @@ TTF_Font* GM_LoadFont(const std::string& file_path, int ptsize)
   return f;
 }
 
-/* File and folder helpers */
-//
-//std::string GM_GetExecutablePath()
-//{
-//  static char exe[MAX_PATH + 1];
-//  memset(exe, 0, (MAX_PATH + 1) * sizeof(char));
-//
-//#ifdef _WIN32
-//  if (GetModuleFileNameA(NULL, exe, MAX_PATH) == 0) {
-//    SDLEx_LogError("Failed to query executable path");
-//    throw std::exception("Failed to query executable path");
-//  }
-//#endif
-//
-//#ifdef _linux_
-//#endif
-//
-//  return exe;
-//}
-//
-//std::string GM_GetCurrentPath()
-//{
-//  static char cwd[MAX_PATH + 1];
-//  memset(cwd, 0, (MAX_PATH + 1) * sizeof(char));
-//#ifdef _WIN32
-//  _getcwd(cwd, MAX_PATH * sizeof(char));
-//#endif
-//
-//  return std::string(cwd);
-//}
-//
-//void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, bool recursive)
-//{
-//  GM_EnumPathEx(folder, "", files, recursive);
-//}
-//
-//template<typename Iter>
-//void EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files)
-//{
-//  Iter iter(folder), eod;
-//  for (; iter != eod; ++iter) {
-//    if ( is_regular_file(iter->path())) {
-//      if (ext.length() > 0 && iter->path().extension().string() != ext)
-//        continue;
-//      files.push_back(iter->path().string());
-//    }
-//  }
-//}
-//
-//void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive)
-//{
-//  boost::filesystem::path dir(folder);
-//  if (recursive) {
-//    EnumPathEx<boost::filesystem::recursive_directory_iterator>(folder, ext, files);
-//  }
-//  else {
-//    EnumPathEx<boost::filesystem::directory_iterator>(folder, ext, files);
-//  }
-//}
-
 /* Timer implementation */
 
 timer::timer()
@@ -524,18 +467,17 @@ void color::apply() const
 
 color color::from_string(const std::string & sclr)
 {
-  const ui::theme & th = UI_GetTheme();
-  if (sclr == std::string("front")) {
-    return th.color_front;
+  const ui::theme & th = ui::current_theme();
+  if (sclr == std::string("idle") || 
+      sclr == std::string("normal") || 
+      sclr == std::string("default")) {
+    return th.color_idle;
   }
   if (sclr == std::string("back")) {
     return th.color_back;
   }
   if (sclr == std::string("highlight")) {
     return th.color_highlight;
-  }
-  if (sclr == std::string("toolbox")) {
-    return th.color_toolbox;
   }
   if (sclr == std::string("red")) {
     return color::red();
