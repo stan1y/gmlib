@@ -1,5 +1,6 @@
 #include "GMSprites.h"
 #include "GMUtil.h"
+#include "RESLib.h"
 
 /* helpers */
 
@@ -31,7 +32,9 @@ SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access, u
   */
 
 sprites_sheet::sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_t sprite_h)
-  :texture(res)
+  :texture(GM_LoadSurface(resources::find(res)),
+           SDL_TEXTUREACCESS_STREAMING,
+           SDL_BLENDMODE_BLEND)
 {
   _cols = width() / sprite_w;
   _rows = height() / sprite_h;
