@@ -523,13 +523,8 @@ public:
   virtual ~screen() { SDL_GL_DeleteContext(_glctx); }
 
   /* Current game screen pointer */
-  static screen* current();
+  static const screen* current();
   static void set_current(screen* s);
-
-  /* Returns instance of the global screen, 
-     which can be used to components only
-  */
-  static screen * global();
 
   /* Screen Update */
   virtual void update() {

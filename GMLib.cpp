@@ -266,17 +266,18 @@ screen::screen(SDL_Window* wnd):
   SDL_AddEventWatch(GM_ScreenEventHandler, this);
 }
 
-screen* screen::current() 
+const screen* screen::current() 
 {
   return g_screen_current;
 }
 
 void screen::set_current(screen* s)
 {
+  mutex_lock guard(g_screen_lock);
   if (g_screen_current != s && g_screen_next != s) {
-      // requested screen becomes next one
-      g_screen_next = s;
-    }
+    // requested screen becomes next one
+    g_screen_next = s;
+  }
 }
 
 /* Load helpers */
