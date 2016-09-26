@@ -501,9 +501,9 @@ public:
   public:
     component(screen * s):_parent_screen(s) {}
     virtual ~component() {};
-    virtual void render(SDL_Renderer* r, screen * src) = 0;
-    virtual void update(screen * src) = 0;
-    virtual void on_event(SDL_Event* ev, screen * src) = 0;
+    virtual void render(SDL_Renderer* r) = 0;
+    virtual void update() = 0;
+    virtual void on_event(SDL_Event* ev) = 0;
     screen * get_screen() { return _parent_screen; }
 
   private:
@@ -531,7 +531,7 @@ public:
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
-      (*it)->update(this);
+      (*it)->update();
     }
   };
   
@@ -540,7 +540,7 @@ public:
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
-      (*it)->render(r, this);
+      (*it)->render(r);
     }
   };
 
@@ -549,7 +549,7 @@ public:
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
-      (*it)->on_event(ev,this);
+      (*it)->on_event(ev);
     }
   };
 

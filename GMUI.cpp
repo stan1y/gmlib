@@ -139,7 +139,7 @@ void manager::set_hovered_control(control * target)
 
 /* UI Manager Component interface */
 
-void manager::render(SDL_Renderer* r, screen * src)
+void manager::render(SDL_Renderer* r)
 {
   // call UI protocol's render
   control::render(r, get_absolute_pos());
@@ -151,7 +151,7 @@ void manager::render(SDL_Renderer* r, screen * src)
   }
 }
 
-void manager::update(screen * scr)
+void manager::update()
 {
   // count idle miliseconds
   g_usr_idle_cnt += GM_GetFrameTicks();
@@ -183,7 +183,7 @@ void manager::update(screen * scr)
   control::update();
 }
 
-void manager::on_event(SDL_Event* ev, screen * src)
+void manager::on_event(SDL_Event* ev)
 {
   mutex_lock lock(_cur_event_mx);
   _cur_event = ev;

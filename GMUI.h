@@ -257,9 +257,9 @@ public:
   const theme & get_theme() { return _theme; }
 
   /* Control overrides */
-  virtual void update(screen * src);
-  virtual void on_event(SDL_Event* ev, screen * src);
-  virtual void render(SDL_Renderer* r, screen * src);
+  virtual void update();
+  virtual void on_event(SDL_Event* ev);
+  virtual void render(SDL_Renderer* r);
 
   /* Customize string representation for the manager */
   virtual std::string tostr() const;
