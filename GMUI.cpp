@@ -77,7 +77,7 @@ void manager::destroy(control* child)
   }
 }
 
-std::string manager::tostr()
+std::string manager::tostr() const
 {
   std::stringstream ss;
   ss << "{manager " \
@@ -276,10 +276,10 @@ control* create_control(const std::string type_id, rect & pos)
   if (type_id == "lbtn") {
     return new lbtn(pos);
   }
-  if (type_id == "input") {
+  if (type_id == "text_input") {
     return new text_input(pos);
   }
-  if (type_id == "combo") {
+  if (type_id == "combo_box") {
     return new combo(pos);
   }
   return NULL;
@@ -372,7 +372,7 @@ control* manager::build(data const * ptr)
   // create instance of the class
   control * inst = create_control(class_id, pos);
   if (inst == NULL) {
-    SDLEx_LogError("manager::build() - failed to create an instance of [%s]", class_id);
+    SDLEx_LogError("manager::build() - failed to create an instance of [%s]", class_id.c_str());
     throw std::exception("failed to create an instance of the class");
   }
 

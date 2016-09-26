@@ -9,7 +9,8 @@ namespace ui {
 // regular control constructor. manager is a parent by default
 control::control(const std::string & type_name, rect pos):
   _type(type_name),
-  _visible(true), _proxy(false), _locked(false), _destroyed(false),
+  _visible(true), _proxy(false), _locked(false), 
+  _destroyed(false), _disabled(false),
   _pos(pos), _parent(NULL), _id(newid()),
   _scrolled_rect(0, 0, pos.w, pos.h)
 {
@@ -20,7 +21,8 @@ control::control(const std::string & type_name, rect pos):
 // regular control constructor. manager is a parent by default with custom ID
 control::control(const std::string & type_name, rect pos, const std::string id):
   _type(type_name),
-  _visible(true), _proxy(false), _locked(false), _destroyed(false),
+  _visible(true), _proxy(false), _locked(false), 
+  _destroyed(false), _disabled(false),
   _pos(pos), _parent(NULL), _id(id),
   _scrolled_rect(0, 0, pos.w, pos.h)
 {
@@ -31,7 +33,8 @@ control::control(const std::string & type_name, rect pos, const std::string id):
 // manager's constructor
 control::control():
   _type("ui-manager"), _id("root"), _parent(NULL), 
-  _visible(true), _proxy(false),  _destroyed(false),
+  _visible(true), _proxy(false), _locked(false), 
+  _destroyed(false), _disabled(false),
   _pos(rect(GM_GetDisplayRect())), 
   _scrolled_rect(0, 0, _pos.w, _pos.h)
 {
@@ -51,17 +54,29 @@ control::~control()
   if (UI_Debug()) SDL_Log("control::~control - destroyed id: %s", identifier().c_str());
 }
 
-std::string control::tostr()
+std::string control::tostr() const
 {
   std::stringstream ss;
-  ss << "{" << get_type_name() \
-     << " id=" << _id \
-     << ", pos=" << _pos.tostr() \
-     << ", visible=" << YES_NO(_visible) \
-     << ", proxy=" << YES_NO(_proxy) \
-     << ", destroyed=" << YES_NO(_destroyed) \
-     << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str())
-     << "}";
+  if (_destroyed)
+    ss << "{" << get_type_name() \
+       << " id=" << _id \
+       << ", !zombie}";
+  else if (_proxy)
+    if (_destroyed)
+      ss << "{" << get_type_name() \
+         << " id=" << _id \
+         << ", pos=" << _pos.tostr() \
+         << ", !proxy=yes" \
+         << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str()) \
+         << "}";
+  else
+    ss << "{" << get_type_name() \
+       << " id=" << _id \
+       << ", pos=" << _pos.tostr() \
+       << ", visible=" << YES_NO(_visible) \
+       << ", disabled=" << YES_NO(_disabled) \
+       << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str()) \
+       << "}";
   return ss.str();
 }
 
@@ -85,7 +100,7 @@ rect control::get_absolute_pos()
     rect pos = _pos + parent_rect.topleft();
     // offscreen rendered controls are affected by scrolled_rect
     // unless they are locked in position
-    if (!is_locked())
+    if (!locked())
       pos = pos - _parent->get_scrolled_rect().topleft();
     // absolute pos is a visible part of the control (within parent's rect)
     pos.clip(parent_rect);

@@ -48,10 +48,10 @@ public:
   virtual ~control();
   
   /* Returns string name of this control type */
-  std::string get_type_name() { return _type; }
+  const std::string & get_type_name() const { return _type; }
 
   /* Returns string description of this control instance */
-  virtual std::string tostr();
+  virtual std::string tostr() const;
 
   /** UI Control protocol */
   const std::string & identifier() const { return _id; }
@@ -130,8 +130,12 @@ public:
   void set_proxy(bool d) { _proxy = d; }
 
   /* Get/set position lock flag for the control */
-  bool is_locked() { return _locked; }
+  bool locked() const { return _locked; }
   void set_locked(bool s) { _locked = s; }
+
+  /* Get/set disabled state flag for the control */
+  bool disabled() const { return _disabled; }
+  void set_disabled(bool s) { _disabled = s; }
 
   /** Children Protocol */
 
@@ -166,6 +170,7 @@ protected:
   bool _proxy;
   bool _locked;
   bool _destroyed;
+  bool _disabled;
   std::string _type;
 
 private:
@@ -257,7 +262,7 @@ public:
   virtual void render(SDL_Renderer* r, screen * src);
 
   /* Customize string representation for the manager */
-  virtual std::string tostr();
+  virtual std::string tostr() const;
 
   /* Get/set debug mode for UI manager */
   bool is_debug() { return _debug_mode; }
