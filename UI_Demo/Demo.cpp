@@ -29,6 +29,15 @@ public:
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     _panel_from_json->find_child("btn_three")->mouse_down \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
+
+    ui::box * list = _panel_from_json->find_child<ui::box>("vbox_list");
+    for(int i = 0; i < 25; ++i) {
+      ui::label * lbl = new ui::label(rect(0, 0, list->pos().w, 15));
+      std::stringstream ss;
+      ss << "item-" << i;
+      lbl->set_text(ss.str());
+      list->add_child(lbl);
+    }
   }
 
   ui::panel * build_panel()
@@ -42,7 +51,7 @@ public:
     lbl->set_valign(ui::label::middle);
     lbl->set_idle_color(color::green());
     lbl->set_highlight_color(color::cyan());
-    lbl->set_text("The Label with Text");
+    lbl->set_text("The Label with text in VBox");
     pnl->add_child(lbl);
 
     auto btn = new ui::btn(rect(0, 0, 0, 40));
@@ -53,17 +62,23 @@ public:
     btn->set_text("Click Me!");
     pnl->add_child(btn);
     
-    /*btn->mouse_up += boost::bind(&demo_screen::on_btn_clickme_clicked, this, _1);
+    btn->mouse_up += boost::bind(&demo_screen::on_btn_clickme_clicked, this, _1);
     
     auto input = new ui::text_input(rect(0, 0, 200, 40));
-    pnl->add_child(input);*/
+    input->set_margin(2);
+    input->set_text("alphanum text input");
+    pnl->add_child(input);
     
-/*    auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox, ui::box::box_style::pack_end, 5);
-    btn_group->add_child(new ui::push_button(rect(), t.get_resource("pushbtn/Icons/ArrowLeft.png")));
-    btn_group->add_child(new ui::push_button(rect(), t.get_resource("pushbtn/Icons/InfoIcon.png")));
-    btn_group->add_child(new ui::push_button(rect(), t.get_resource("pushbtn/Icons/ArrowRight.png")));
+    auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox, ui::box::box_style::pack_end, 5);
+    // here we specify path to the file with icon with help of theme's relative resources path api
+    // in json, the value for "icon_idle" and others is a resource id for simplification of the declarative use
+    btn_group->add_child(new ui::push_btn(t.get_resource("pushbtn/Icons/ArrowLeft.png")));
+    auto info_btn = new ui::push_btn(t.get_resource("pushbtn/Icons/InfoIcon.png"));
+    info_btn->set_disabled(true);
+    btn_group->add_child(info_btn);
+    btn_group->add_child(new ui::push_btn(t.get_resource("pushbtn/Icons/ArrowRight.png")));
     pnl->add_child(btn_group);
-    */
+    
     return pnl;
   }
 
