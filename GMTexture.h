@@ -1,3 +1,15 @@
+/* 
+ * GMLib - The GMLib library.
+ * Copyright Stanislav Yudin, 2014-2016
+ *
+ * This module providers basic "texture" class for all
+ * needs of off-screen rendering, blitting and media
+ * representation. This is mostly based on SDL_Texture,
+ * SDL_Surface and SDL_Render* set of functions. However
+ * some features of "texture" are based on SDLEx library and
+ * SDLEx_* set of functions in it.
+ */
+
 #ifndef _GM_TEXTURE_H_
 #define _GM_TEXTURE_H_
 
@@ -44,27 +56,37 @@ public:
 
   /* Create & Initialize the texture object */
   texture();
-  texture(SDL_Texture * tx);
-  texture(int w, int h, SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
-    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
   texture(const std::string & file_path);
+  texture(SDL_Texture * tx, SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
+  texture(int w, int h, 
+    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
+    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
   texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
+
+  void blank(int w, int h, 
+    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
+    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+
   ~texture();
 
   bool is_valid() { return (_texture != NULL); }
   
   void release();
-  void blank(int w, int h, 
-    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
-    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
 
   /* load texture from resource (see GM_LoadTexture) */
   void load(const std::string& file_path);
+  
   /* load texture data from surface */
-  void load_surface(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
+  void set_surface(SDL_Surface* src);
+  
+  /* load from an external surface */
   void convert_surface(SDL_Surface * s);
+
   /* set raw texture */
   void set_texture(SDL_Texture*);
+
   /* load texture data by rendering text with font */
   void load_text_solid(const std::string& text, TTF_Font* font, const color & clr);
   void load_text_blended(const std::string& text, TTF_Font* font, const color & clr);
@@ -108,12 +130,16 @@ public:
   const std::string resource_name() const { return _resource; }
 
 private:
+
   std::string _resource;
   SDL_Texture* _texture;
   int _width;
   int _height;
   void* _pixels;
   int _pitch;
+  uint32_t _format;
+  SDL_TextureAccess _access;
+  SDL_BlendMode _bmode;
 };
 
 
