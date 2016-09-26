@@ -10,14 +10,14 @@ namespace resources
 /* item in cache */
 struct resource_descriptor 
 {
-  iresource * resource;
+  iresource const * resource;
   std::string resource_name;
   std::string resource_postfix;
   boost::filesystem::path resource_path;
 
   void init(const std::string & resource_id,
             const std::string & p = std::string(),
-            iresource * r = nullptr)
+            iresource const * r = nullptr)
   {
     resource = r;
     resource_postfix = std::string("");
@@ -34,7 +34,7 @@ struct resource_descriptor
 
   resource_descriptor(const std::string & resource_id,
                       const std::string & p = std::string(),
-                      iresource * r = nullptr)
+                      iresource const * r = nullptr)
   {
     init(resource_id, p, r);
   }
@@ -79,7 +79,7 @@ std::string root_path()
 }
 
 /* Get item from cache by path. Returns nullptr if not found */
-iresource * get(const std::string & resource)
+iresource const * get(const std::string & resource)
 {
   if (!g_cache || !g_assets_root) {
         SDLEx_LogError("resources::get_texture() - no assets root initialized");
@@ -93,9 +93,9 @@ iresource * get(const std::string & resource)
 }
 
 /* Get texture from cache by path. Returns nullptr if not found */
-const texture & get_texture(const std::string& resource)
+texture const * get_texture(const std::string& resource)
 {
-  iresource * res = get(resource);
+  iresource const * res = get(resource);
   if (res == nullptr) {
     std::string found_at = find(resource);
     if (found_at.size()) {
@@ -110,19 +110,18 @@ const texture & get_texture(const std::string& resource)
     throw std::exception("Failed to find texture");
   }
 
-  texture * tx = dynamic_cast<texture*> (res);
+  texture const * tx = dynamic_cast<texture const *> (res);
   if (tx == nullptr) {
     SDLEx_LogError("resources::get_texture - failed to cast iresource");
     throw std::exception("Failed to cast iresource");
   }
-  tx->incref();
-  return (*tx);
+  return tx;
 }
 
 /* Get data from cache by path. Returns nullptr if not found */
-const data & get_data(const std::string& resource)
+data const * get_data(const std::string& resource)
 {
-  iresource * res = get(resource);
+  iresource const * res = get(resource);
   if (res == nullptr) {
     std::string found_at = find(resource);
     if (found_at.size()) {
@@ -137,18 +136,17 @@ const data & get_data(const std::string& resource)
     throw std::exception("Failed to find texture");
   }
 
-  data * d = dynamic_cast<data*> (res);
+  data const * d = dynamic_cast<data const *> (res);
   if (d == nullptr) {
     SDLEx_LogError("resources::get_data - failed to cast iresource");
     throw std::exception("Failed to cast iresource");
   }
-  d->incref();
-  return (*d);
+  return d;
 }
 
-const ttf_font & get_font(const std::string& resource)
+ttf_font const * get_font(const std::string& resource)
 {
-  iresource * res = get(resource);
+  iresource const * res = get(resource);
   if (res == nullptr) {
     std::string found_at = find(resource);
     if (found_at.size()) {
@@ -163,13 +161,12 @@ const ttf_font & get_font(const std::string& resource)
     throw std::exception("Failed to find texture");
   }
 
-  ttf_font * f = dynamic_cast<ttf_font*> (res);
+  ttf_font const * f = dynamic_cast<ttf_font const*> (res);
   if (f == nullptr) {
     SDLEx_LogError("resources::get_font - failed to cast iresource");
     throw std::exception("Failed to cast iresource");
   }
-  f->incref();
-  return (*f);
+  return f;
 }
 
 static bool find_file(const boost::filesystem::path & directory, 
@@ -212,10 +209,10 @@ std::string find(const std::string& resource)
   return abs_path;
 }
 
-bool exists(const std::string& resource)
+bool loaded(const std::string& resource)
 {
   if (!g_cache || !g_assets_root) {
-      SDLEx_LogError("resources::exists() - no assets root initialized");
+      SDLEx_LogError("resources::loaded() - no assets root initialized");
       throw std::exception("no assets root");
   }
   return g_cache->find(resource) != g_cache->end() ? true : false;
