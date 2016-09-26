@@ -16,10 +16,12 @@ box::scrollbar::scrollbar(box * container,
                           scrollbar_type type):
   control("scrollbar", relpos),
   _type(type),
-  _container(container)
+  _container(container),
+  _color_idle(get_frame()->color_idle),
+  _color_highlight(get_frame()->color_highlight),
+  _color_back(get_frame()->color_back)
 {
-  if (_container == NULL)
-    throw std::exception("NULL container specified for scrollbar");
+  if (_container == NULL) throw std::exception("NULL container specified for scrollbar");
   _drag = cursor_drag_state::stop;
   set_type(type);
 
@@ -50,21 +52,15 @@ rect box::scrollbar::get_cursor_rect(const rect & children_rect) const
 
 void box::scrollbar::render(SDL_Renderer * r, const rect & dst)
 {
-  const theme & th = UI_GetTheme();
-
-  // draw border
-  th.color_front.apply(r);
-  SDL_RenderDrawRect(r, &dst);
-  
   // draw cursor
   rect cursor_rect = get_cursor_rect(_container->get_children_rect());
   cursor_rect += dst.topleft();
   if (_drag != cursor_drag_state::stop) {
     // drag state is active
-    th.color_highlight.apply(r);
+    _color_highlight.apply(r);
   }
   else {
-    th.color_back.apply(r);
+    _color_idle.apply(r);
   }
   SDL_RenderFillRect(r, &cursor_rect);
 
@@ -72,11 +68,13 @@ void box::scrollbar::render(SDL_Renderer * r, const rect & dst)
   rect scrollbar_rect = _pos + _container->get_absolute_pos().topleft();
   if (get_absolute_pos().collide_point(pointer)) {
     // hovered scrollbar rect -> hightlight
-    th.color_highlight.apply(r);
+    _color_highlight.apply(r);
   }
   else {
-    th.color_front.apply(r);
+    _color_idle.apply(r);
   }
+  // draw border
+  SDL_RenderDrawRect(r, &dst);
   // draw cursor border
   SDL_RenderDrawRect(r, &cursor_rect);
   

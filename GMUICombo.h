@@ -56,7 +56,7 @@ private:
   void resize_area();
   void on_hover(control * target);
   void on_hover_lost(control * target);
-  void on_focus(control * target);
+  void on_focused(control * target);
   void on_focus_lost(control * target);
   void on_item_mouseup(control * target);
 

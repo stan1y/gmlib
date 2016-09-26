@@ -387,9 +387,10 @@ void box::update_children()
   */
 
 panel::panel(rect pos, panel_style ps, box_type t, box_style s, int margin):
-  box("panel", pos, t, s, margin)
+  box("panel", pos, t, s, margin),
+  _ps(ps),
+  _color_back(get_frame()->color_back)
 {
-  set_panel_style(ps);
 }
 
 panel::~panel()
@@ -398,6 +399,15 @@ panel::~panel()
 
 void panel::load(const data & d)
 {
+  if (d.has_key("color_back")) {
+    if (d["color_back"].is_array(4)) {
+      _color_back = d["color_back"].as<color>();
+    }
+    if (d["color_back"].is_string()) {
+      _color_back = color::from_string(d["color_back"].as<std::string>());
+    }
+  }
+
   if (d.has_key("panel_style")) {
     if (d["panel_style"].is_string()) {
       std::string pstyle = d["panel_style"].as<std::string>();
@@ -413,63 +423,24 @@ void panel::load(const data & d)
     }
   }
   else {
-    // dialog by default
-    _ps = panel_style::dialog;
+    // panel is dialog by default
+    set_panel_style(panel_style::dialog);
   }
 
-  if (d.has_key("background")) {
-    if (d["background"].is_array()) {
-      _back = d["background"].as<color>();
-    }
-  }
   box::load(d);
 }
 
 void panel::render(SDL_Renderer * r, const rect & dst)
 {
-  const theme & th = UI_GetTheme();
-
   // render background
-  _back.apply(r);
+  _color_back.apply(r);
   SDL_RenderFillRect(r, &dst);
 
   // render box content
   box::render(r, dst);
 
   // render box frame
-  switch(_ps) {
-  case panel_style::dialog:
-    th.draw_container_frame(th.dialog, r, dst);
-    break;
-  case panel_style::toolbox:
-    th.draw_container_frame(th.toolbox, r, dst);
-    break;
-  case panel_style::group:
-    th.draw_container_frame(th.group, r, dst);
-    break;
-  };
-}
-
-panel::panel_style panel::get_panel_style() 
-{ 
-  return _ps;
-}
-
-void panel::set_panel_style(panel_style ps) 
-{ 
-  _ps = ps;
-  const theme & th = UI_GetTheme();
-  switch (_ps) {
-  default:
-  case panel_style::dialog:
-  case panel_style::group:
-    set_background_color(th.color_back);
-    break;
-
-  case panel_style::toolbox:
-    set_background_color(th.color_toolbox);
-    break;
-  }
+  current_theme().draw_container_frame(get_frame(), r, dst);
 }
 
 } //namespace ui

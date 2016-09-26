@@ -4,10 +4,12 @@ namespace ui {
 
 label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
-  _font(&UI_GetTheme().font_text_norm),
-  _font_idle_color(UI_GetTheme().color_text),
-  _font_hover_color(UI_GetTheme().color_text),
-  _font_color(UI_GetTheme().color_text),
+  _font_text(get_frame()->font_text),
+  _font_style(font_style::blended),
+  _color_idle(get_frame()->color_idle),
+  _color_back(get_frame()->color_back),
+  _color_highlight(get_frame()->color_highlight),
+  _hovered(false),
   _dirty(true),
   _animating(false),
   _alpha(255),
@@ -15,14 +17,18 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
 {
   hovered += boost::bind( &label::on_hovered, this, _1 );
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
+  focused += boost::bind( &label::on_focused, this, _1 );
+  focus_lost += boost::bind( &label::on_focus_lost, this, _1 );
 }
 
 label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
-  _font(&UI_GetTheme().font_text_norm),
-  _font_idle_color(UI_GetTheme().color_text),
-  _font_hover_color(UI_GetTheme().color_text),
-  _font_color(UI_GetTheme().color_text),
+  _font_text(get_frame()->font_text),
+  _font_style(font_style::blended),
+  _color_idle(get_frame()->color_idle),
+  _color_back(get_frame()->color_back),
+  _color_highlight(get_frame()->color_highlight),
+  _hovered(false),
   _dirty(true),
   _animating(false),
   _alpha(255),
@@ -30,6 +36,8 @@ label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h
 {
   hovered += boost::bind( &label::on_hovered, this, _1 );
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
+  focused += boost::bind( &label::on_focused, this, _1 );
+  focus_lost += boost::bind( &label::on_focus_lost, this, _1 );
 }
 
 label::~label()
@@ -63,7 +71,7 @@ void label::set_icon(SDL_Surface* icon)
     return;
   }
   _icon_file.clear();
-  _icon_tx.load_surface(icon, SDL_TEXTUREACCESS_STATIC, SDL_BLENDMODE_BLEND);
+  _icon_tx.convert_surface(icon);
 }
 
 void label::set_icon(SDL_Texture* icon)
@@ -78,12 +86,26 @@ void label::set_icon(SDL_Texture* icon)
 
 void label::on_hovered(control * target)
 {
-  set_font_color(_font_hover_color);
+  _hovered = true;
+  _dirty = true;
 }
 
 void label::on_hover_lost(control * target)
 {
-  set_font_color(_font_idle_color);
+  _hovered = false;
+  _dirty = true;
+}
+
+void label::on_focused(control * target)
+{
+  _focused = true;
+  _dirty = true;
+}
+
+void label::on_focus_lost(control * target)
+{
+  _focused = false;
+  _dirty = true;
 }
 
 void label::load(const data & d)
@@ -155,33 +177,46 @@ void label::load(const data & d)
     _icon_gap = d["icon_gap"].as<uint32_t>();
   }
 
-  if (d.has_key("font")) {
-    std::string sfont = d["font"].as<std::string>();
-    if (sfont == "normal") 
-      _font = &UI_GetTheme().font_text_norm;
-    if (sfont == "bold")
-      _font = &UI_GetTheme().font_text_bold;
-    if (sfont == "ital")
-      _font = &UI_GetTheme().font_text_ital;
+  if (d.has_key("font_text") && d.has_subkey("font_text.face") && d.has_subkey("font_text.size")) {
+    std::string font_style = "blended";
+    std::stringstream res_id;
+    res_id << d["font_text"]["face"].as<std::string>() \
+           << ":" \
+           << d["font_text"]["size"].as<size_t>();
+    _font_text = resources::get_font(res_id.str());
+  }
+  else {
+    // use font from theme
+    _font_text = get_frame()->font_text;
   }
 
-  if (d.has_key("font_hover_color")) {
-    if (d["font_hover_color"].is_string()) {
-      std::string sclr = d["font_hover_color"].as<std::string>();
-      _font_hover_color = color::from_string(sclr);
+  if (d.has_key("color_back")) {
+    if (d["color_back"].is_string()) {
+      std::string sclr = d["color_back"].as<std::string>();
+      _color_back = color::from_string(sclr);
     }
-    if (d["font_hover_color"].is_array()) {
-      _font_hover_color = d["font_hover_color"].as<color>();
+    if (d["color_back"].is_array()) {
+      _color_back = d["color_back"].as<color>();
     }
   }
 
-  if (d.has_key("font_idle_color")) {
-    if (d["font_idle_color"].is_string()) {
-      std::string sclr = d["font_idle_color"].as<std::string>();
-      _font_idle_color = color::from_string(sclr);
+  if (d.has_key("color_idle")) {
+    if (d["color_idle"].is_string()) {
+      std::string sclr = d["color_idle"].as<std::string>();
+      _color_idle = color::from_string(sclr);
     }
-    if (d["font_idle_color"].is_array()) {
-      _font_idle_color = d["font_idle_color"].as<color>();
+    if (d["color_idle"].is_array()) {
+      _color_idle = d["color_idle"].as<color>();
+    }
+  }
+
+  if (d.has_key("color_highlight")) {
+    if (d["color_highlight"].is_string()) {
+      std::string sclr = d["color_highlight"].as<std::string>();
+      _color_highlight = color::from_string(sclr);
+    }
+    if (d["color_highlight"].is_array()) {
+      _color_highlight = d["color_highlight"].as<color>();
     }
   }
 
@@ -254,9 +289,17 @@ void label::render(SDL_Renderer * r, const rect & dst)
 void label::paint(SDL_Renderer * r)
 {
   if (!_dirty) return;
-  const theme & th = manager::instance()->get_theme();
   // render text, it can be empty string
-  _font->print(_text_tx, _text.length() > 0 ? _text : " ", _font_color);
+  color clr = _color_idle;
+  if (_hovered) {
+    clr = _color_highlight;
+  }
+
+  if (_font_style == font_style::blended)
+    _text_tx.load_text_blended(_text.length() > 0 ? _text : " ", _font_text->fnt(), clr);
+  else
+    _text_tx.load_text_solid(_text.length() > 0 ? _text : " ", _font_text->fnt(), clr);
+
   // load icon as resource only if given
   if (_icon_file.size() > 0) {
     _icon_tx.load(_icon_file);

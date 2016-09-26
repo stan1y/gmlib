@@ -23,11 +23,15 @@ public:
     middle
   } v_align;
 
+  // this is the position of
+  // label icon if used
   typedef enum {
     icon_right,
     icon_left
   } icon_pos;
 
+  // this structure defines a padding around a controls
+  // children area
   typedef struct margin_t {
     int top;
     int left;
@@ -47,6 +51,12 @@ public:
       bottom = b; right = r;
     }
   } margin;
+
+  // the style of label's font rendering
+  typedef enum {
+    solid   = 0,
+    blended = 1
+  } font_style;
 
   /* Public constructor for labels */
   label(rect pos, 
@@ -74,47 +84,47 @@ public:
   const std::string& get_text() { return _text; }
   
   /* Label text font */
-  void set_font(const theme::font * f)
+  void set_font(ttf_font const * f)
   {
-    _font = f;
+    _font_text = f;
     _dirty = true;
   }
-  const theme::font * get_font() { return _font; }
-  
-  /* Currently used label text font color */
-  void set_font_color(const color & c)
-  {
-    _font_color = c;
-    _dirty = true;
-  }
-  color get_font_color() { return _font_color; }
+  ttf_font const * get_font() { return _font_text; }
+
+  void set_font_style(font_style s) { _font_style = s; }
+  const font_style get_font_style() { return _font_style; }
 
   /* Idle and hovered color options */
-  void set_font_hover_color(const color & c)
+  void set_highlight_color(const color & c)
   {
-    _font_hover_color = c;
-    if (this == ui::get_hovered_control())
-      set_font_color(_font_hover_color);
+    _color_highlight = c;
+    _dirty = true;
   }
-  color get_font_hover_color() { return _font_hover_color; }
+  color get_hightlight_color() { return _color_highlight; }
 
-  void set_font_idle_color(const color & c)
+  void set_idle_color(const color & c)
   {
-    _font_idle_color = c;
-    if (this != ui::get_hovered_control())
-      set_font_color(_font_idle_color);
+    _color_idle = c;
+    _dirty = true;
   }
-  color get_font_idle_color() { return _font_idle_color; }
+  color get_idle_color() { return _color_idle; }
+
+  void set_background_color(const color & c)
+  {
+    _color_back = c;
+    _dirty = true;
+  }
+  color get_background_color() { return _color_back; }
 
   /* Label icon */
   void set_icon(const std::string& icon_file);
   void set_icon(SDL_Surface* icon);
   void set_icon(SDL_Texture* icon);
   const texture & get_icon() { return _icon_tx; }
-  color get_icon_color() { return _icon_clr; }
+  color get_icon_color() { return _icon_color; }
   void set_icon_color(color & c)
   {
-    _icon_clr = c;
+    _icon_color = c;
     _dirty = true;
   }
 
@@ -128,8 +138,15 @@ public:
   const h_align get_halign() const { return _ha; }
   const v_align get_valign() const { return _va; }
 
+  const bool is_hovered() const { return _hovered; }
+  const bool is_focused() const { return _focused; }
+
   void set_halign(const h_align & ha) { _ha = ha; }
   void set_valign(const v_align & va) { _va = va; }
+
+  const theme::label_frame * get_frame() { 
+    return dynamic_cast<const theme::label_frame*>(current_theme().get_frame("label")); 
+  }
   
 protected:
   /* Private contructor for sub-classes to specify different type_name */
@@ -140,10 +157,19 @@ protected:
     h_align ha = label::left, 
     v_align va = label::top);
 
-  void paint(SDL_Renderer * r);
+  virtual void paint(SDL_Renderer * r);
 
+  /* let derived classes control the "dirty" flag */
+  void mark_dirty() { _dirty = true; }
+  const texture & get_text_texture() const { return _text_tx; }
+  const point & get_text_offset() const { return _text_offset; }
+
+private:
   void on_hovered(control * target);
   void on_hover_lost(control * target);
+
+  void on_focused(control * target);
+  void on_focus_lost(control * target);
 
   icon_pos _ip;
   margin _pad;
@@ -158,15 +184,18 @@ protected:
   uint32_t _icon_gap;
   texture _icon_tx;
   std::string _icon_file;
-  color _icon_clr;
+  color _icon_color;
   
-  const theme::font * _font;
-  color _font_color;
-  color _font_hover_color;
-  color _font_idle_color;
+  ttf_font const * _font_text;
+  font_style _font_style;
+  color _color_idle;
+  color _color_highlight;
+  color _color_back;
   
   bool _dirty;
   bool _animating;
+  bool _hovered;
+  bool _focused;
   int _alpha;
   int _alpha_step;
 };

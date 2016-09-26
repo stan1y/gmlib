@@ -14,16 +14,15 @@ class button : public label {
 public:
   virtual ~button() {}
 
+  /* toggle this button on or off */
   bool checked() { return _checked; }
   void set_checked(bool c) { _checked = c; }
-
-  void render_as(const theme & th, const theme::button_frame & f, SDL_Renderer * r, const rect & dst);
 
   virtual void load(const data &d) { label::load(d); }
 
 protected:
-  /* Private constructor for button sub-classes. 
-     No direct 'button' instances allowed'
+  /* Protected constructor for button sub-classes. 
+     No direct 'button' instances allowed this way.
   */
   button(
     const std::string & button_subtype_name,
@@ -33,6 +32,23 @@ protected:
     h_align ha = label::left, 
     v_align va = label::top);
 
+  /* get button's frame by it's type */
+  const theme::button_frame * get_btn_frame() { 
+    auto f = current_theme().get_frame(get_type_name());
+    auto cf = dynamic_cast<const theme::button_frame*>(f); 
+    return cf;
+  }
+
+  virtual void render(SDL_Renderer * r, const rect & dst)
+  {
+    // render button frame & back
+    current_theme().draw_button_frame(get_btn_frame(), r, dst);
+  
+    // render label contents on top
+    label::render(r, dst);
+  }
+
+  /* button can be togged on/off */
   bool _checked;
 };
 
@@ -49,15 +65,9 @@ public:
     v_align va = label::top):
   button("btn", pos, pad, ip, ha, va)
   {
-    set_font(&UI_GetTheme().font_text_bold);
-    set_font_idle_color(UI_GetTheme().color_front);
-    set_font_hover_color(UI_GetTheme().color_highlight);
-  }
-
-  virtual void render(SDL_Renderer * r, const rect & dst)
-  {
-    const theme & th = UI_GetTheme();
-    render_as(th, th.btn, r, dst);
+    set_font(get_btn_frame()->font_text);
+    set_idle_color(get_btn_frame()->color_text_idle);
+    set_highlight_color(get_btn_frame()->color_text_highlight);
   }
 };
 
@@ -74,15 +84,33 @@ public:
     v_align va = label::top):
   button("sbtn", pos, pad, ip, ha, va)
   {
-    set_font(&UI_GetTheme().font_text_norm);
-    set_font_idle_color(UI_GetTheme().color_front);
-    set_font_hover_color(UI_GetTheme().color_highlight);
+    set_font(get_btn_frame()->font_text);
+    set_idle_color(get_btn_frame()->color_text_idle);
+    set_highlight_color(get_btn_frame()->color_text_highlight);
   }
+};
 
-  virtual void render(SDL_Renderer * r, const rect & dst)
-  {
-    const theme & th = UI_GetTheme();
-    render_as(th, th.sbtn, r, dst);
+class shape {
+public:
+  typedef enum {
+    rectangle = 1,
+    rounded   = 2,
+    prism     = 3
+  } shape_type;
+
+  static void render(SDL_Renderer * r, const rect & dst, shape_type stype) {
+    switch(stype) {
+      case shape::rectangle:
+      default:
+        SDL_RenderDrawRect(r, &dst);
+        break;
+      case shape::rounded:
+        SDLEx_RenderDrawRoundedRect(r,
+          dst.x, dst.y, dst.x + dst.w, dst.y + dst.h, 3);
+        break;
+      case shape::prism:
+        break;
+    }
   }
 };
 
@@ -92,11 +120,7 @@ public:
 */
 class lbtn : public button {
 public:
-  typedef enum {
-    rectangle = 1,
-    rounded   = 2,
-    prism     = 3
-  } btn_style;
+  
 
   lbtn(rect pos, 
     margin pad = margin_t(),
@@ -105,36 +129,34 @@ public:
     v_align va = label::top):
   button("lbtn", pos, pad, ip, ha, va)
   {
-    set_font(&UI_GetTheme().font_text_norm);
-    set_font_idle_color(UI_GetTheme().color_front);
-    set_font_hover_color(UI_GetTheme().color_toolbox);
+    set_font(get_btn_frame()->font_text);
+    set_idle_color(get_btn_frame()->color_idle);
+    set_highlight_color(get_btn_frame()->color_highlight);
   }
 
-  void set_btn_style(btn_style s) { _btn_style = s; }
-  btn_style get_btn_style() { return _btn_style; }
+  const theme::label_frame * get_btn_frame() { 
+    return dynamic_cast<const theme::label_frame*>(current_theme().get_frame("lbtn")); 
+  }
+
+  void set_btn_shape(shape::shape_type s) { _btn_shape = s; }
+  shape::shape_type get_btn_shape() { return _btn_shape; }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
-    get_font_color().apply(r);
-    switch(_btn_style) {
-      case lbtn::rectangle:
-      default:
-        SDL_RenderDrawRect(r, &dst);
-        break;
-      case lbtn::rounded:
-        SDLEx_RenderDrawRoundedRect(r,
-          dst.x, dst.y, dst.x + dst.w, dst.y + dst.h, 3);
-        break;
-      case lbtn::prism:
-        break;
+    if (is_hovered()) {
+      get_hightlight_color().apply(r);
     }
+    else {
+      get_idle_color().apply(r);
+    }
+    shape::render(r, dst, _btn_shape);
     label::render(r, dst);
   }
 
   virtual void load(const data &);
 
 private:
-  btn_style _btn_style;
+  shape::shape_type _btn_shape;
 };
 
 }; //namespace ui

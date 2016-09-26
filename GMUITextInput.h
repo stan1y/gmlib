@@ -2,6 +2,7 @@
 #define _GM_UI_INPUT_H_
 
 #include "GMUILabel.h"
+#include "GMUIButton.h"
 
 namespace ui {
 
@@ -60,13 +61,14 @@ protected:
   void erase_at(size_t c);
   void insert_at(size_t c, const std::string & val);
   std::string translate_sym(const uint8_t * kbdstate, const SDL_Keycode & sym);
-  void on_focus(control * target);
+  void on_focused(control * target);
   void on_focus_lost(control * target);
   void on_kbd_up(control * target);
 
   bool _readonly;
   bool _draw_frame;
 
+  shape::shape_type _inp_shape;
   size_t _cursor;
   input_validation _valid;
   uint8_t _cursor_alpha;

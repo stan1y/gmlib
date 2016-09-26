@@ -9,16 +9,16 @@ combo::combo(rect pos,
             icon_pos ip,
             h_align ha, 
             v_align va):
-  text_input(pos, valid, pad, ip, ha, va),
+  text_input("combo", pos, valid, pad, ip, ha, va),
   _area_maxlen(area_maxlen),
   _expand_on_hover(false),
-  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), UI_GetTheme().color_back ))
+  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_frame()->color_back))
 { 
   _area->set_identifier( identifier() + std::string("_area") );
   _area->set_visible(false);
   set_readonly(true);
   
-  focus += boost::bind(&combo::on_focus, this, _1);
+  focused += boost::bind(&combo::on_focused, this, _1);
   focus_lost += boost::bind(&combo::on_focus_lost, this, _1);
   hovered += boost::bind(&combo::on_hover, this, _1);
   hover_lost += boost::bind(&combo::on_hover_lost, this, _1);
@@ -41,7 +41,8 @@ label * combo::get_item(size_t item)
 void combo::resize_area()
 {
   control_list::const_iterator it = _area->children().begin();
-  int area_len = _pad.top + _pad.bottom;
+  margin & pad = get_margin();
+  int area_len = pad.top + pad.bottom;
   for(; it != _area->children().end(); ++it) {
     area_len += (*it)->pos().h;
   }
@@ -63,7 +64,7 @@ size_t combo::add_item(const std::string & text, margin pad, h_align ha, v_align
   label * lbl = new label(rect(0, 0, _pos.w, 20), pad, icon_left, ha, va);
   lbl->set_text(text);
   lbl->set_font(get_font());
-  lbl->set_font_color(get_font_color());
+  lbl->set_idle_color(get_idle_color());
   lbl->mouse_up += boost::bind(&combo::on_item_mouseup, this, _1);
   
   _area->add_child(lbl);
@@ -142,7 +143,7 @@ void combo::on_hover_lost(control * target)
   }
 }
 
-void combo::on_focus(control * target)
+void combo::on_focused(control * target)
 {
   if (!_expand_on_hover) {
     rect abs_pos = get_absolute_pos();

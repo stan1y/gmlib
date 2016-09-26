@@ -63,7 +63,16 @@ public:
     virtual void render(SDL_Renderer * r, const rect & dst);
     virtual void update();
 
+    const theme::label_frame * get_frame()
+    {
+      return dynamic_cast<const theme::label_frame*> (current_theme().get_frame("scrollbar"));
+    }
+
   private:
+    color _color_idle;
+    color _color_back;
+    color _color_highlight;
+
     // scrollbar event handlers
     void on_mouse_up(control * target);
     void on_mouse_down(control * target);
@@ -161,26 +170,49 @@ protected:
 class panel: public box {
 public:
   typedef enum {
-    dialog  = 1,
+    dialog   = 1,
     toolbox = 2,
-    group   = 3
+    group   = 3,
+    window  = 4
   } panel_style;
 
   panel(rect pos, panel_style ps = panel_style::dialog, box_type t = box::vbox, box_style s = box::no_style, int margin = 0);
   virtual ~panel();
 
-  panel_style get_panel_style();
-  void set_panel_style(panel_style ps);
-
-  color get_background_color() { return _back; }
-  void set_background_color(const color & c) { _back = c; }
+  color get_background_color() { return _color_back; }
+  void set_background_color(const color & c) { _color_back = c; }
 
   virtual void render(SDL_Renderer* r, const rect & dst);
   virtual void load(const data &);
 
+  const theme::container_frame * get_frame() {
+    switch (_ps) {
+      case panel_style::dialog:
+        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("dialog")); 
+      case panel_style::group:
+        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("group")); 
+      case panel_style::toolbox:
+        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("toolbox")); 
+      case panel_style::window:
+        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("window"));
+      default:
+        SDLEx_LogError("panel::get_frame - unknown panel style %d", _ps);
+        throw std::exception("Uknown panel style");
+        break;
+    };
+    
+  }
+
+  const panel::panel_style panel::get_panel_style() const { return _ps; }
+  void panel::set_panel_style(const panel_style & ps)
+  { 
+    _ps = ps; 
+    set_background_color(get_frame()->color_back);
+  }
+
 private:
   panel_style _ps;
-  color _back;
+  color _color_back;
 };
 
 }; //namespace ui

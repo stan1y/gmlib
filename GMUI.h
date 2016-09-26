@@ -30,7 +30,7 @@ public:
   event_handler selection_change;
   event_handler hovered;
   event_handler hover_lost;
-  event_handler focus;
+  event_handler focused;
   event_handler focus_lost;
   event_handler mouse_move;
   event_handler mouse_wheel;
@@ -240,7 +240,7 @@ public:
 
   /** Construct new control assuming data is an object for
      a top-level parent control of the whole data object */
-  control* build(const data &);
+  control* build(data const *);
 
   /** Puts direct child at the end of the rendering order */
   void pop_front(control * c);
@@ -308,7 +308,7 @@ static void destroy(control * cnt)
 
 // T* ui::build<T>(const data &)
 // template shortcut to manager's build method
-template<class T> T * build(const data & d) 
+template<class T> T * build(data const * d) 
 {
   return dynamic_cast<T *>( manager::instance()->build(d) );
 }
@@ -355,6 +355,10 @@ static theme::pointer::pointer_type get_pointer_type()
   return manager::instance()->get_pointer_type();
 }
 
+static const theme & current_theme()
+{
+  return ui::manager::instance()->get_theme();
+}
 
 /*
  * Core Controls 
@@ -374,17 +378,18 @@ public:
   void show();
 
   /* show global alert */
-  static void alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  static void alert_ex(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms);
   static void alert(const std::string & text, uint32_t timeout_ms);
 
 protected:
   /* use static methods to create new instances of global message alert */
-  message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  message(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms);
 
 private:
-  void reset(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  void reset(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms);
   uint32_t _timeout_ms;
   timer _timer;
+  std::string _text;
   texture _tx;
 };
 
@@ -395,11 +400,6 @@ private:
  * Utils
  */
 
-
-/** Return abs path to resources folder for theme */
-std::string UI_GetThemeRoot(const std::string & theme_path);
-inline ui::manager * UI_GetManager() { return ui::manager::instance(); }
-inline const ui::theme & UI_GetTheme() { return ui::manager::instance()->get_theme(); }
 
 /* Get miliseconds since last user input (kbd, mouse, touch) */
 uint32_t UI_GetUserIdle();

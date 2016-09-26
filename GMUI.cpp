@@ -105,7 +105,7 @@ void manager::set_focused_control(control * target)
 #ifdef UI_DEBUG_HOVER
     SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
 #endif
-    _focused_cnt->focus(_focused_cnt);
+    _focused_cnt->focused(_focused_cnt);
   }
 }
 
@@ -327,8 +327,10 @@ void manager::push_back(control * c)
   _children[idx] = tmp;
 }
 
-control* manager::build(const data & d)
+control* manager::build(data const * ptr)
 {
+  const data & d = *ptr;
+
   if (!d.is_object()) {
     SDLEx_LogError("manager::build - given data is not a json object");
     throw std::exception("given data is not a json object");
@@ -383,7 +385,7 @@ control* manager::build(const data & d)
     if (children.is_array()) {
       size_t len = children.length();
       for(size_t i = 0; i < len; ++i) {
-        inst->add_child(build(children[i]));
+        inst->add_child(build(&children[i]));
       }
     }
   }
@@ -404,18 +406,19 @@ theme::pointer::pointer_type manager::get_pointer_type()
 /**
   UI Message implementation
   */
-message::message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms):
+message::message(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms):
   _timeout_ms(timeout_ms),
-  control("message", texture::get_string_rect(text, f.fnt()))
+  control("message", texture::get_string_rect(text, f->fnt()))
 {
   reset(text, f, c, timeout_ms);
 }
 
-void message::reset(const std::string & text,  const ttf_font & f, const color & c, uint32_t timeout_ms)
+void message::reset(const std::string & text,  ttf_font const * f, const color & c, uint32_t timeout_ms)
 {
   _timer.stop();
   set_visible(false);
-  _tx.load_text_solid(text, f.fnt(), c);
+  _text = text;
+  _tx.load_text_solid(_text, f->fnt(), c);
   rect display = GM_GetDisplayRect();
 
   _pos.w = _tx.width();
@@ -437,7 +440,7 @@ void message::update()
   uint32_t depleted = ticked / 10;
   if (depleted >= 255) {
     _timer.stop();
-    SDL_Log("message::update() - self-destruct");
+    SDL_Log("message::update() - self-destruct msg \"%s\"", _text.c_str());
     //self-destruct when alpha depleted
     ui::destroy(this);
     g_message = NULL;
@@ -452,18 +455,18 @@ void message::show()
 {
   set_visible(true);
   _timer.start();
+  SDL_Log("message::show() - show message with text \"%s\" at %s", _text.c_str(), _pos.tostr().c_str());
 }
 
 void message::alert(const std::string & text, uint32_t timeout_ms)
 {
-  const theme & th = UI_GetTheme();
   alert_ex(text, 
-    th.font_text_bold, 
-    th.color_highlight, 
+    current_theme().font_text, 
+    current_theme().color_highlight,
     timeout_ms);
 }
 
-void message::alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms)
+void message::alert_ex(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms)
 {
   g_message_mx.lock();
   if (g_message == NULL)

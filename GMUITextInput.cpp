@@ -9,8 +9,9 @@ text_input::text_input(rect pos,
                        icon_pos ip,
                        h_align ha, 
                        v_align va):
-label(pos, pad, ip, ha, va),
+label("input", pos, pad, ip, ha, va),
   _valid(valid),
+  _inp_shape(shape::rectangle),
   _cursor(0),
   _cursor_alpha(255),
   _blink_phase(-1),
@@ -19,7 +20,7 @@ label(pos, pad, ip, ha, va),
   _timer()
 {
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
-  focus += boost::bind(&text_input::on_focus, this, _1);
+  focused += boost::bind(&text_input::on_focused, this, _1);
 }
 
 text_input::text_input(const std::string & type_name, 
@@ -39,7 +40,7 @@ label(type_name, pos, pad, ip, ha, va),
   _timer()
 {
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
-  focus += boost::bind(&text_input::on_focus, this, _1);
+  focused += boost::bind(&text_input::on_focused, this, _1);
 }
 
 text_input::~text_input()
@@ -126,7 +127,7 @@ void text_input::on_kbd_up(control * target)
     set_cursor(0);
     break;
   case SDLK_END:
-    set_cursor(_text.length());
+    set_cursor(get_text().length());
     break;
   case SDLK_DELETE:
     erase_at(_cursor);
@@ -137,12 +138,12 @@ void text_input::on_kbd_up(control * target)
   };
 }
 
-void text_input::on_focus(control * target)
+void text_input::on_focused(control * target)
 {
   if (_readonly)
     return;
 
-  set_cursor(_text.length());
+  set_cursor(get_text().length());
 }
 
 void text_input::on_focus_lost(control * target)
@@ -201,38 +202,39 @@ void text_input::set_cursor(size_t c)
 {
   if (c < 0)
     c = 0;
-  if (c > _text.length())
-    c = _text.length();
+  if (c > get_text().length())
+    c = get_text().length();
 
   _cursor = c;
 }
 
 void text_input::erase_at(size_t c)
 {
+  const std::string & txt = get_text();
   std::stringstream ss;
-  std::string before = _text.substr(0, c);
+  std::string before = txt.substr(0, c);
   ss << before;
-  int chars_left = _text.length() - c - 1;
+  int chars_left = txt.length() - c - 1;
   if (chars_left > 0) {
-    std::string after = _text.substr(c + 1, int32_to_uint32(chars_left));
+    std::string after = txt.substr(c + 1, int32_to_uint32(chars_left));
     ss << after;
   }
-  _text = ss.str();
-  if (_cursor > _text.length())
-    _cursor = _text.length();
-  _dirty = true;
+  set_text(ss.str());
+  if (_cursor > txt.length())
+    _cursor = txt.length();
+  mark_dirty();
 }
 
 void text_input::insert_at(size_t c, const std::string & val)
 {
-  std::string before = _text.substr(0, c);
-  std::string after = _text.substr(c, _text.length() - c);
+  const std::string & txt = get_text();
+  std::string before = txt.substr(0, c);
+  std::string after = txt.substr(c, txt.length() - c);
   std::stringstream ss;
   ss << before;
   ss << val;
   ss << after;
-  _text = ss.str();
-  _dirty = true;
+  set_text(ss.str());
 }
 
 // render text & cursor
@@ -240,8 +242,14 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
 {
   if (_draw_frame) {
     // draw input frame
-    const theme & th = UI_GetTheme();
-    th.draw_button_frame(th.input, r, dst);
+    if (is_hovered()) {
+      get_hightlight_color().apply(r);
+    }
+    else {
+      get_idle_color().apply(r);
+    }
+    shape::render(r, dst, _inp_shape);
+    label::render(r, dst);
   }
   // debug blue frame for text input rect
   if (UI_Debug() && \
@@ -258,18 +266,18 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
   // cursor
   if (!_readonly && manager::instance()->get_focused_control() == this) {
     point cur = get_cursor_pos(dst) + dst.topleft();
-    color clr(UI_GetTheme().color_highlight);
+    color clr(get_hightlight_color());
     clr.a = _cursor_alpha;
     clr.apply(r);
-    SDL_RenderDrawLine(r, cur.x, cur.y, cur.x, cur.y + _text_tx.height());
+    SDL_RenderDrawLine(r, cur.x, cur.y, cur.x, cur.y + get_text_texture().height());
   }
 }
 
 point text_input::get_cursor_pos(const rect & dst)
 {
-  std::string sub = _text.substr(0, _cursor);
-  rect txt_rect = texture::get_string_rect(sub, _font->fnt());
-  return point (_text_offset.x + txt_rect.w, _text_offset.y);
+  std::string sub = get_text().substr(0, _cursor);
+  rect txt_rect = texture::get_string_rect(sub, get_font()->fnt());
+  return point (get_text_offset().x + txt_rect.w, get_text_offset().y);
 }
 
 }; //namespace ui

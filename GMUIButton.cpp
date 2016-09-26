@@ -6,15 +6,8 @@ button::button(const std::string & button_subtype_name, rect pos, margin pad, ic
   label(button_subtype_name, pos, pad, ip, ha, va),
   _checked(false)
 {
-  set_font_hover_color(UI_GetTheme().color_highlight); 
-}
-
-void button::render_as(const theme & th, const theme::button_frame & f, SDL_Renderer * r, const rect & dst)
-{
-  // render button frame & back
-  th.draw_button_frame(f, r, dst);
-  // render label contents on top
-  label::render(r, dst);
+  // no styles setup in base button class
+  // everything should be done by derived classes
 }
 
 void lbtn::load(const data &d) 
@@ -22,26 +15,26 @@ void lbtn::load(const data &d)
   button::load(d);
 
   // lbtn has several styles of renderering
-  if (d.has_key("btn_style")) {
-    if (d["btn_style"].is_number()) {
-      lbtn::btn_style s = (lbtn::btn_style)d["btn_style"].as<int>();
-      set_btn_style(s);
+  if (d.has_key("btn_shape")) {
+    if (d["btn_shape"].is_number()) {
+      shape::shape_type s = (shape::shape_type)d["btn_shape"].as<int>();
+      set_btn_shape(s);
     }
-    if (d["btn_style"].is_string()) {
-      std::string s = d["btn_style"].as<std::string>();
+    if (d["btn_shape"].is_string()) {
+      std::string s = d["btn_shape"].as<std::string>();
       if (s == "rectangle") {
-        set_btn_style(lbtn::rectangle);
+        set_btn_shape(shape::rectangle);
       }
-      if (s == "roundede") {
-        set_btn_style(lbtn::rounded);
+      if (s == "rounded") {
+        set_btn_shape(shape::rounded);
       }
       if (s == "prism") {
-        set_btn_style(lbtn::prism);
+        set_btn_shape(shape::prism);
       }
     }
   }
   else {
-    set_btn_style(lbtn::rectangle);
+    set_btn_shape(shape::rectangle);
   }
 }
 
