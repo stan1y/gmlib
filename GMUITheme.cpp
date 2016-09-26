@@ -5,30 +5,69 @@
 #include <boost/filesystem.hpp>
 using namespace boost;
 
-std::string UI_GetThemeRoot(const std::string & theme_path)
-{
-  filesystem::path root(resources::root_path());
-  std::string t(theme_path);
-  root /= t;
-  return root.string();
-}
-
 namespace ui {
 
-theme::font::font(const std::string & file_path, size_t pt_size, font_style st)
+/** Frames Implementation **/
+
+theme::label_frame::label_frame(theme * t, const std::string & frame_name):
+  base_frame(frame_name),
+  font_text(t->font_text)
 {
-  load(file_path, pt_size);
-  _fs = st;
+  if (!t->get_data().has_key(frame_name)) {
+    SDLEx_LogError("label_frame::label_frame - failed to find frame with name \"%s\"", frame_name.c_str());
+    throw std::exception("Failed to find label frame");
+  }
+
+  const data & frame_data = t->get_data()[frame_name];
+
+  // load label frame colors
+  if (frame_data.has_key("color_back")) {
+    color_back = frame_data["color_back"].as<color>();
+  }
+  else {
+    color_back = t->color_back;
+  }
+  if (frame_data.has_key("color_idle")) {
+    color_idle = frame_data["color_idle"].as<color>();
+  }
+  else {
+    color_idle = t->color_idle;
+  }
+  if (frame_data.has_key("color_highlight")) {
+    color_highlight = frame_data["color_highlight"].as<color>();
+  }
+  else {
+    color_highlight = t->color_highlight;
+  }
+  // load frame font
+  if (frame_data.has_key("font_text") && frame_data.has_subkey("font_text.face") && frame_data.has_subkey("font_text.size")) {
+    font_text = new ttf_font(t->get_frame_resource(frame_name, frame_data["font_text.face"].as<std::string>()),
+                                frame_data["font_text.size"].as<size_t>());
+  }
+  else {
+    // use default font
+    font_text = t->font_text;
+  }
 }
 
-void theme::font::print(texture & target,  const std::string & text, const color & c) const
+theme::container_frame::container_frame(theme * t, const std::string & frame_name):base_frame(frame_name)
 {
-  if (_fs == font_style::solid) target.load_text_solid(text, _f, c);
-  if (_fs == font_style::blended) target.load_text_blended(text, _f, c);
-}
+  if (!t->get_data().has_key(frame_name)) {
+    SDLEx_LogError("container_frame::container_frame - failed to find frame with name \"%s\"", frame_name.c_str());
+    throw std::exception("Failed to find container frame");
+  }
 
-void theme::container_frame::load(theme * t, const std::string & frame_name)
-{
+  const data & frame_data = t->get_data()[frame_name];
+
+  // load container background
+  if (frame_data.has_key("color_back")) {
+    color_back = frame_data["color_back"].as<color>();
+  }
+  else {
+    color_back = t->color_back;
+  }
+
+  // load container borders & corners
   corner_top_left.load(t->get_frame_resource(frame_name, "corner_top_left.png"));
   corner_top_right.load(t->get_frame_resource(frame_name, "corner_top_right.png"));
   corner_bottom_left.load(t->get_frame_resource(frame_name, "corner_bottom_left.png"));
@@ -40,61 +79,127 @@ void theme::container_frame::load(theme * t, const std::string & frame_name)
   border_right.load(t->get_frame_resource(frame_name, "border_right.png"));
 }
 
-void theme::button_frame::load(theme * t, const std::string & frame_name)
+theme::button_frame::button_frame(theme * t, const std::string & frame_name):base_frame(frame_name)
 {
+  if (!t->get_data().has_key(frame_name)) {
+    SDLEx_LogError("label_frame::label_frame - failed to find frame with name \"%s\"", frame_name.c_str());
+    throw std::exception("Failed to find label frame");
+  }
+
+  const data & frame_data = t->get_data()[frame_name];
+
+  // load button's frame sprites
   left.load(t->get_frame_resource(frame_name, "left.png"));
   right.load(t->get_frame_resource(frame_name, "right.png"));
   center.load(t->get_frame_resource(frame_name, "center.png"));
-  // try loading optional hover
+  
+  // try loading optional hovered sprites
   if (t->frame_resource_exists(frame_name, "left_hover.png")) {
     left_hover.load(t->get_frame_resource(frame_name, "left_hover.png"));
     right_hover.load(t->get_frame_resource(frame_name, "right_hover.png"));
     center_hover.load(t->get_frame_resource(frame_name, "center_hover.png"));
   }
+
+  // load button text colors
+  if (frame_data.has_key("color_idle")) {
+    color_text_idle = frame_data["color_idle"].as<color>();
+  }
+  else {
+    color_text_idle = t->color_idle;
+  }
+  if (frame_data.has_key("color_highlight")) {
+    color_text_highlight = frame_data["color_highlight"].as<color>();
+  }
+  else {
+    color_text_highlight = t->color_highlight;
+  }
+
+  // load button font
+  if (frame_data.has_key("font_text") && frame_data.has_subkey("font_text.face") && frame_data.has_subkey("font_text.size")) {
+    font_text = new ttf_font(t->get_frame_resource(frame_name, frame_data["font_text"]["face"].as<std::string>()),
+                             frame_data["font_text"]["size"].as<int>());
+    
+  }
+  else {
+    // use default font from the theme
+    font_text = t->font_text;
+  }
+
+
 }
 
-void theme::push_button_frame::load(theme * t, const std::string & frame_name)
+theme::push_button_frame::push_button_frame(theme * t, const std::string & frame_name):base_frame(frame_name)
 {
   idle.load(t->get_frame_resource(frame_name, "idle.png"));
-  hovered.load(t->get_frame_resource(frame_name, "hovered.png"));
-  if (t->frame_resource_exists(frame_name, "pressed.png")) {
-    pressed.load(t->get_frame_resource(frame_name, "pressed.png"));
+  selected.load(t->get_frame_resource(frame_name, "selected.png"));
+  disabled.load(t->get_frame_resource(frame_name, "disabled.png"));
+  if (t->frame_resource_exists(frame_name, "hovered.png")) {
+    hovered.load(t->get_frame_resource(frame_name, "hovered.png"));
   }
+}
+
+const data & theme::get_data() const
+{
+  return _desc;
 }
 
 theme::theme(const std::string & theme_name):
   ptr_type(pointer::normal),
   _name(theme_name)
 {
-  auto theme_root = filesystem::path(get_root());
-  auto theme_descriptor = theme_root / "theme.json";
+  filesystem::path theme_root = filesystem::path(get_root());
+  filesystem::path theme_descriptor = theme_root / "theme.json";
   if (!filesystem::exists(theme_descriptor) || !filesystem::is_regular_file(theme_descriptor)) {
     SDLEx_LogError("theme::theme - invalid theme name, descriptor is missing. '%s'",
       theme_descriptor.string().c_str());
     throw std::exception("Invalid theme name, descriptor is missing.");
   }
-  SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.c_str());
+  SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.string().c_str());
   _desc.load(theme_descriptor.string());
 
-  // load colors
+  // load common default colors
+  if (_desc.has_key("color_back")) {
+    color_back = _desc["color_back"].as<color>();
+  }
+  else {
+    color_back = color(127, 127, 127, 255);
+  }
+  if (_desc.has_key("color_idle")) {
+    color_idle = _desc["color_idle"].as<color>();
+  }
+  else {
+    color_idle = color(0, 0, 0, 255);
+  }
+  if (_desc.has_key("color_highlight")) {
+    color_highlight = _desc["color_highlight"].as<color>();
+  }
+  else {
+    color_highlight = color::magenta();
+  }
+  // load common default font
+  if (_desc.has_key("font_text") && _desc.has_subkey("font_text.face") && _desc.has_subkey("font_text.size")) {
+    font_text = new ttf_font(get_resource(_desc["font_text"]["face"].as<std::string>()),
+                   _desc["font_text"]["size"].as<int>());
+    
+  }
+  else {
+    font_text = new ttf_font("terminus.ttf", 14);
+  }
 
-  color_front = _desc["color_front"].as<color>();
-  color_back = _desc["color_back"].as<color>();
-  color_highlight = _desc["color_highlight"].as<color>();
-  color_text = _desc["color_text"].as<color>();
-  color_toolbox = _desc["color_toolbox"].as<color>();
-  font_text_norm.load(
-    (theme_root /_desc["font_norm"]["face"].as<std::string>()).string(),
-    _desc["font_norm"]["size"].as<uint32_t>());
-  font_text_norm.set_style(_desc["font_norm"]["style"].as<std::string>());
-  font_text_bold.load(
-    (theme_root /_desc["font_bold"]["face"].as<std::string>()).string(),
-    _desc["font_bold"]["size"].as<uint32_t>());
-  font_text_bold.set_style(_desc["font_bold"]["style"].as<std::string>());
-  font_text_ital.load(
-    (theme_root /_desc["font_ital"]["face"].as<std::string>()).string(),
-    _desc["font_ital"]["size"].as<uint32_t>());
-  font_text_ital.set_style(_desc["font_ital"]["style"].as<std::string>());
+  // load frames
+  add_frame(new label_frame(this, "label"));
+  add_frame(new label_frame(this, "text_input"));
+  add_frame(new label_frame(this, "combo_box"));
+  add_frame(new label_frame(this, "list_box"));
+  add_frame(new label_frame(this, "scrollbar"));
+  add_frame(new container_frame(this, "dialog"));
+  add_frame(new container_frame(this, "toolbox"));
+  add_frame(new container_frame(this, "group"));
+  add_frame(new container_frame(this, "window"));
+  add_frame(new button_frame(this, "btn"));
+  add_frame(new button_frame(this, "sbtn"));
+  add_frame(new label_frame(this, "lbtn"));
+  add_frame(new push_button_frame(this, "pushbtn"));
 
   // load pointer
   if (_desc.has_key("pointer") && _desc["pointer"].is_object()) {
@@ -107,16 +212,23 @@ theme::theme(const std::string & theme_name):
     // disable SDL pointer rendering
     SDL_ShowCursor(SDL_DISABLE);
   }
+}
 
-  // load frames
-  dialog.load(this, "dialog");
-  toolbox.load(this, "toolbox");
-  group.load(this, "group");
+void theme::add_frame(const theme::base_frame * f)
+{
+  if (_frames.find(f->name) == _frames.end()) {
+    _frames.insert(std::make_pair(f->name, f));
+  }
+}
 
-  // buttons
-  btn.load(this, "btn");
-  sbtn.load(this, "sbtn");
-  input.load(this, "input");
+const theme::base_frame * theme::get_frame(const std::string & name) const
+{
+  auto it = _frames.find(name);
+  if (it == _frames.end()) {
+    SDLEx_LogError("theme::get_frame - failed to find frame with name: %s", name.c_str());
+    throw std::exception("Failed to find control frame");
+  }
+  return it->second;
 }
 
 std::string theme::get_root() const
@@ -144,6 +256,24 @@ bool theme::frame_resource_exists(const std::string & frame_name, const std::str
   filesystem::path p(get_root());
   p /= frame_name;
   p /= frame_res;
+  return exists(p);
+}
+
+std::string theme::get_resource(const std::string & theme_res) const
+{
+  filesystem::path p(get_root());
+  p /= theme_res;
+  if (!exists(p)) {
+    SDLEx_LogError("theme:get_resource - resource not found at [%s]", p.string().c_str());
+    throw std::exception("theme: does not exists");
+  }
+  return p.string();
+}
+
+bool theme::resource_exists(const std::string & theme_res) const
+{
+  filesystem::path p(get_root());
+  p /= theme_res;
   return exists(p);
 }
 
@@ -175,11 +305,11 @@ void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
   }
 }
 
-void theme::draw_container_frame(const container_frame & f, SDL_Renderer * r, const rect & dst) const
+void theme::draw_container_frame(const container_frame * f, SDL_Renderer * r, const rect & dst) const
 {
   // const
-  int BORDER_LENGTH = min(f.border_top.width(), f.border_left.height());
-  int BORDER_HEIGHT = min(f.corner_top_left.width(), f.corner_top_left.height());
+  int BORDER_LENGTH = min(f->border_top.width(), f->border_left.height());
+  int BORDER_HEIGHT = min(f->corner_top_left.width(), f->corner_top_left.height());
 
   // paint borders
   int bx = 0, xdiff = 0;
@@ -193,9 +323,9 @@ void theme::draw_container_frame(const container_frame & f, SDL_Renderer * r, co
       bdst.w = xdiff;
       bsrc.w = xdiff;
     }
-    f.border_top.render(r, bsrc, bdst);
+    f->border_top.render(r, bsrc, bdst);
     bdst.y = dst.y + dst.h;
-    f.border_bottom.render(r, bsrc, bdst);
+    f->border_bottom.render(r, bsrc, bdst);
     bx += BORDER_LENGTH;
   }
   int by = 0, ydiff = 0;
@@ -215,9 +345,9 @@ void theme::draw_container_frame(const container_frame & f, SDL_Renderer * r, co
       bdst.h = ydiff;
       bsrc.h = ydiff;
     }
-    f.border_left.render(r, bsrc, bdst);
+    f->border_left.render(r, bsrc, bdst);
     bdst.x = dst.x + dst.w;
-    f.border_right.render(r, bsrc, bdst);
+    f->border_right.render(r, bsrc, bdst);
     by += BORDER_LENGTH;
   }
     
@@ -230,27 +360,27 @@ void theme::draw_container_frame(const container_frame & f, SDL_Renderer * r, co
   bdst.y = dst.y - BORDER_HEIGHT;
   bdst.w = BORDER_HEIGHT;
   bdst.h = BORDER_HEIGHT;
-  f.corner_top_left.render(r, bsrc, bdst);
+  f->corner_top_left.render(r, bsrc, bdst);
   bdst.y = dst.y + dst.h;
-  f.corner_bottom_left.render(r, bsrc, bdst);
+  f->corner_bottom_left.render(r, bsrc, bdst);
   bdst.x = dst.x + dst.w;
-  f.corner_bottom_right.render(r, bsrc, bdst);
+  f->corner_bottom_right.render(r, bsrc, bdst);
   bdst.y = dst.y - BORDER_HEIGHT;
-  f.corner_top_right.render(r, bsrc, bdst);
+  f->corner_top_right.render(r, bsrc, bdst);
 }
 
-void theme::draw_button_frame(const button_frame & f, SDL_Renderer * r, const rect & dst) const
+void theme::draw_button_frame(const button_frame * f, SDL_Renderer * r, const rect & dst) const
 {
-  rect ldst(dst.x, dst.y, f.left.width(), dst.h);
-  f.left.render(r, ldst);
-  rect cdst(dst.x + f.left.width(), dst.y, f.center.width(), dst.h);
-  int center = dst.w - (f.right.width() + f.left.width());
+  rect ldst(dst.x, dst.y, f->left.width(), dst.h);
+  f->left.render(r, ldst);
+  rect cdst(dst.x + f->left.width(), dst.y, f->center.width(), dst.h);
+  int center = dst.w - (f->right.width() + f->left.width());
   for(int x = 0; x < center; ++x) {
-    cdst.x = dst.x + f.left.width() + x;
-    f.center.render(r, cdst);
+    cdst.x = dst.x + f->left.width() + x;
+    f->center.render(r, cdst);
   }
-  rect rdst(dst.x + f.left.width() + center, dst.y, f.right.width(), dst.h);
-  f.right.render(r, rdst);
+  rect rdst(dst.x + f->left.width() + center, dst.y, f->right.width(), dst.h);
+  f->right.render(r, rdst);
 }
 
 } //namespace ui

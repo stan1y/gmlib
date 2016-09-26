@@ -3,6 +3,7 @@
 
 #include "GMTexture.h"
 #include "GMData.h"
+#include "RESLib.h"
 
 namespace ui {
 
@@ -11,10 +12,6 @@ namespace ui {
   Encapsulates theme-based control frames rendering
 */
 class theme {
-private:
-  data _desc;
-  std::string _name;
-
 public:
 
   /* Themed pointer information */
@@ -32,24 +29,22 @@ public:
     texture tx_select;
   };
 
-  /* UI Theme's font cache */
+  /* UI Theme's font cache 
   class font : public ttf_font {
   public:
     typedef enum {
       solid = 0,
       blended = 1
     } font_style;
-
-    font() {}
     
+    // load from file, managed mode
     font(const std::string & file_path, size_t pts, font_style st);
+    font(const std::string & file_path, size_t pts, const std::string & style = "blended");
     
     void print(texture & target, const std::string & text, const color & c) const;
     
     font_style style() const { return _fs; }
-    
     void set_style(font_style & s) { _fs = s; }
-    
     void set_style(const std::string & fs)
     {
       if (fs == "solid") {
@@ -62,18 +57,29 @@ public:
 
   private:
     font_style _fs;
-    texture _pointer;
-    texture _pointer_resize;
+  };
+  */
+  struct base_frame {
+    /* frame's name, the control's type */
+    std::string name;
+    base_frame(const std::string & n):name(n) {}
+    virtual ~base_frame() {}
   };
 
-  class frame {
-  public:
-    virtual void load(theme * t, const std::string & frame_name) = 0;
+  /* label frame, the most basic one */
+  struct label_frame: public base_frame {
+
+    label_frame(theme * t, const std::string & frame_name);
+
+    /* frame specific colors & fonts */
+    color color_back;
+    color color_idle;
+    color color_highlight;
+    ttf_font const * font_text;
   };
 
   /* Frames declarations */
-  class container_frame : public frame {
-  public:
+  struct container_frame : public base_frame {
      texture corner_top_left;
      texture corner_top_right;
      texture corner_bottom_left;
@@ -82,10 +88,12 @@ public:
      texture border_bottom;
      texture border_left;
      texture border_right;
-     virtual void load(theme * t, const std::string & frame_name);
+     color color_back;
+
+     container_frame(theme * t, const std::string & frame_name);
    };
 
-   class button_frame {
+   class button_frame: public base_frame {
    public:
      texture left;
      texture right;
@@ -95,54 +103,63 @@ public:
      texture right_hover;
      texture center_hover;
 
-     virtual void load(theme * t, const std::string & frame_name);
+     ttf_font const * font_text;
+     color color_text_idle;
+     color color_text_highlight;
+     
+     button_frame(theme * t, const std::string & frame_name);
    };
 
-   class push_button_frame {
+   class push_button_frame: public base_frame {
    public:
      texture idle;
+     texture selected;
+     texture disabled;
      texture hovered;
-     texture pressed;
 
-     virtual void load(theme * t, const std::string & frame_name);
+     push_button_frame(theme * t, const std::string & frame_name);
    };
 
-  /** Available Frames */
-  container_frame dialog;
-  container_frame toolbox;
-  container_frame group;
-  button_frame btn;
-  button_frame sbtn;
-  button_frame input;
-
-  /** Available colors & fonts **/
-  color color_front;
+  /** Common default colors and fonts */
   color color_back;
+  color color_idle;
   color color_highlight;
-  color color_text;
-  color color_toolbox;
-  font font_text_norm;
-  font font_text_bold;
-  font font_text_ital;
+  ttf_font const * font_text;
 
   /* Pointer */
   pointer ptr;
   pointer::pointer_type ptr_type;
 
-  /* Create new frame based on resources folder */
+  /* Create a new theme based folder in ui resources */
   theme(const std::string & theme_name);
 
   /* Get path to theme resource */
+  const data & get_data() const;
   std::string get_root() const;
+  
   std::string get_frame_resource(const std::string & frame_name, const std::string & frame_res) const;
   bool frame_resource_exists(const std::string & frame_name, const std::string & frame_res) const;
 
+  std::string get_resource(const std::string & theme_res) const;
+  bool resource_exists(const std::string & frame_res) const;
+
   /** Theme Drawing APIs */
-  void draw_container_frame(const container_frame & f, SDL_Renderer * r, const rect & dst) const;
-  void draw_button_frame(const button_frame & f, SDL_Renderer * r, const rect & dst) const;
+  void draw_container_frame(const container_frame * f, SDL_Renderer * r, const rect & dst) const;
+  void draw_button_frame(const button_frame * f, SDL_Renderer * r, const rect & dst) const;
   void draw_pointer(SDL_Renderer* r, const rect & dst);
 
   const data & get_desc() const { return _desc; }
+
+  /** Theme Setup APIs */
+  void add_frame(const base_frame *);
+  const base_frame * get_frame(const std::string & name) const;
+
+private:
+  /* theme's privates */
+  data _desc;
+  std::string _name;
+
+  std::map<std::string, const base_frame*> _frames;
 };
 
 }; //namespace ui
