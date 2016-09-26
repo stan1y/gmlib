@@ -30,7 +30,7 @@ static screen * g_screen_ui;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
-        SDLEx_LogError("GM_GetWindow: not initialized");
+        SDLEx_LogError("%s: not initialized", __METHOD_NAME__);
         return nullptr;
     }
     return g_window;
@@ -38,7 +38,7 @@ SDL_Window* GM_GetWindow() {
 
 SDL_Renderer* GM_GetRenderer() {
   if (g_renderer == nullptr) {
-    SDLEx_LogError("GM_GetRenderer: not initialized");
+    SDLEx_LogError("%s: not initialized", __METHOD_NAME__);
     return nullptr;
   }
   return g_renderer;
@@ -56,15 +56,15 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //init subsystems
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-        SDLEx_LogError("GM_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
+        SDLEx_LogError("SDL_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (IMG_Init(IMG_INIT_PNG) == -1) {
-        SDLEx_LogError("GM_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
+        SDLEx_LogError("IMG_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (TTF_Init() == -1) {
-        SDLEx_LogError("GM_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
+        SDLEx_LogError("TTF_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
         return -1;;
     }
 
@@ -81,7 +81,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //check cfg path is ok
     if (cfg_path.empty()) {
-      SDLEx_LogError("GM_Init: invalid config path");
+      SDLEx_LogError("%s: invalid config path", __METHOD_NAME__);
       return -1;
     }
     boost::filesystem::path p_path(cfg_path);
@@ -99,14 +99,14 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         srect.w, srect.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
-        SDLEx_LogError("GM_Init: Failed to system window. SDL Error: %s", SDL_GetError());
+        SDLEx_LogError("%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
         return -1;
     }
     // setup renderer
     uint32_t didx = cfg->driver_index();
     g_renderer = SDL_CreateRenderer(g_window, didx, cfg->renderer_flags());
     if ( g_renderer == nullptr ) {
-        SDLEx_LogError("GM_Init: Failed to create renderer driver_index=%d", didx);
+        SDLEx_LogError("%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, didx);
         return -1;
     }
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
@@ -114,7 +114,8 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     // log renderer info
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
-    SDL_Log("GM_Init: screen ready: %s; fullscreen: %s; driver: %s", 
+    SDL_Log("%s: screen ready: %s; fullscreen: %s; driver: %s",
+      __METHOD_NAME__,
       srect.tostr().c_str(), 
       ( cfg->fullscreen() ? "yes" : "no" ), 
       renderer_info.name);
@@ -524,4 +525,9 @@ rect rect::scale(const float & fw, const float & fh) const
   r.w -= 2 * dx;
   r.h -= 2 * dy;
   return r;
+}
+
+rect rect::center(const uint32_t for_w, const uint32_t for_h) const
+{
+  return rect(x + (w - for_w) / 2, y + (h - for_h) / 2, for_w, for_h);
 }

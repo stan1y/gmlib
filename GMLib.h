@@ -54,6 +54,13 @@
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
+#ifndef __METHOD_NAME__
+  #ifdef __PRETTY_FUNCTION__
+    #define __METHOD_NAME__ __PRETTY_FUNCTION__
+  #else
+    #define __METHOD_NAME__ __FUNCTION__
+  #endif
+#endif
 
 /*
  *
@@ -179,6 +186,8 @@ struct rect : SDL_Rect {
   }
 
   rect scale(const float & fw, const float & fh) const;
+
+  rect center(const uint32_t for_w, const uint32_t for_h) const;
 
   /** Check this rect collides with another rect */
   bool rect::collide_rect(const rect & b) const
