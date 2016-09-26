@@ -249,14 +249,17 @@ void label::update()
       if (_alpha <= 0) {
         SDL_Log("label::update - fade out done");
         set_visible(false);
+        return;
       }
       else {
         SDL_Log("label::update - fade in done");
+        return;
       }
     }
 
     if (_alpha < 0 ) _alpha = 0;
     if (_alpha > 255) _alpha = 255;
+    
     SDL_Log("label::update - fade in %d/%d", _alpha, _alpha_step);
   }
 }
