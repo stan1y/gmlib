@@ -131,10 +131,11 @@ theme::button_frame::button_frame(theme * t, const std::string & frame_name):bas
 theme::push_button_frame::push_button_frame(theme * t, const std::string & frame_name):base_frame(frame_name)
 {
   idle.load(t->get_frame_resource(frame_name, "idle.png"));
-  selected.load(t->get_frame_resource(frame_name, "selected.png"));
-  disabled.load(t->get_frame_resource(frame_name, "disabled.png"));
-  if (t->frame_resource_exists(frame_name, "hovered.png")) {
-    hovered.load(t->get_frame_resource(frame_name, "hovered.png"));
+  if (t->frame_resource_exists(frame_name, "pressed.png")) {
+    pressed.load(t->get_frame_resource(frame_name, "pressed.png"));
+  }
+  if (t->frame_resource_exists(frame_name, "disabled.png")) {
+    disabled.load(t->get_frame_resource(frame_name, "disabled.png"));
   }
 }
 

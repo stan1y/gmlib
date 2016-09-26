@@ -6,8 +6,8 @@ button::button(const std::string & button_subtype_name, rect pos, margin pad, ic
   label(button_subtype_name, pos, pad, ip, ha, va),
   _checked(false)
 {
-  // no styles setup in base button class
-  // everything should be done by derived classes
+  // enable text highlight for buttons
+  enable_hightlight_on_hover();
 }
 
 void lbtn::load(const data &d) 

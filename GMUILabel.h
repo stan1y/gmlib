@@ -116,6 +116,28 @@ public:
   }
   color get_background_color() { return _color_back; }
 
+  void enable_hightlight_on_focus()
+  {
+    _highlight_on_focus = true;
+    _dirty = true;
+  }
+  void disable_hightlight_on_focus()
+  {
+    _highlight_on_focus = false;
+    _dirty = true;
+  }
+
+  void enable_hightlight_on_hover()
+  {
+    _highlight_on_hover = true;
+    _dirty = true;
+  }
+  void disable_hightlight_on_hover()
+  {
+    _highlight_on_hover = false;
+    _dirty = true;
+  }
+
   /* Label icon */
   void set_icon(const std::string& icon_file);
   void set_icon(SDL_Surface* icon);
@@ -144,7 +166,7 @@ public:
   void set_halign(const h_align & ha) { _ha = ha; }
   void set_valign(const v_align & va) { _va = va; }
 
-  const theme::label_frame * get_frame() { 
+  const theme::label_frame * get_frame() const { 
     return dynamic_cast<const theme::label_frame*>(current_theme().get_frame("label")); 
   }
   
@@ -195,7 +217,9 @@ private:
   bool _dirty;
   bool _animating;
   bool _hovered;
+  bool _highlight_on_hover;
   bool _focused;
+  bool _highlight_on_focus;
   int _alpha;
   int _alpha_step;
 };

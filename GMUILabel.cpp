@@ -10,8 +10,11 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _color_back(get_frame()->color_back),
   _color_highlight(get_frame()->color_highlight),
   _hovered(false),
+  _focused(false),
   _dirty(true),
   _animating(false),
+  _highlight_on_hover(false),
+  _highlight_on_focus(false),
   _alpha(255),
   control("label", pos)
 {
@@ -29,8 +32,11 @@ label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h
   _color_back(get_frame()->color_back),
   _color_highlight(get_frame()->color_highlight),
   _hovered(false),
+  _focused(false),
   _dirty(true),
   _animating(false),
+  _highlight_on_hover(false),
+  _highlight_on_focus(false),
   _alpha(255),
   control(type_name, pos)
 {
@@ -291,7 +297,10 @@ void label::paint(SDL_Renderer * r)
   if (!_dirty) return;
   // render text, it can be empty string
   color clr = _color_idle;
-  if (_hovered) {
+  if (is_focused() && _highlight_on_focus) {
+    clr = _color_highlight;
+  }
+  else if (is_hovered() && _highlight_on_hover) {
     clr = _color_highlight;
   }
 

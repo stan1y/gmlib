@@ -283,7 +283,7 @@ void box::update_children()
   for(; it != _children.end(); ++it) {
     control* child = (*it);
     // skip locked children of this box
-    if (child->is_locked())
+    if (child->locked())
       continue;
     // skip hidden
     if (!child->visible())

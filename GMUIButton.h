@@ -33,7 +33,7 @@ protected:
     v_align va = label::top);
 
   /* get button's frame by it's type */
-  const theme::button_frame * get_btn_frame() { 
+  const theme::button_frame * get_btn_frame() const { 
     auto f = current_theme().get_frame(get_type_name());
     auto cf = dynamic_cast<const theme::button_frame*>(f); 
     return cf;
@@ -68,6 +68,12 @@ public:
     set_font(get_btn_frame()->font_text);
     set_idle_color(get_btn_frame()->color_text_idle);
     set_highlight_color(get_btn_frame()->color_text_highlight);
+
+    // change pos to reflect height of the frame sprites
+    size_t body_height = max(get_btn_frame()->left.height(),
+      get_btn_frame()->right.height());
+    
+    set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
 };
 
@@ -87,12 +93,18 @@ public:
     set_font(get_btn_frame()->font_text);
     set_idle_color(get_btn_frame()->color_text_idle);
     set_highlight_color(get_btn_frame()->color_text_highlight);
+
+    // change pos to reflect height of the frame sprites
+    size_t body_height = max(get_btn_frame()->left.height(),
+      get_btn_frame()->right.height());
+    set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
 };
 
 class shape {
 public:
   typedef enum {
+    none      = 0,
     rectangle = 1,
     rounded   = 2,
     prism     = 3
@@ -101,7 +113,6 @@ public:
   static void render(SDL_Renderer * r, const rect & dst, shape_type stype) {
     switch(stype) {
       case shape::rectangle:
-      default:
         SDL_RenderDrawRect(r, &dst);
         break;
       case shape::rounded:
@@ -109,6 +120,11 @@ public:
           dst.x, dst.y, dst.x + dst.w, dst.y + dst.h, 3);
         break;
       case shape::prism:
+        break;
+
+      default:
+      case shape::none:
+        // nothing to do for none
         break;
     }
   }
@@ -120,8 +136,6 @@ public:
 */
 class lbtn : public button {
 public:
-  
-
   lbtn(rect pos, 
     margin pad = margin_t(),
     icon_pos ip = icon_pos::icon_left,
@@ -129,6 +143,8 @@ public:
     v_align va = label::top):
   button("lbtn", pos, pad, ip, ha, va)
   {
+    // lbtn can have any rect size it wants
+    // no need to update this->pos() in any way
     set_font(get_btn_frame()->font_text);
     set_idle_color(get_btn_frame()->color_idle);
     set_highlight_color(get_btn_frame()->color_highlight);

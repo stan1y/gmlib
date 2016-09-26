@@ -19,6 +19,7 @@ label("input", pos, pad, ip, ha, va),
   _draw_frame(true),
   _timer()
 {
+  enable_hightlight_on_focus();
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
   focused += boost::bind(&text_input::on_focused, this, _1);
 }
@@ -39,6 +40,7 @@ label(type_name, pos, pad, ip, ha, va),
   _draw_frame(true),
   _timer()
 {
+  enable_hightlight_on_focus();
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
   focused += boost::bind(&text_input::on_focused, this, _1);
 }
@@ -243,6 +245,9 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
   if (_draw_frame) {
     // draw input frame
     if (is_hovered()) {
+      get_hightlight_color().apply(r);
+    }
+    else if (is_focused()) {
       get_hightlight_color().apply(r);
     }
     else {

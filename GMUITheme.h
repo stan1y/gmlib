@@ -113,9 +113,8 @@ public:
    class push_button_frame: public base_frame {
    public:
      texture idle;
-     texture selected;
      texture disabled;
-     texture hovered;
+     texture pressed;
 
      push_button_frame(theme * t, const std::string & frame_name);
    };
