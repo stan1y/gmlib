@@ -51,7 +51,19 @@ std::string control::newid()
 
 control::~control()
 {
-  if (UI_Debug()) SDL_Log("control::~control - destroyed id: %s", identifier().c_str());
+  // destroy children of this control
+  if (UI_Debug()) SDL_Log("%s - destroying %d children of id: %s",
+    __METHOD_NAME__,
+    _children.size(),
+    identifier().c_str());
+  control_list::iterator it = _children.begin();
+  for(; it != _children.end(); ++it) {
+    control * child = *it;
+    delete child;
+  }
+  if (UI_Debug()) SDL_Log("%s - destroyed id: %s", 
+    __METHOD_NAME__,
+    identifier().c_str());
 }
 
 std::string control::tostr() const
@@ -145,7 +157,7 @@ control * control::find_child_at(const point & at)
   // search children
   if (_children.size() > 0) {
     // iterate children in reverse order, because the
-    // bottom is of the list is rendered at the top
+    // bottom of the list is rendered at the top
     control_list::reverse_iterator it = _children.rbegin();
     for(; it != _children.rend(); ++it) {
       control * child = *it;
