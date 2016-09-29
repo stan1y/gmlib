@@ -172,11 +172,12 @@ void GM_Quit()
 
 void GM_StartFrame()
 {
+  mutex_lock guard(g_screen_lock);
+
   if (g_fps_timer) {
-
     //init fps timer first on first frame
-    if(!g_fps_timer->is_started()) g_fps_timer->start();
-
+    if(!g_fps_timer->is_started())
+      g_fps_timer->start();
     //update avg fps
     g_avg_fps = g_counted_frames / ( g_fps_timer->get_ticks() / 1000.f );
     if (g_avg_fps > 2000000) {
@@ -185,24 +186,23 @@ void GM_StartFrame()
   }
 
   //clear screen with black
-   SDL_SetRenderTarget(g_renderer, NULL);
-   SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
-   SDL_RenderClear(g_renderer);
+  SDL_SetRenderTarget(g_renderer, NULL);
+  SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
+  SDL_RenderClear(g_renderer);
 }
 
 void GM_UpdateFrame()
 {
+  mutex_lock guard(g_screen_lock);
+
   //update game state
-  {
-    mutex_lock guard(g_screen_lock);
-    if (g_screen_current != g_screen_next) {
-      g_screen_current = g_screen_next;
-      g_screen_current->activate();
+  if (g_screen_current != g_screen_next) {
+    g_screen_current = g_screen_next;
+    g_screen_current->activate();
 #ifdef GM_DEBUG
-      SDL_Log("%s - screen %p is now active", 
-        __METHOD_NAME__, g_screen_current);
+    SDL_Log("%s - screen %p is now active", 
+      __METHOD_NAME__, g_screen_current);
 #endif
-    }
   }
     
   // update global & current screens
@@ -213,6 +213,8 @@ void GM_UpdateFrame()
 
 void GM_RenderFrame()
 {
+  mutex_lock guard(g_screen_lock);
+
   // update current screen
   if (g_screen_current == NULL) {
     SDLEx_LogError("%s - failed to render: no active screen", 
@@ -310,23 +312,23 @@ SDL_Surface* GM_LoadSurface(const std::string& file_path)
 
 SDL_Texture* GM_LoadTexture(const std::string& file_path)
 {
-    SDL_Surface* s = GM_LoadSurface(file_path);
-    SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
-    if (tex == NULL) {
-      SDLEx_LogError("%s: failed to create texture from surface",
-        __METHOD_NAME__,
-        file_path.c_str());
-      throw sdl_exception();
-    }
-    SDL_FreeSurface(s);
-    return tex;
+  SDL_Surface* s = GM_LoadSurface(file_path);
+  SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
+  if (tex == NULL) {
+    SDLEx_LogError("%s: failed to create texture from surface",
+      __METHOD_NAME__,
+      file_path.c_str());
+    throw sdl_exception();
+  }
+  SDL_FreeSurface(s);
+  return tex;
 }
 
 TTF_Font* GM_LoadFont(const std::string& file_path, int ptsize)
 {
   TTF_Font* f = TTF_OpenFont(file_path.c_str(), ptsize);
   if (!f) {
-      SDLEx_LogError("%s: failed to load %s",
+    SDLEx_LogError("%s: failed to load %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
