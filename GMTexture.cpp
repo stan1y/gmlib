@@ -82,7 +82,10 @@ void texture::set_texture(SDL_Texture * tx)
 void texture::blank(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, uint32_t pixel_format)
 {
   SDL_Texture * tx = GM_CreateTexture(w, h, access, pixel_format);
-  set_texture(tx); 
+  set_texture(tx);
+  _access = access;
+  _bmode = bmode;
+  _format = pixel_format;
 }
 
 void texture::release()
@@ -100,7 +103,6 @@ texture::~texture()
 
 void texture::load(const std::string& file_path)
 {
-  _resource = file_path;
   SDL_Surface* src = GM_LoadSurface(file_path);
   convert_surface(src);
 
@@ -302,4 +304,122 @@ uint8_t texture::get_alpha()
   if (SDL_GetTextureAlphaMod(_texture, &a) != 0)
     throw sdl_exception();
   return a;
+}
+
+
+/* Class multi_texture implementation */
+
+multi_texture::multi_texture(const rect & size):
+  _width(size.w), 
+  _height(size.h)
+{
+  init();
+}
+
+multi_texture::multi_texture(const rect & size, int fw, int fh):
+  _width(size.w), 
+  _height(size.h)
+{
+  init(fw, fh);
+}
+
+multi_texture::multi_texture(int w, int h, int fw, int fh):
+  _width(w),
+  _height(h)
+{
+  init(fw, fh);
+}
+
+void multi_texture::init(int fw, int fh)
+{
+  uint32_t fragments_w = 0;
+  uint32_t fragments_h = 0;
+
+  if (fw == 0 && fh == 0) {
+    fragments_w = fragment::fragment_max_width;
+    fragments_h = fragment::fragment_max_height;
+    fw = _width / fragments_w;
+    if (_width % fragments_w != 0) fw += 1;
+    fh = _height / fragments_h;
+    if (_height % fragments_h != 0) fh += 1;
+  }
+  else {
+    fragments_w = _width / fw;
+    fragments_h = _height / fh;
+  }
+
+  if (fragments_w % 2 != 0 || fragments_h % 2 != 0) {
+    SDLEx_LogError("%s - fragment size [%d, %d] is not a power of 2",
+      __METHOD_NAME__,
+      fragments_w,
+      fragments_h);
+    throw std::exception("Invalid multi_texture:fragment size - not a power of 2");
+  }
+
+  for(int ix = 0; ix < fw; ++ix) {
+    for(int iy = 0; iy < fh; ++iy) {
+      rect fragment_rect(ix * fragments_w, 
+                         iy * fragments_h,
+                         fragments_w,
+                         fragments_h);
+
+      // if this fragment seems to be last in a row/column and too large
+      // trim it's size to fit into [width, height] of multi_texture
+      if (fragment_rect.x + fragment_rect.w > _width) {
+        fragment_rect.w = _width - fragment_rect.x;
+      }
+      if (fragment_rect.y + fragment_rect.h > _height) {
+        fragment_rect.h = _height - fragment_rect.y;
+      }
+      _fragments.push_back(new fragment(fragment_rect));
+    }
+  }
+  SDL_Log("%s - created %d fragments of size (%d, %d), total size is (%d, %d)",
+    __METHOD_NAME__,
+    _fragments.size(),
+    fragments_w,
+    fragments_h,
+    _width,
+    _height);
+}
+
+void multi_texture::render(SDL_Renderer * r, const point & at)
+{
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    point draw_at = at + f->pos().topleft();
+    rect fragment_rect(draw_at.x, draw_at.y, f->pos().w, f->pos().h);
+    f->get_texture().render(r, fragment_rect);
+#ifdef GM_DEBUG_MULTI_TEXTURE
+    color::yellow().apply(r);
+    SDL_RenderDrawRect(r, &fragment_rect);
+#endif
+  }
+}
+
+void multi_texture::render_texture(SDL_Renderer * r, const texture & tx, const point & at)
+{
+  lock_container(_fragments);
+  rect texture_collide_rect(at.x, at.y, tx.width(), tx.height());
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    const rect & fpos = f->pos();
+    // check if texture collides with this fragment and clip it's rect if yes
+    if (fpos.collide_rect(texture_collide_rect)) {
+      rect clipped = texture_collide_rect.clip(fpos);
+      // render into the fragment's texture with clipped rect
+      {
+        rect src(clipped.x - at.x, clipped.y - at.y, clipped.w, clipped.h);
+        rect dst(clipped.x - fpos.x, clipped.y - fpos.y, clipped.w, clipped.h);
+        texture::render_context context(&f->get_texture(), r);
+        tx.render(r, src, dst);
+      }
+    }
+  }
+}
+
+multi_texture::~multi_texture()
+{
 }

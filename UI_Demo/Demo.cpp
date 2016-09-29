@@ -11,19 +11,25 @@ class demo_screen : public screen {
 private:
   ui::panel * _panel_with_buttons;
   ui::panel * _panel_from_json;
-  texture _back;
+  multi_texture _back;
 
 public:
   demo_screen():
     _panel_with_buttons(NULL),
-    _panel_from_json(NULL)
+    _panel_from_json(NULL),
+    _back(GM_GetDisplayRect(), 1024 / 64, 768 / 64) 
   {
     add_component(ui::manager::instance());
 
-    _back.load(resources::find("start.png"));
-
+    // build background
+    texture const * start = resources::get_texture("test.png");
+    _back.render_texture(GM_GetRenderer(), *start, point(rand_int(10, 500), rand_int(10, 350)));
+    //_back.render_texture(GM_GetRenderer(), *start, point(32, 32));
+    
+    // build UI manually
     _panel_with_buttons = build_panel();
-
+    
+    // build UI automatically from ui.json file
     _panel_from_json = ui::build<ui::panel>(resources::get_data("demo.ui.json"));
     _panel_from_json->find_child("btn_one")->mouse_down \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
@@ -31,7 +37,8 @@ public:
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     _panel_from_json->find_child("btn_three")->mouse_down \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
-
+    
+    // populate list panel with some items
     ui::box * list = _panel_from_json->find_child<ui::box>("vbox_list");
     for(int i = 0; i < 25; ++i) {
       ui::label * lbl = new ui::label(rect(0, 0, list->pos().w, 15));
@@ -99,9 +106,8 @@ public:
 
   virtual void render(SDL_Renderer* r)
   {
-    // clear screen with black
-    color::black().apply(r);
-    SDL_RenderClear(r);
+    // render background
+    _back.render(r);
 
     // render screen components
     screen::render(r);
