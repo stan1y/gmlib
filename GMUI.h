@@ -217,7 +217,7 @@ public:
   static const int ui_debug = 1;
 
   /* Initialize UI subsystem*/
-  static void initialize(rect & available_rect, bool debug = false);
+  static void initialize(rect & available_rect);
 
   /* Pointer to a currently processed event (during event handlers execution) */
   static const SDL_Event* current_event();
@@ -264,21 +264,13 @@ public:
   /* Customize string representation for the manager */
   virtual std::string tostr() const;
 
-  /* Get/set debug mode for UI manager */
-  bool is_debug() { return _debug_mode; }
-  void set_debug(bool s) { _debug_mode = s; }
-
 private:
-  manager(rect &  available_rect, bool debug = false);
+  manager(rect &  available_rect);
   void set_hovered_control(control * target);
   void set_focused_control(control * target);
 
   // forbid manager::load calls
   virtual void load(data&) {};
-
-  // render UI with debug info
-  // log UI events to the console
-  bool _debug_mode;
 
   // global pointer position
   point _pointer;
@@ -405,11 +397,7 @@ private:
  * Utils
  */
 
-
 /* Get miliseconds since last user input (kbd, mouse, touch) */
 uint32_t UI_GetUserIdle();
-
-/* Get debug mode state for the UI manager */
-inline bool UI_Debug() { return ui::manager::instance()->is_debug(); }
 
 #endif _GMUI_H_

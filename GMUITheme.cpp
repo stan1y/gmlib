@@ -155,7 +155,9 @@ theme::theme(const std::string & theme_name):
       theme_descriptor.string().c_str());
     throw std::exception("Invalid theme name, descriptor is missing.");
   }
+#ifdef GM_DEBUG_UI
   SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.string().c_str());
+#endif
   _desc.load(theme_descriptor.string());
 
   // load common default colors

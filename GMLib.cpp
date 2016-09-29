@@ -21,7 +21,7 @@ static uint32_t g_screen_ticks_per_frame = 0;
 static float g_avg_fps = 0.0f;
 static texture g_fps;
 static color g_fps_color;
-static TTF_Font* g_fps_font;
+static ttf_font const * g_fps_font;
 
 /* Screens */
 static sdl_mutex g_screen_lock;
@@ -114,12 +114,13 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     // log renderer info
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
+#ifdef GM_DEBUG
     SDL_Log("%s: screen ready: %s; fullscreen: %s; driver: %s",
       __METHOD_NAME__,
       srect.tostr().c_str(), 
       ( cfg->fullscreen() ? "yes" : "no" ), 
       renderer_info.name);
-    
+#endif
     // resources cache
     resources::initialize(GM_GetConfig()->assets_path());
 
@@ -131,24 +132,25 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //setup game state
     g_frame_timer = new timer();
-    g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
+    if (cfg->fps_cap() > 0)
+      g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
     
     // init UI
     rect display = GM_GetDisplayRect();
     ui::manager::initialize(display);
     
     //setup screens
-    if (cfg->calculate_fps()) {
+#ifdef GM_DEBUG
       g_fps_timer = new timer();
-    }
+#endif
     g_screen_current = nullptr;
     g_screen_next = nullptr;
 
     //fps counter
     g_fps_color = color( 0, 255, 0, 255 );
-    g_fps_font = GM_LoadFont(resources::find("terminus.ttf"), 12);
+    g_fps_font = resources::get_font("terminus.ttf:12");
 
-    SDL_Log("%s: ready", __METHOD_NAME__);
+    printf("GMLib: ready\n");
     return 0;
 }
 
@@ -195,8 +197,11 @@ void GM_UpdateFrame()
     mutex_lock guard(g_screen_lock);
     if (g_screen_current != g_screen_next) {
       g_screen_current = g_screen_next;
+      g_screen_current->activate();
+#ifdef GM_DEBUG
       SDL_Log("%s - screen %p is now active", 
         __METHOD_NAME__, g_screen_current);
+#endif
     }
   }
     
@@ -234,10 +239,11 @@ void GM_EndFrame()
   SDL_RenderPresent(g_renderer);
   //update counted frames and delay frame end
   ++g_counted_frames;
-
-  uint32_t frame_ticks = GM_GetFrameTicks();
-  if (frame_ticks < g_screen_ticks_per_frame) {
-    SDL_Delay(g_screen_ticks_per_frame - frame_ticks);
+  if (g_screen_ticks_per_frame > 0) {
+    uint32_t frame_ticks = GM_GetFrameTicks();
+    if (frame_ticks < g_screen_ticks_per_frame) {
+      SDL_Delay(g_screen_ticks_per_frame - frame_ticks);
+    }
   }
 }
 
@@ -286,14 +292,16 @@ SDL_Surface* GM_LoadSurface(const std::string& file_path)
 {
   SDL_Surface *tmp = IMG_Load(file_path.c_str());
   if (!tmp) {
-    SDLEx_LogError("GM_LoadSurface: failed to load %s: %s", file_path.c_str(), SDL_GetError());
-    throw std::exception("Failed to load surface from file");
+    SDLEx_LogError("%s: failed to load %s",
+      __METHOD_NAME__,
+      file_path.c_str());
+    throw sdl_exception();
   }
 
   SDL_Surface* s = SDL_ConvertSurfaceFormat(tmp, SDL_PIXELFORMAT_RGBA8888, NULL );
   if (!s) {
-    SDLEx_LogError("GM_LoadSurface: failed to convert surface: %s", file_path.c_str(), SDL_GetError());
-    throw std::exception("Failed to convert surface");
+    SDLEx_LogError("%s: failed to convert surface.", __METHOD_NAME__);
+    throw sdl_exception();
   }
   SDL_FreeSurface(tmp);
 
@@ -304,6 +312,12 @@ SDL_Texture* GM_LoadTexture(const std::string& file_path)
 {
     SDL_Surface* s = GM_LoadSurface(file_path);
     SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
+    if (tex == NULL) {
+      SDLEx_LogError("%s: failed to create texture from surface",
+        __METHOD_NAME__,
+        file_path.c_str());
+      throw sdl_exception();
+    }
     SDL_FreeSurface(s);
     return tex;
 }
@@ -312,8 +326,10 @@ TTF_Font* GM_LoadFont(const std::string& file_path, int ptsize)
 {
   TTF_Font* f = TTF_OpenFont(file_path.c_str(), ptsize);
   if (!f) {
-      SDLEx_LogError("GM_LoadFont: failed to load %s", file_path.c_str());
-      throw std::exception("Failed to load font from file");
+      SDLEx_LogError("%s: failed to load %s",
+      __METHOD_NAME__,
+      file_path.c_str());
+    throw sdl_exception();
   }
   return f;
 }
@@ -387,11 +403,11 @@ bool point::collide_circle(const point & center, const int radius)
 }
 
 bool operator== (rect& a, rect& b) {
-    return (a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h);
+  return (SDL_RectEquals(&a, &b) == SDL_TRUE);
 }
 
 bool operator!= (rect& a, rect& b) {
-    return (a.x != b.x || a.y != b.y || a.w != b.w || a.h != b.h);
+    return (SDL_RectEquals(&a, &b) != SDL_TRUE);
 }
 
 rect operator+ (const rect& a, const rect& b) {

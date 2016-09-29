@@ -69,6 +69,9 @@ std::string find(const std::string& resource);
 /* Check if there is a resource present in cache with given id */
 bool loaded(const std::string& resource);
 
+/* Add new item to cache with id */
+void add(std::string resource_id, std::string found_at, iresource const * r);
+
 }
 
 #endif //_RES_LIB_H

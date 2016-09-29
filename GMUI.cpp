@@ -26,10 +26,10 @@ static std::mutex g_message_mx;
 
 /** Manager **/
 
-void manager::initialize(rect & available_rect, bool debug)
+void manager::initialize(rect & available_rect)
 {
   if (g_manager == NULL) {
-    g_manager = new manager(available_rect, debug);
+    g_manager = new manager(available_rect);
   }
   else {
     g_manager->set_pos(available_rect);
@@ -51,10 +51,9 @@ const SDL_Event* manager::current_event()
   return NULL;
 }
 
-manager::manager(rect & available_rect, bool debug):
+manager::manager(rect & available_rect):
   control(),
   screen::component(NULL),
-  _debug_mode(debug),
   _cur_event(NULL),
   _theme(GM_GetConfigData().get<std::string>(
     "ui_theme",    // key name
@@ -82,7 +81,6 @@ std::string manager::tostr() const
   std::stringstream ss;
   ss << "{manager " \
      << " rect: " << _pos.tostr() \
-     << " debug: " << YES_NO(_debug_mode) \
      << " children: " << _children.size()
      << "}";
   return ss.str();
@@ -418,7 +416,7 @@ void message::reset(const std::string & text,  ttf_font const * f, const color &
   _timer.stop();
   set_visible(false);
   _text = text;
-  _tx.load_text_solid(_text, f->fnt(), c);
+  _tx.load_text_solid(_text, f, c);
   rect display = GM_GetDisplayRect();
 
   _pos.w = _tx.width();
@@ -440,7 +438,9 @@ void message::update()
   uint32_t depleted = ticked / 10;
   if (depleted >= 255) {
     _timer.stop();
+#ifdef GM_DEBUG_UI
     SDL_Log("message::update() - self-destruct msg \"%s\"", _text.c_str());
+#endif
     //self-destruct when alpha depleted
     ui::destroy(this);
     g_message = NULL;
@@ -455,7 +455,9 @@ void message::show()
 {
   set_visible(true);
   _timer.start();
+#ifdef GM_DEBUG_UI
   SDL_Log("message::show() - show message with text \"%s\" at %s", _text.c_str(), _pos.tostr().c_str());
+#endif
 }
 
 void message::alert(const std::string & text, uint32_t timeout_ms)

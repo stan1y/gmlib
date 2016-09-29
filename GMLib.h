@@ -4,6 +4,13 @@
  *
  * This is the main GMLib header file to be
  * included by client applications.
+ *
+ * GMLib supports a number of compilation flags to control
+ * debug logging & rendering for components of the library. 
+ * Here is the actual list of the flags you can use:
+ * - GM_DEBUG              - generic core library components logging
+ * - GM_DEBUG_UI           - UI controls, manager, theme, etc logging
+ * - GM_DEBUG_MULTITEXTURE - multi_texture class logging & rendering
  */
 
 #ifndef GM_LIB_H
@@ -54,12 +61,18 @@
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
+/* __METHOD_NAME__ wrapper for MSVS and GCC */
 #ifndef __METHOD_NAME__
   #ifdef __PRETTY_FUNCTION__
     #define __METHOD_NAME__ __PRETTY_FUNCTION__
   #else
     #define __METHOD_NAME__ __FUNCTION__
   #endif
+#endif
+
+/* Define if we want to cap fps and for how much */
+#ifndef GM_FPS_CAP
+#define GM_FPS_CAP 60
 #endif
 
 /*
@@ -173,7 +186,7 @@ struct rect : SDL_Rect {
   /** Produce a new rect as a clip of this and another rect */
   rect rect::clip(const rect & other) const
   {
-    rect res;
+    /*rect res;
     res.x = max(x, other.x);
     res.w = min(x + w - other.x, other.x + other.w - x);
     res.y = max(y, other.y);
@@ -182,7 +195,16 @@ struct rect : SDL_Rect {
     if (w <= 0 || h <= 0) {
       res.w = 0; res.h = 0;
     }
-    return res;
+    return res;*/
+
+    rect out;
+    if (SDL_IntersectRect(this, &other, &out) != SDL_TRUE) {
+      //SDLEx_LogError("%s - given rects do not intersect",
+      //  __METHOD_NAME__);
+      //throw std::exception("Cannot clip rectangles. No intersection.");
+      return other;
+    }
+    return out;
   }
 
   rect scale(const float & fw, const float & fh) const;
@@ -192,17 +214,14 @@ struct rect : SDL_Rect {
   /** Check this rect collides with another rect */
   bool rect::collide_rect(const rect & b) const
   {
-    return x + w > b.x && b.x + b.w > x && \
-          y + h > b.y && b.y + b.h > y;
+    SDL_Rect dummy;
+    return (SDL_IntersectRect(this, &b, &dummy) == SDL_TRUE);
   }
 
   /** Check this rect collides with a point */
   bool rect::collide_point(const point & pnt) const
   {
-    return pnt.x >= x && \
-            pnt.y >= y && \
-            pnt.x < x + w && \
-            pnt.y < y + h;
+    return (SDL_PointInRect(&pnt, this) == SDL_TRUE);
   }
 };
 
@@ -435,7 +454,6 @@ public:
   const int32_t       driver_index() const;
   const std::string   assets_path() const;
   const bool          fullscreen() const;
-  const bool          calculate_fps() const;
   const int           fps_cap() const;
   const uint32_t      window_flags() const;
   const uint32_t      renderer_flags() const;

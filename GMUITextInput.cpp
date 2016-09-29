@@ -256,15 +256,17 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
     shape::render(r, dst, _inp_shape);
     label::render(r, dst);
   }
+
+#ifdef GM_DEBUG_UI
   // debug blue frame for text input rect
-  if (UI_Debug() && \
-    manager::instance()->get_focused_control() == this) 
+  if (manager::instance()->get_focused_control() == this) 
   {
     static color blue(0, 0, 255, 255);
     blue.apply(r);
     rect cdst(dst.x + 1, dst.y + 1, dst.w - 2, dst.h - 2);
     SDL_RenderDrawRect(r, &cdst);
   }
+#endif
 
   label::render(r, dst);
 

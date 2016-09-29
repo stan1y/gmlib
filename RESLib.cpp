@@ -47,6 +47,16 @@ typedef std::map<std::string, resource_descriptor> cache;
 static boost::filesystem::path * g_assets_root;
 static cache* g_cache = nullptr;
 
+void add(std::string resource_id, std::string found_at, iresource const * r)
+{
+  g_cache->insert(std::make_pair(resource_id, resource_descriptor(resource_id, found_at, r)));
+#ifdef GM_DEBUG
+  SDL_Log("%s - loaded new item %s",
+    __METHOD_NAME__,
+    resource_id.c_str());
+#endif
+}
+
 void initialize(const std::string& assets_root)
 {
   auto assets = boost::filesystem::path(assets_root);
@@ -59,14 +69,18 @@ void initialize(const std::string& assets_root)
   }
 
   if (!boost::filesystem::is_directory(*g_assets_root)) {
-    SDLEx_LogError("resources::initialize() - assets root is not a directory '%s'",
+    SDLEx_LogError("%s - assets root is not a directory '%s'",
+      __METHOD_NAME__,
       g_assets_root->string().c_str());
     throw std::exception("Assets root is not a directory");
   }
 
   g_cache = new cache();
-  SDL_Log("resources::initialize() - assets ready at '%s'",
+#ifdef GM_DEBUG
+  SDL_Log("%s - assets ready at '%s'",
+    __METHOD_NAME__,
     g_assets_root->string().c_str());
+#endif
 }
 
 std::string root_path()
@@ -74,16 +88,18 @@ std::string root_path()
   if (g_assets_root != nullptr)
     return g_assets_root->string();
 
-  SDLEx_LogError("resources::root_path() - no assets root initialized");
-  throw std::exception("no assets root");
+  SDLEx_LogError("%s - no assets root initialized",
+    __METHOD_NAME__);
+  throw std::exception("No assets root defined");
 }
 
 /* Get item from cache by path. Returns nullptr if not found */
 iresource const * get(const std::string & resource)
 {
   if (!g_cache || !g_assets_root) {
-        SDLEx_LogError("resources::get_texture() - no assets root initialized");
-        throw std::exception("no assets root");
+        SDLEx_LogError("%s - no assets root initialized",
+          __METHOD_NAME__);
+        throw std::exception("No assets root defined");
     }
     cache::iterator it = g_cache->find(resource);
     if (it == g_cache->end()) {
@@ -100,19 +116,21 @@ texture const * get_texture(const std::string& resource)
     std::string found_at = find(resource);
     if (found_at.size()) {
       res = new texture(found_at);
-      g_cache->insert(std::make_pair(resource, resource_descriptor(resource, found_at, res)));
+      add(resource, found_at, res);
     }
   }
 
   if (res == nullptr) {
-    SDLEx_LogError("resources::get_texture - failed find texture '%s'", 
+    SDLEx_LogError("%s - failed find texture '%s'", 
+      __METHOD_NAME__,
       resource.c_str());
     throw std::exception("Failed to find texture");
   }
 
   texture const * tx = dynamic_cast<texture const *> (res);
   if (tx == nullptr) {
-    SDLEx_LogError("resources::get_texture - failed to cast iresource");
+    SDLEx_LogError("%s - failed to cast iresource",
+      __METHOD_NAME__);
     throw std::exception("Failed to cast iresource");
   }
   return tx;
@@ -126,19 +144,21 @@ data const * get_data(const std::string& resource)
     std::string found_at = find(resource);
     if (found_at.size()) {
       res = new data(found_at);
-      g_cache->insert(std::make_pair(resource, resource_descriptor(resource, found_at, res)));
+      add(resource, found_at, res);
     }
   }
 
   if (res == nullptr) {
-    SDLEx_LogError("resources::get_texture - failed find texture '%s'", 
+    SDLEx_LogError("%s - failed find texture '%s'",
+      __METHOD_NAME__,
       resource.c_str());
     throw std::exception("Failed to find texture");
   }
 
   data const * d = dynamic_cast<data const *> (res);
   if (d == nullptr) {
-    SDLEx_LogError("resources::get_data - failed to cast iresource");
+    SDLEx_LogError("%s - failed to cast iresource",
+      __METHOD_NAME__);
     throw std::exception("Failed to cast iresource");
   }
   return d;
@@ -150,20 +170,23 @@ ttf_font const * get_font(const std::string& resource)
   if (res == nullptr) {
     std::string found_at = find(resource);
     if (found_at.size()) {
-      res = new texture(found_at);
-      g_cache->insert(std::make_pair(resource, resource_descriptor(resource, found_at, res)));
+      resource_descriptor dsc(resource);
+      res = new ttf_font(found_at, atoi(dsc.resource_postfix.c_str()));
+      add(resource, found_at, res);
     }
   }
 
   if (res == nullptr) {
-    SDLEx_LogError("resources::get_texture - failed find texture '%s'", 
+    SDLEx_LogError("%s - failed find texture '%s'",
+      __METHOD_NAME__,
       resource.c_str());
     throw std::exception("Failed to find texture");
   }
 
   ttf_font const * f = dynamic_cast<ttf_font const*> (res);
   if (f == nullptr) {
-    SDLEx_LogError("resources::get_font - failed to cast iresource");
+    SDLEx_LogError("%s - failed to cast iresource",
+      __METHOD_NAME__);
     throw std::exception("Failed to cast iresource");
   }
   return f;
@@ -189,7 +212,8 @@ static bool find_file(const boost::filesystem::path & directory,
 std::string find(const std::string& resource)
 {
   if (!g_cache || !g_assets_root) {
-      SDLEx_LogError("resources::find() - no assets root initialized");
+      SDLEx_LogError("%s - no assets root initialized",
+        __METHOD_NAME__);
       throw std::exception("no assets root");
   }
 
@@ -197,22 +221,20 @@ std::string find(const std::string& resource)
   boost::filesystem::path resource_name(descr.resource_name);
   boost::filesystem::path resource_filepath;
   if (!find_file(*g_assets_root, resource_name, resource_filepath)) {
-    SDL_Log("resources::find - nothing found for resource name '%s'", resource.c_str());
+    SDL_Log("%s - nothing found for resource id '%s'", 
+      __METHOD_NAME__,
+      resource.c_str());
     return std::string();
   }
 
-  std::string abs_path = boost::filesystem::absolute(resource_filepath, *g_assets_root).string();
-  SDL_Log("resources::find - found '%s' at '%s'", 
-    resource.c_str(),
-    abs_path.c_str());
-  
-  return abs_path;
+  return boost::filesystem::absolute(resource_filepath, *g_assets_root).string();
 }
 
 bool loaded(const std::string& resource)
 {
   if (!g_cache || !g_assets_root) {
-      SDLEx_LogError("resources::loaded() - no assets root initialized");
+      SDLEx_LogError("%s - no assets root initialized",
+        __METHOD_NAME__);
       throw std::exception("no assets root");
   }
   return g_cache->find(resource) != g_cache->end() ? true : false;

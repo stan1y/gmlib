@@ -134,14 +134,14 @@ void texture::convert_surface(SDL_Surface * s)
   SDL_FreeSurface(converted);
 }
 
-void texture::load_text_solid(const std::string& text, TTF_Font* font, const color & c)
+void texture::load_text_solid(const std::string& text, ttf_font const * font, const color & c)
 {
-  convert_surface(TTF_RenderText_Solid(font, text.c_str(), c));
+  convert_surface(TTF_RenderText_Solid(font->fnt(), text.c_str(), c));
 }
 
-void texture::load_text_blended(const std::string& text, TTF_Font* font, const color & c)
+void texture::load_text_blended(const std::string& text, ttf_font const * font, const color & c)
 {
-  convert_surface(TTF_RenderText_Blended(font, text.c_str(), c));
+  convert_surface(TTF_RenderText_Blended(font->fnt(), text.c_str(), c));
 }
 
 void texture::set_surface(SDL_Surface* src)
@@ -374,6 +374,7 @@ void multi_texture::init(int fw, int fh)
       _fragments.push_back(new fragment(fragment_rect));
     }
   }
+#ifdef GM_DEBUG_MULTI_TEXTURE
   SDL_Log("%s - created %d fragments of size (%d, %d), total size is (%d, %d)",
     __METHOD_NAME__,
     _fragments.size(),
@@ -381,6 +382,7 @@ void multi_texture::init(int fw, int fh)
     fragments_h,
     _width,
     _height);
+#endif
 }
 
 void multi_texture::render(SDL_Renderer * r, const point & at)

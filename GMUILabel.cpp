@@ -308,9 +308,9 @@ void label::paint(SDL_Renderer * r)
   }
 
   if (_font_style == font_style::blended)
-    _text_tx.load_text_blended(_text.length() > 0 ? _text : " ", _font_text->fnt(), clr);
+    _text_tx.load_text_blended(_text.length() > 0 ? _text : " ", _font_text, clr);
   else
-    _text_tx.load_text_solid(_text.length() > 0 ? _text : " ", _font_text->fnt(), clr);
+    _text_tx.load_text_solid(_text.length() > 0 ? _text : " ", _font_text, clr);
 
   // load icon as resource only if given
   if (_icon_file.size() > 0) {

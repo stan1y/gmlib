@@ -14,7 +14,9 @@ control::control(const std::string & type_name, rect pos):
   _pos(pos), _parent(NULL), _id(newid()),
   _scrolled_rect(0, 0, pos.w, pos.h)
 {
-  if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
+#ifdef GM_DEBUG_UI
+  SDL_Log("control::control created new %s", tostr().c_str());
+#endif
   manager::instance()->add_child(this);
 }
 
@@ -26,19 +28,25 @@ control::control(const std::string & type_name, rect pos, const std::string id):
   _pos(pos), _parent(NULL), _id(id),
   _scrolled_rect(0, 0, pos.w, pos.h)
 {
-  if (UI_Debug()) SDL_Log("control::control created new %s", tostr().c_str());
+#ifdef GM_DEBUG_UI
+  SDL_Log("control::control created new %s", tostr().c_str());
+#endif
   manager::instance()->add_child(this);
 }
 
 // manager's constructor
 control::control():
-  _type("ui-manager"), _id("root"), _parent(NULL), 
+  _type("manager"), _id("root"), _parent(NULL), 
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
   _pos(rect(GM_GetDisplayRect())), 
   _scrolled_rect(0, 0, _pos.w, _pos.h)
 {
-  SDL_Log("manager::manager - intialized with %s", _pos.tostr().c_str());
+#ifdef GM_DEBUG_UI
+  SDL_Log("%s - ui manager intialized with %s", 
+    __METHOD_NAME__,
+    _pos.tostr().c_str());
+#endif
 }
 
 
@@ -52,18 +60,22 @@ std::string control::newid()
 control::~control()
 {
   // destroy children of this control
-  if (UI_Debug()) SDL_Log("%s - destroying %d children of id: %s",
+#ifdef GM_DEBUG_UI
+  SDL_Log("%s - destroying %d children of id: %s",
     __METHOD_NAME__,
     _children.size(),
     identifier().c_str());
+#endif
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control * child = *it;
     delete child;
   }
-  if (UI_Debug()) SDL_Log("%s - destroyed id: %s", 
+#ifdef GM_DEBUG_UI
+  SDL_Log("%s - destroyed id: %s", 
     __METHOD_NAME__,
     identifier().c_str());
+#endif
 }
 
 std::string control::tostr() const
@@ -99,10 +111,12 @@ void control::load(const data & d)
   _visible = d.get("visible", true);
   _proxy = d.get("proxy", false);
 
-  if (UI_Debug()) SDL_Log("control::load id: %s reloaded as %s",
+#ifdef GM_DEBUG_UI
+  SDL_Log("control::load id: %s reloaded as %s",
     old_id.c_str(),
     tostr().c_str()
   );
+#endif
 }
 
 rect control::get_absolute_pos()
@@ -125,11 +139,13 @@ void control::set_parent(control* parent)
 {
   manager * mgr = manager::instance();
   std::string s;
-  if (UI_Debug()) SDL_Log("control::set_parent id: %s changed parent from %s to %s", 
+#ifdef GM_DEBUG_UI
+  SDL_Log("control::set_parent id: %s changed parent from %s to %s", 
     identifier().c_str(), 
     _parent == NULL ? "<nobody>" : _parent->identifier().c_str(), 
     parent == NULL ? "<nobody>" : parent->identifier().c_str()
     );
+#endif
   _parent = parent;
 }
 
@@ -249,8 +265,9 @@ void control::render(SDL_Renderer* r, const rect & dst)
     c->render(r, control_dst);
   }
   
-  if (UI_Debug())
+#ifdef GM_DEBUG_UI
     render_debug_frame(r, dst);
+#endif
 }
 
 void control::update()

@@ -17,8 +17,9 @@ void initialize(const config * cfg)
 
   Py_SetStandardStreamEncoding("utf-8", "utf-8");
   Py_Initialize();
-
+#ifdef GM_DEBUG_PYTHON
   SDL_Log("python::initialize - done %s", Py_GetVersion());
+#endif
 }
 
 void shutdown()

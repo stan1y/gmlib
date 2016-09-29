@@ -38,7 +38,9 @@ data::data(const std::string & json_file):
 
 void data::load(const std::string & json_file)
 {
+#ifdef GM_DEBUG
   SDL_Log("data::load - reading %s\n", json_file.c_str()); 
+#endif
   json_t * p = GM_LoadJSON(json_file);
   if (p == NULL) throw std::exception("failed to load data");
   set_owner_of(p);

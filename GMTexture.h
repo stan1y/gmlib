@@ -94,8 +94,8 @@ public:
   void set_texture(SDL_Texture*);
 
   /* load texture data by rendering text with font */
-  void load_text_solid(const std::string& text, TTF_Font* font, const color & clr);
-  void load_text_blended(const std::string& text, TTF_Font* font, const color & clr);
+  void load_text_solid(const std::string& text, ttf_font const * font, const color & clr);
+  void load_text_blended(const std::string& text, ttf_font const * font, const color & clr);
   
   /* calculate rect needed to hold text rendered with font & color */
   static rect get_string_rect(const std::string& text, TTF_Font* font);

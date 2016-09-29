@@ -12,7 +12,6 @@ struct config_private : public data {
   std::string assets_path;
   std::string python_home;
   bool fullscreen;
-  bool calculate_fps;
 
   /** 
   Other components can use data access protocol 
@@ -73,11 +72,6 @@ const bool config::fullscreen() const
   return g_config->fullscreen;
 }
 
-const bool config::calculate_fps() const
-{
-  return g_config->calculate_fps;
-}
-
 const int config::fps_cap() const
 {
   return g_config->fps_cap;
@@ -108,7 +102,6 @@ config_private::config_private()
     driver_name = "";
     assets_path = "";
     fullscreen = false;
-    calculate_fps = true;
     fps_cap = 60;
 
     driver_index = -1;
@@ -134,11 +127,10 @@ int config::load(const std::string& cfg_file)
     char* assets = NULL;
     char* driver = NULL;
     char* python_home = NULL;
-    g_config->unpack("{s:i s:i s:b s:b s:s s:s s:s}",
+    g_config->unpack("{s:i s:i s:b s:s s:s s:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
         "fullscreen",       &g_config->fullscreen,
-        "calculate_fps",    &g_config->calculate_fps,
         "driver",           &driver,
         "python_home",      &python_home,
         "assets_path",      &assets);

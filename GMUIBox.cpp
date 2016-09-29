@@ -88,8 +88,9 @@ void box::render(SDL_Renderer * r, const rect & dst)
     _scroll->render(r, scrollbar_rect);
 
     // debug rendering on top of offset texture
-    if (UI_Debug())
+#if GM_DEBUG_UI
       render_debug_frame(r, dst);
+#endif
   }
   else {
     // direct children rendering
@@ -268,8 +269,10 @@ void box::do_scroll(int dx, int dy)
   if (_scroll->type() == scrollbar_type::scrollbar_bottom) {
     throw std::exception("not implemented");
   }
+#ifdef GM_DEBUG_UI
   SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
     _scrolled_rect.tostr().c_str(), dx, dy);
+#endif
 }
 
 void box::update_children()
@@ -359,11 +362,14 @@ void box::update_children()
       break;
     };
     //update child position (rect)
-    if (UI_Debug()) SDL_Log("box::update_children {%s} type(%d) style(%d) - place child {%s} at %s",
+    child->set_pos(pos);
+
+#ifdef GM_DEBUG_UI
+    SDL_Log("box::update_children {%s} type(%d) style(%d) - place child {%s} at %s",
       identifier().c_str(), _type, _style,
       child->identifier().c_str(),
       pos.tostr().c_str());
-    child->set_pos(pos);
+#endif
   }
 
   // normalize children rect

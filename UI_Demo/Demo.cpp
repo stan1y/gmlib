@@ -127,9 +127,6 @@ int main(int argc, char* argv[])
     return rc;
   }
 
-  // enable debug UI 
-  ui::manager::instance()->set_debug(false);
-
   // setup demo screen
   auto demo = new demo_screen();
   screen::set_current(demo);
