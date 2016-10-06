@@ -106,6 +106,9 @@ public:
 
   virtual void render(SDL_Renderer* r)
   {
+    color(0, 0, 100, 255).apply(r);
+    SDL_RenderClear(r);
+
     // render background
     _back.render(r);
 
