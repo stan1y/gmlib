@@ -41,21 +41,28 @@
 #include "GMLib.h"
 #include "GMTexture.h"
 #include "GMData.h"
+#include "GMPython.h"
 
 namespace resources
 {
 
-/* Get item from cache by path. Returns nullptr if not found */
+/* 
+ * Get item from resources cache by identifier.
+ *  Returns nullptr if not found
+ */
 iresource const * get(const std::string & resource);
 
-/* Get texture from cache by path */
+/* Get texture from resources by identifier */
 texture const * get_texture(const std::string& resource);
 
-/* Get texture from cache by path */
+/* Get data from resources by identifier */
 data const * get_data(const std::string& resource);
 
-/* Get texture from cache by path */
+/* Get font from resources by identifier */
 ttf_font const * get_font(const std::string& resource);
+
+/* Get script from resources by identifier */
+python::script const * get_script(const std::string& resource);
 
 /* Initialize resources root */
 void initialize(const std::string& assets_root);

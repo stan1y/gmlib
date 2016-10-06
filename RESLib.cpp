@@ -149,10 +149,10 @@ data const * get_data(const std::string& resource)
   }
 
   if (res == nullptr) {
-    SDLEx_LogError("%s - failed find texture '%s'",
+    SDLEx_LogError("%s - failed find data '%s'",
       __METHOD_NAME__,
       resource.c_str());
-    throw std::exception("Failed to find texture");
+    throw std::exception("Failed to find data");
   }
 
   data const * d = dynamic_cast<data const *> (res);
@@ -177,10 +177,10 @@ ttf_font const * get_font(const std::string& resource)
   }
 
   if (res == nullptr) {
-    SDLEx_LogError("%s - failed find texture '%s'",
+    SDLEx_LogError("%s - failed find font '%s'",
       __METHOD_NAME__,
       resource.c_str());
-    throw std::exception("Failed to find texture");
+    throw std::exception("Failed to find font");
   }
 
   ttf_font const * f = dynamic_cast<ttf_font const*> (res);
@@ -190,6 +190,35 @@ ttf_font const * get_font(const std::string& resource)
     throw std::exception("Failed to cast iresource");
   }
   return f;
+}
+
+
+python::script const * get_script(const std::string& resource)
+{
+  iresource const * res = get(resource);
+  if (res == nullptr) {
+    std::string found_at = find(resource);
+    if (found_at.size()) {
+      resource_descriptor dsc(resource);
+      res = new python::script(found_at);
+      add(resource, found_at, res);
+    }
+  }
+
+  if (res == nullptr) {
+    SDLEx_LogError("%s - failed find script '%s'",
+      __METHOD_NAME__,
+      resource.c_str());
+    throw std::exception("Failed to find script");
+  }
+
+  python::script const * s = dynamic_cast<python::script const*> (res);
+  if (s == nullptr) {
+    SDLEx_LogError("%s - failed to cast iresource",
+      __METHOD_NAME__);
+    throw std::exception("Failed to cast iresource");
+  }
+  return s;
 }
 
 static bool find_file(const boost::filesystem::path & directory, 
