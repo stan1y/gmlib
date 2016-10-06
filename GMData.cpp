@@ -36,6 +36,17 @@ data::data(const std::string & json_file):
   load(json_file);
 }
 
+std::string data::tostr() const
+{
+  if (_p == NULL)
+    return std::string();
+
+  char * json = json_dumps(_p, JSON_ENCODE_ANY);
+  std::string sjson(json);
+  free(json);
+  return sjson;
+}
+
 void data::load(const std::string & json_file)
 {
 #ifdef GM_DEBUG

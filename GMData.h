@@ -60,6 +60,9 @@ public:
 
   /* parse json string */
   data(const std::string & json, uint32_t parser_flags);
+
+  /* product json string */
+  std::string tostr() const;
   
   /* load from a resource */
   data(const std::string & json_res);
