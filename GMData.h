@@ -16,9 +16,6 @@
 #include "GMLib.h"
 #include "GMUtil.h"
 
-/* Load json object from resources */
-json_t*      GM_LoadJSON(const std::string& file);
-
 /* Utility conterters */
 inline uint32_t jint_to_uint32(json_int_t i) {
     if (i > _UI32_MAX) {
@@ -48,228 +45,526 @@ inline uint8_t jint_to_uint8(json_int_t i) {
 class data: public iresource {
 public:
 
-  bool valid() { return (_p != nullptr); }
+  /*
+   * Data Exception details class with
+   * optional parsing error details from jansson lib
+   */
+  class json_exception: public std::exception {
+  public:
+    json_exception(const char * msg, json_error_t * err = nullptr)
+      :exception(msg)
+    {
+      if (err == nullptr)
+        return;
+      // copy error details
+      line = err->line;
+      column = err->column;
+      position = position;
+      SDL_strlcpy(source, err->source, JSON_ERROR_SOURCE_LENGTH);
+      SDL_strlcpy(text, err->text, JSON_ERROR_TEXT_LENGTH);
+    }
 
-  data():_p(nullptr), _f(0)
+    /*
+     * JSON parsing exception details
+     */
+    int line;
+    int column;
+    int position;
+    char source[JSON_ERROR_SOURCE_LENGTH];
+    char text[JSON_ERROR_TEXT_LENGTH];
+  };
+
+  /*
+   * Class data::json
+   * A wrapper over json_t without ownership
+   * Providers plain types to/from 
+   * conversion api
+   */
+  struct json : public json_t {
+    /*
+     * Create new instances
+     */
+    static json * array() { return (json*) json_array(); }
+    static json * object() { return (json*) json_object(); }
+    static json * integer(json_int_t ival) { return (json*) json_integer(ival); }
+    static json * real(double dval) { return (json*) json_real(dval); }
+    static json * boolean(bool bval) { return (json*) json_boolean(bval); }
+    static json * string(const char * sval) { return (json*) json_string(sval); }
+
+    /* Unpack contained JSON with provided format */
+    void unpack(const char *fmt, ...) const;
+
+    /* 
+     * Get this json value as plain type value.
+     * Template methods to convert into custom type 
+     */
+    template<typename T> T as() const;
+  
+    template<> int as() const
+    {
+      if (!json_is_integer(this))
+        throw json_exception("data object is not an integer");
+
+      json_int_t i = json_integer_value(this);
+      return jint_to_sint32(i);
+    }
+
+    template<> unsigned int as() const
+    {
+      if (!json_is_integer(this))
+        throw json_exception("data object is not an integer");
+
+      json_int_t i = json_integer_value(this);
+      return jint_to_uint32(i);
+    }
+
+    template<> unsigned short as() const
+    {
+      if (!json_is_integer(this))
+        throw json_exception("object is not an integer");
+
+      json_int_t i = json_integer_value(this);
+      return jint_to_uint8(i);
+    }
+
+    template<> point as() const
+    {
+      if (!json_is_array(this) || json_array_size(this) != 2) {
+        throw json_exception("invald object or array lenght for a point array");
+      }
+      point p;
+      unpack("[ii]", &p.x, &p.y);
+      return p;  
+    }
+
+    template<> rect as() const
+    {
+      if (!json_is_array(this) || json_array_size(this) != 4) {
+        throw json_exception("invald object or array lenght for a rect array");
+      }
+      rect r;
+      unpack("[iiii]", &r.x, &r.y, &r.w, &r.h);
+      return r;
+    }
+
+    template<> color as() const
+    {
+      if (!json_is_array(this) || json_array_size(this) != 4) {
+        throw json_exception("invald object or array lenght for a color array");
+      }
+      color c;
+      json_int_t r = 0, g = 0, b = 0, a = 0;
+      unpack("[iiii]", &r, &g, &b, &a);
+      c.r = jint_to_uint8(r);
+      c.g = jint_to_uint8(g);
+      c.b = jint_to_uint8(b);
+      c.a = jint_to_uint8(a);
+      return c;
+    }
+
+    template<> const char * as() const
+    {
+      if (!json_is_string(this)) throw json_exception("object is not a string");
+      const char * s = json_string_value(this);
+      return s;
+    }
+
+    template<> std::string as() const
+    {
+      return std::string(as<const char*>());
+    }
+
+    template<> std::pair<int,int> as() const
+    {
+      if (!json_is_array(this) || json_array_size(this) != 2) {
+        throw json_exception("invald object or array lenght for a std::pair array");
+      }
+      int f = 0, s = 0;
+      unpack("[ii]", &f, &s);
+      return std::make_pair(f, s);
+    }
+
+    template<> bool as() const
+    {
+      return (json_typeof(this) == JSON_TRUE);
+    }
+
+    bool is_true() const
+    {
+      if (!json_is_boolean(this)) {
+        throw json_exception("instance is not a boolean");
+      }
+      return json_is_true(this);
+    }
+  };
+
+
+  /*
+   * Class data::object_iterator
+   * std::iterator implementation for
+   * traversing json objects with string key
+   * by key name. Instance is an equvivalent 
+   * of a key object.
+   */
+  class object_iterator: public std::iterator<
+                         std::input_iterator_tag,   // iterator_category
+                         const data,                // value_type
+                         int,                      // difference_type
+                         const data*,               // pointer -> a value of the data
+                         void*>              // reference -> a string key in dictionary
+  {
+  public:
+    // new iterator with given values
+    explicit object_iterator(json * p, void * i): 
+      _p(p),
+      _i(i)
+    {}
+    // new iterator from the fist key of the dict
+    explicit object_iterator(const data & d): 
+      _p(d.as_json()),
+      _i(json_object_iter(_p))
+    {}
+
+    // end iterator
+    explicit object_iterator():
+      _p(nullptr),
+      _i(nullptr)
+    {}
+
+    ~object_iterator() {}
+
+    // iterate over keys of the json object
+    object_iterator& operator++() { _i = json_object_iter_next(_p, _i); return *this; }
+    object_iterator operator++(int) { object_iterator retval = *this; ++(*this); return retval; }
+
+    // compare iterator to others and end() operator(_i == nullptr)
+    bool operator==(object_iterator other) const { return _i == other._i; }
+    bool operator!=(object_iterator other) const { return !(*this == other); }
+
+    // get referece to a real operator type -> (void *)
+    object_iterator::reference operator*() const {
+      return _i;
+    }
+
+    // get dict key -> string
+    const char * key() const { return json_object_iter_key(_i); }
+
+     // get dict value converted to into supported type
+    template<class T> T value() const { return value()->as<T>(); }
+
+    // get dict value -> data::json
+    json * value() const {
+      return (json *) json_object_iter_value(_i);
+    }
+
+    // get dict value -> data
+    data as_data() const {
+      return data( (json *) json_copy(value()) );
+    }
+
+    // assign json_t value to this key
+    // the instance of json_t is expected to be a newly created one
+    void set_value(json * val)
+    {
+      json_object_iter_set(_p, _i, val);
+    }
+
+    /*
+     * "operator=" implementation
+     * Assign type specific value to this key
+     */
+    template<class T>
+    void operator=(const T& val);
+
+    template<>
+    void operator=(const data& val) 
+    {
+      // assign a copy of val
+      json_object_iter_set_new(_p, _i, val.as_json());
+    }
+
+    template<>
+    void operator=(const bool & bval)
+    {
+      json * val = json::boolean(bval);
+      set_value(val);
+      json_decref(val);
+    }
+
+    template<>
+    void operator=(const std::string & sval)
+    {
+      json * val = json::string(sval.c_str());
+      set_value(val);
+      json_decref(val);
+    }
+
+    template<>
+    void operator=(const int& ival)
+    {
+      json * val = json::integer(ival);
+      set_value(val);
+      json_decref(val);
+    }
+
+    // query value type helpers
+    bool is_value_number() { return json_is_number(value()); }
+    bool is_value_interger() { return json_is_integer(value()); }
+    bool is_value_real() { return json_is_real(value()); }
+    bool is_value_string() { return json_is_string(value()); }
+    bool is_value_object() { return json_is_object(value()); }
+    bool is_value_array(size_t of_size = 0) 
+    { 
+      json * val = value();
+      return (json_is_array(val) && (of_size > 0 ? json_array_size(val) == of_size : true) ); 
+    }
+
+  private:
+    json * _p;
+    void * _i;
+  };
+
+
+  /*
+   * Class data::array_iterator
+   * std::iterator implementation for
+   * traversing json arrays with size_t indexes.
+   * Iterator instance holds index in the array.
+   */
+  class array_iterator: public std::iterator<
+                         std::input_iterator_tag,   // iterator_category
+                         const data,                // value_type
+                         int,                      // difference_type
+                         const data*,               // pointer -> a value of the data
+                         const data::json*>         // reference -> a const value of data::json
+  {
+  public:
+    // new iterator with given values
+    explicit array_iterator(json * p, size_t i): 
+      _p(p),
+      _i(i)
+    {}
+    // new iterator from the fist key of the dict
+    explicit array_iterator(const data & d): 
+      _p(d.as_json()),
+      _i(0)
+    {}
+
+    // end iterator
+    explicit array_iterator():
+      _p(nullptr),
+      _i(0)
+    {}
+
+    ~array_iterator() {}
+
+    // assign json_t value to this key
+    // the instance of json_t is expected to be a newly created one
+    void set(json * val)
+    {
+      json_array_set(_p, _i, val);
+    }
+
+    // iterate over keys of the json object
+    array_iterator& operator++() { ++_i; return *this; }
+    array_iterator operator++(int) { array_iterator retval = *this; ++(*this); return retval; }
+
+    // compare iterator to others and end() operator(_i == nullptr)
+    bool operator==(array_iterator other) const { return (_p == other._p && _i == other._i); }
+    bool operator!=(array_iterator other) const { return !(*this == other); }
+
+    // get pointer to the underlying data::json
+    array_iterator::reference operator*() const {
+      return item();
+    }
+
+    // get pointer to the underlying data::json
+    array_iterator::reference item() const {
+      data::json * item = (data::json*) json_array_get(_p, _i);
+      return item;
+    }
+
+    /* return underlying index in array */
+    size_t index() { return _i; }
+
+    /*
+     * "operator=" implementation
+     * Assign type specific value to this key
+     */
+    template<class T>
+    void operator=(const T& val);
+
+    template<>
+    void operator=(const data& val) 
+    {
+      // assign a copy of val
+      json_array_set_new(_p, _i, val.as_json());
+    }
+
+    template<>
+    void operator=(const bool & bval)
+    {
+      json * val = json::boolean(bval);
+      set(val);
+      json_decref(val);
+    }
+
+    template<>
+    void operator=(const std::string & sval)
+    {
+      json * val = json::string(sval.c_str());
+      set(val);
+      json_decref(val);
+    }
+
+    template<>
+    void operator=(const int& ival)
+    {
+      json * val = json::integer(ival);
+      set(val);
+      json_decref(val);
+    }
+
+    // query value type helpers
+    bool is_value_number() { return json_is_number(item()); }
+    bool is_value_interger() { return json_is_integer(item()); }
+    bool is_value_real() { return json_is_real(item()); }
+    bool is_value_string() { return json_is_string(item()); }
+    bool is_value_object() { return json_is_object(item()); }
+    bool is_value_array(size_t of_size = 0) 
+    { 
+      const json * val = item();
+      return (json_is_array(val) && (of_size > 0 ? json_array_size(val) == of_size : true) ); 
+    }
+
+  private:
+    json * _p;
+    size_t _i;
+  };
+
+
+  /**********************************************
+   * Data Class - Opaque JSON storage with
+   * automatic C++ refcount support of inner
+   * json_t type. The type json_t is a type
+   * from jansson library.
+   */
+
+
+  /* Assign a new instance of data with given json_t*
+   * The json_t object is expected to be a fresh instance
+   * with one ref count only.
+   */
+  data(json* p):_json(nullptr), _f(0)
+  {
+    assign(p);
+  }
+
+  /* Create a copy of data instance with own copy of data::json */
+  data(data & d):_json((json*)json_copy(d.as_json())), _f(0)
+  {}
+  
+  /* Create a copy of data instance with own copy of data::json */
+  data(const json * p):_json((json*)json_copy((json_t*)p)), _f(0)
   {}
 
-  data(json_t* p):_p(nullptr), _f(0)
+  /* null constructor */
+  data():_json(nullptr), _f(0)
+  {}
+
+  /* Assign this instance with given json_t 
+   * the pointer to json_t is expected to be
+   * fresh isntance with refcount = 1
+   */
+  void assign(json * p)
   {
-    set_owner_of(p);
+    if (p == nullptr)
+      return;
+
+    
+    if (_json != nullptr) {
+      // release owned data
+      json_decref(_json);
+    }
+
+    // assign new data
+    _json = p;
+    json_incref(_json);
   }
 
   /* parse json string */
   data(const std::string & json, uint32_t parser_flags);
 
-  /* product json string */
-  std::string tostr() const;
+  /* serialize this data as json string */
+  std::string tostr(int ident = 2) const;
   
   /* load from a resource */
   data(const std::string & json_res);
 
-  /* returns string representation of the
-  std::string tostr(int ident = 2) const
-  {
-    char * s = json_dumps(_p, JSON_INDENT(ident) );
-    return std::string(s); // return a copy
-  }
-
   /* Load json data from a file given by path */
   virtual void load(const std::string & json_file);
 
-  /* Unpack contained JSON with provided format */
-  virtual void unpack(const char *fmt, ...) const;
+  /* Get access to the data::json inner value */
+  json * as_json() const { return _json; }
 
-  /* Set this instance of data a owner of ref to the 
-     specified json_t by incref-ing it */
-  void set_owner_of(json_t* p)
+  /*
+   * Iterate object via keys 
+   */
+  object_iterator object_begin() const { return object_iterator(_json, json_object_iter(_json)); }
+  object_iterator object_end() const { return object_iterator(_json, nullptr); }
+
+  /*
+   * Check if this data dictionary contains given string key
+   */
+  bool has_key(const std::string & key) const
   {
-    if (p == NULL) return;
-    if (_p != NULL) {
-      json_decref(_p);
-      _p = NULL;
+    if (!_json || !json_is_object(_json))
+      throw json_exception("data is not a object");
+
+    json_t* j = json_object_get(_json, key.c_str());
+    return (j != NULL);
+  }
+
+  /*
+    * Check if this data of nested dictionaries contains given subset
+    * if string keys in format "key.subkey.subsubkey"
+    */
+  bool has_subkey(const std::string & key) const
+  {
+    if (!_json || !json_is_object(_json)) 
+      throw json_exception("data is not a object");
+
+    json * val = nullptr;
+    void * it = find_iter_recursive(key.c_str(), &val);
+    if (it == nullptr) {
+      // not found
+      return false;
     }
-    _p = p;
-    json_incref(_p);
+    if (val == _json) {
+      // found on this level
+      return false;
+    }
+    return true;
   }
 
   ~data()
   {
-    if (_p != NULL) {
-      json_decref(_p);
-      _p = NULL;
+    if (_json != NULL) {
+      json_decref(_json);
+      _json = NULL;
     }
   }
 
-  bool is_object() const
-  {
-    return json_is_object(_p);
-  }
-
-  bool has_key(const std::string & key) const
-  {
-    if (!is_object()) throw std::exception("data is not a object");
-    json_t* j = json_object_get(_p, key.c_str());
-    return (j != NULL);
-  }
-
-  bool has_subkey(const std::string & key) const
-  {
-    if (!is_object()) throw std::exception("data is not a object");
-    std::vector<std::string> subkeys = split_string(key, '.');
-    auto ikey = subkeys.begin();
-    json_t* current = _p;
-    for(; ikey != subkeys.end(); ++ikey) {
-      current = json_object_get(current, ikey->c_str());
-      if (current == NULL) {
-        return false;
-      }
-    }
-    return (current != NULL && current != _p);
-  }
-
-  bool is_array(const size_t of_size = 0) const
-  {
-    return json_is_array(_p) && ( of_size == 0 ? true : json_array_size(_p) == of_size );
-  }
-
-  bool is_string() const
-  {
-    return json_is_string(_p);
-  }
-
-  size_t length() const
-  {
-    if (is_string()) {
-      const char* s = json_string_value(_p);
-      return SDL_strlen(s);
-    }
-    if (is_array())
-    {
-      return json_array_size(_p);
-    }
-    throw std::exception("data is not indexable");
-  }
-
-  bool is_number() const
-  {
-    return json_is_number(_p);
-  }
-
-  /* Template methods to convert into cutom type */
-  template<typename T> T as() const;
-  
-  template<> int32_t as() const
-  {
-    if (!json_is_integer(_p)) throw std::exception("data object is not an integer");
-    json_int_t i = json_integer_value(_p);
-    return jint_to_sint32(i);
-  }
-
-  template<> uint32_t as() const
-  {
-    if (!json_is_integer(_p)) throw std::exception("data object is not an integer");
-    json_int_t i = json_integer_value(_p);
-    return jint_to_uint32(i);
-  }
-
-  template<> uint8_t as() const
-  {
-    if (!json_is_integer(_p)) throw std::exception("object is not an integer");
-    json_int_t i = json_integer_value(_p);
-    return jint_to_uint8(i);
-  }
-
-  template<> point as() const
-  {
-    if (!json_is_array(_p)) {
-      throw std::exception("object is not a point array");
-    }
-    if (length() != 2) {
-      throw std::exception("invalid object array length for a point array");
-    }
-    point p;
-    unpack("[ii]", &p.x, &p.y);
-    return p;  
-  }
-
-  template<> rect as() const
-  {
-    if (!json_is_array(_p)){
-      SDLEx_LogError("data::as - json is not a rect array");
-      throw std::exception("json is not a rect array");
-    }
-    if (length() != 4) {
-      SDLEx_LogError("data::as - invalid object array length for a rect array");
-      throw std::exception("invalid object array length for a rect array");
-    }
-    rect r;
-    unpack("[iiii]", &r.x, &r.y, &r.w, &r.h);
-    return r;
-  }
-
-  template<> color as() const
-  {
-    if (!json_is_array(_p)) throw std::exception("object is not a color array");
-    if (length() != 4) throw std::exception("invalid object array length for a color array");
-    color c;
-    json_int_t r = 0, g = 0, b = 0, a = 0;
-    unpack("[iiii]", &r, &g, &b, &a);
-    c.r = jint_to_uint8(r);
-    c.g = jint_to_uint8(g);
-    c.b = jint_to_uint8(b);
-    c.a = jint_to_uint8(a);
-    return c;
-  }
-
-  template<> const char * as() const
-  {
-    if (!json_is_string(_p)) throw std::exception("object is not a string");
-    const char * s = json_string_value(_p);
-    return s;
-  }
-
-  template<> std::string as() const
-  {
-    return std::string(as<const char*>());
-  }
-
-  template<> std::pair<int,int> as() const
-  {
-    if (!json_is_array(_p)) {
-      SDLEx_LogError("data::as() - instance is not a pair");
-      throw std::exception("instance is not a pair array");
-    }
-    if (length() != 2) {
-      throw std::exception("invalid array length for a pair");
-      SDLEx_LogError("data::as() - invalid array length for a pair");
-    }
-    int f = 0, s = 0;
-    unpack("[ii]", &f, &s);
-    return std::make_pair(f, s);
-  }
-
-  template<> bool as() const
-  {
-    return (json_typeof(_p) == JSON_TRUE);
-  }
-
-  bool is_true() const
-  {
-    if (!json_is_boolean(_p)) {
-      SDLEx_LogError("data::is_true - instance is not a boolean");
-      throw std::exception("instance is not a boolean");
-    }
-    return json_is_true(_p);
-  }
-
+  /*
+   * Set dictionary pair with string key
+   */
   void set(const char* key, json_t * val)
   {
-    if (!is_object()) {
+    if (!_json || !json_is_object(_json)) {
       SDLEx_LogError("data::set - instance is not an object");
-      throw std::exception("instance is not an object");
+      throw json_exception("instance is not an object");
     }
-    json_object_set(_p, key, val);
+    json_object_set(_json, key, val);
   }
 
   template<typename T>
@@ -287,64 +582,213 @@ public:
     set(key, json_integer(val));
   }
 
+  /* Get dictionary item by string key */
+  json * get(const char* key) const
+  {
+    if (!_json || !json_is_object(_json)) {
+      SDLEx_LogError("data::get - instance is not an object");
+      throw json_exception("instance is not a object");
+    }
+    return (json *) json_object_get(_json, key);
+  }
+  
+  /* Get dictionary item by string key */
   template<typename T>
   T get(const char* key, T def_value = T()) const
   {
-    if (!is_object()) {
-      SDLEx_LogError("data::get - instance is not an object");
-      throw std::exception("instance is not a object");
-    }
-    json_t * p = json_object_get(_p, key);
+    json * p = get(key);
     if (p == NULL) 
       return def_value;
-    return data(p).as<T>();
+    return p->as<T>();
   }
 
-  data operator[](const std::string& key) const
+  /*
+   *  Get dictionary item iterator by string key
+   */
+  object_iterator operator[](const std::string& key) const
   {
-    if (!is_object()) {
+    if (!_json || !json_is_object(_json)) {
       SDLEx_LogError("data::operator[std::string] - instance is not an object");
-      throw std::exception("instance is not a object");
+      throw json_exception("instance is not a object");
     }
 
-    json_t * p = NULL;
+    void * it = NULL;
     if (key.find(".") == UINT32_MAX) {
-      p = json_object_get(_p, key.c_str());
+      // there is no dots in key, so check this level only
+      it = json_object_iter_at(_json, key.c_str()); 
     }
     else {
-      std::vector < std::string> tokens = split_string(key, '.');
-      for (size_t i = 0; i < tokens.size(); ++i) {
-        p = json_object_get(p == NULL ? _p : p, tokens[i].c_str());
-      }
+      // check sublevels 
+      it = find_iter_recursive(key.c_str(), NULL);
     }
-    if (p == NULL) {
-      SDLEx_LogError("data::operator[std::string] - object has no key ");
-      throw std::exception("data object has no key");
+
+    if (it == NULL) {
+      SDLEx_LogError("%s - key %s does not exist",
+        __METHOD_NAME__, key.c_str());
+      throw json_exception("Key does not exist");
     }
-    return data(p);
+    return object_iterator(_json, it);
   }
 
+
+  /*
+   * Add array item to at the back
+   */
+  void push_back(json_t * val)
+  {
+    if (!_json || !json_is_array(_json)) {
+      SDLEx_LogError("%s - instance is not an array",
+        __METHOD_NAME__);
+      throw json_exception("instance is not an array");
+    }
+
+    json_array_append(_json, val);
+  }
+
+  /*
+   * Add array item at index
+   */
+  void insert(size_t idx, json_t * val)
+  {
+    if (!_json || !json_is_array(_json)) {
+      SDLEx_LogError("%s - instance is not an array",
+        __METHOD_NAME__);
+      throw json_exception("instance is not an array");
+    }
+
+    json_array_insert(_json, idx, val);
+  }
+  
+  /*
+   * Iterate arrays via indexes 
+   */
+  array_iterator array_begin() const { return array_iterator(_json, 0); }
+  array_iterator array_end() const { return array_iterator(_json, json_array_size(_json) ); }
+
+  /*
+   * Get array item by index
+   */
+  template<typename T>
+  T at(size_t idx, T def_value = T()) const
+  {
+    if (!_json || !_json->is_array()) {
+      SDLEx_LogError("%s - instance is not an array",
+        __METHOD_NAME__);
+      throw json_exception("instance is not an array");
+    }
+    data item(json_array_get(_p, idx));
+    if (item.is_null()) 
+      return def_value;
+    return item.as<T>();
+  }
+
+  /*
+   *  Get array item as data by index
+   */
   data operator[](size_t idx) const
   {
     if (!is_array()) {
       SDLEx_LogError("data::operator[size_t] - instance is not an array");
-      throw std::exception("data is not an array");
+      throw json_exception("data is not an array");
     }
-    if (idx >= json_array_size(_p)) {
+    if (idx >= json_array_size(_json)) {
       SDLEx_LogError("data::operator[size_t] - index is out of range");
-      throw std::exception("index out of data array range");
+      throw json_exception("index out of data array range");
     }
-    return data(json_array_get(_p, idx));
+    return data( (json*) json_array_get(_json, idx));
   }
-  
-  json_t * ptr() const { return _p; }
 
+  /*
+    * Check if this data is empty
+    */
+  bool is_null() const
+  {
+    return (!_json || json_is_null(_json));
+  }
+
+  /*
+    * Check if this data is dictionary
+    */
+  bool is_object() const
+  {
+    return (_json && json_is_object(_json));
+  }
+
+  /*
+    * Check if this data is array
+    */
+  bool is_array(const size_t of_size = 0) const
+  {
+    return (_json && json_is_array(_json) && ( of_size == 0 ? true : json_array_size(_json) == of_size ));
+  }
+
+  /*
+    * Check if this data is string
+    */
+  bool is_string() const
+  {
+    return (_json && json_is_string(_json));
+  }
+
+  bool is_number() const
+  {
+    return json_is_number(_json);
+  }
+
+  bool is_real() const
+  {
+    return json_is_real(_json);
+  }
+
+  bool is_integer() const
+  {
+    return json_is_integer(_json);
+  }
+
+  /*
+    * Get length of an indexable item
+    * such as a string or an array
+    */
+  size_t length() const
+  {
+    if (!_json)
+      throw json_exception("Null value does not have length");
+
+    if (is_string()) {
+      const char* s = json_string_value(_json);
+      return SDL_strlen(s);
+    }
+    if (is_array())
+    {
+      return json_array_size(_json);
+    }
+    throw json_exception("data is not indexable");
+  }
+
+  /* 
+  * Get this data as plain type value.
+  * Template methods to convert into custom type 
+  */
+  template<typename T> T as() const
+  {
+    if (!is_null())
+      throw json_exception("Cannot convert null value");
+
+    return _json->as<T>();
+  }
+
+  /* Unpack contained JSON with provided format */
+  void unpack(const char *fmt, ...) const;
+  
 private:
-  json_t* _p;
+  // lookup in dictionary
+  void * find_iter_recursive(const char* key, json ** found) const;
+
+  data::json * _json;
   uint32_t _f;
 };
 
-/* Get config as data object */
-const data & GM_GetConfigData();
+/* Load json object from resources */
+data::json*      GM_LoadJSON(const std::string& file);
 
 #endif //_GM_DATA_H_
