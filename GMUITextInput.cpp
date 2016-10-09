@@ -53,8 +53,8 @@ text_input::~text_input()
 void text_input::load(const data & d)
 {
   if (d.has_key("validation")) {
-    if (d["validation"].is_string()) {
-      std::string sval = d["validation"].as<std::string>();
+    if (d["validation"].is_value_string()) {
+      std::string sval = d["validation"].value<std::string>();
       input_validation v;
       if (sval == std::string("whitespace")) {
         v = input_validation::whitespace;
@@ -77,11 +77,11 @@ void text_input::load(const data & d)
   }
 
   if (d.has_key("readonly")) {
-    _readonly = d["readonly"].as<bool>();
+    _readonly = d["readonly"].value<bool>();
   }
 
   if (d.has_key("frame")) {
-    _draw_frame = d["frame"].as<bool>();
+    _draw_frame = d["frame"].value<bool>();
   }
 
   label::load(d);

@@ -59,17 +59,17 @@ public:
     font_style _fs;
   };
   */
-  struct base_frame {
+  struct base_skin {
     /* frame's name, the control's type */
     std::string name;
-    base_frame(const std::string & n):name(n) {}
-    virtual ~base_frame() {}
+    base_skin(const std::string & n):name(n) {}
+    virtual ~base_skin() {}
   };
 
   /* label frame, the most basic one */
-  struct label_frame: public base_frame {
+  struct label_skin: public base_skin {
 
-    label_frame(theme * t, const std::string & frame_name);
+    label_skin(theme * t, const std::string & skin_name);
 
     /* frame specific colors & fonts */
     color color_back;
@@ -79,7 +79,7 @@ public:
   };
 
   /* Frames declarations */
-  struct container_frame : public base_frame {
+  struct container_skin : public base_skin {
      texture corner_top_left;
      texture corner_top_right;
      texture corner_bottom_left;
@@ -90,10 +90,10 @@ public:
      texture border_right;
      color color_back;
 
-     container_frame(theme * t, const std::string & frame_name);
+     container_skin(theme * t, const std::string & skin_name);
    };
 
-   class button_frame: public base_frame {
+   class button_skin: public base_skin {
    public:
      texture left;
      texture right;
@@ -107,16 +107,16 @@ public:
      color color_text_idle;
      color color_text_highlight;
      
-     button_frame(theme * t, const std::string & frame_name);
+     button_skin(theme * t, const std::string & skin_name);
    };
 
-   class push_button_frame: public base_frame {
+   class push_button_skin: public base_skin {
    public:
      texture idle;
      texture disabled;
      texture pressed;
 
-     push_button_frame(theme * t, const std::string & frame_name);
+     push_button_skin(theme * t, const std::string & skin_name);
    };
 
   /** Common default colors and fonts */
@@ -136,29 +136,29 @@ public:
   const data & get_data() const;
   std::string get_root() const;
   
-  std::string get_frame_resource(const std::string & frame_name, const std::string & frame_res) const;
-  bool frame_resource_exists(const std::string & frame_name, const std::string & frame_res) const;
+  std::string get_skin_resource(const std::string & skin_name, const std::string & skin_res) const;
+  bool skin_resource_exists(const std::string & skin_name, const std::string & skin_res) const;
 
   std::string get_resource(const std::string & theme_res) const;
-  bool resource_exists(const std::string & frame_res) const;
+  bool resource_exists(const std::string & skin_res) const;
 
   /** Theme Drawing APIs */
-  void draw_container_frame(const container_frame * f, SDL_Renderer * r, const rect & dst) const;
-  void draw_button_frame(const button_frame * f, SDL_Renderer * r, const rect & dst) const;
+  void draw_container_skin(const container_skin * f, SDL_Renderer * r, const rect & dst) const;
+  void draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const;
   void draw_pointer(SDL_Renderer* r, const rect & dst);
 
   const data & get_desc() const { return _desc; }
 
   /** Theme Setup APIs */
-  void add_frame(const base_frame *);
-  const base_frame * get_frame(const std::string & name) const;
+  void add_skin(const base_skin *);
+  const base_skin * get_skin(const std::string & name) const;
 
 private:
   /* theme's privates */
   data _desc;
   std::string _name;
 
-  std::map<std::string, const base_frame*> _frames;
+  std::map<std::string, const base_skin*> _skins;
 };
 
 }; //namespace ui

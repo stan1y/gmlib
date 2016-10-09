@@ -1,19 +1,35 @@
 #include "GMPython.h"
-#include "Python.h"
 
 #include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 
 namespace python {
 
+/*
+ * Python exception
+ * collects python's error details
+ */
+script::script_exception::script_exception(const char * msg):
+  exception(msg)
+{
+  if (!PyErr_Occurred()) {
+    return;
+  }
+
+  // Get python error traceback
+  PyErr_Print();
+}
+
+
 void initialize(const config * cfg) 
 {
-  auto python_home = boost::filesystem::current_path();
+  auto python_home = fs::current_path();
   wchar_t * wpython_home = Py_DecodeLocale(python_home.string().c_str(), NULL);
   Py_SetPythonHome(wpython_home);
 
-  auto python_lib = python_home / "lib";
-  wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
-  Py_SetPath(wpython_lib);
+  //auto python_lib = python_home / "lib";
+  //wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
+  //Py_SetPath(wpython_lib);
 
   Py_SetStandardStreamEncoding("utf-8", "utf-8");
   Py_Initialize();
@@ -27,17 +43,49 @@ void shutdown()
   Py_Finalize();
 }
 
+/* Check if list or tuple contain an object */
+bool PyObject_Contains(PyObject * obj, PyObject * needle)
+{
+  if (!PyList_Check(obj) && !PyTuple_Check(obj)) {
+    return false;
+  }
+
+  // iterate container
+  PyObject *iterator = PyObject_GetIter(obj);
+  PyObject *item;
+
+  if (iterator == NULL) {
+    return false;
+  }
+  // compare items
+  bool found = false;
+  while (item = PyIter_Next(iterator)) {
+    if (PyObject_RichCompareBool(item, needle, Py_EQ)) {
+      found = true;
+      break;
+    }
+  }
+  Py_DECREF(iterator);
+  return found;
+}
+
 script::script(const std::string file_path):
   _py_module(NULL)
 {
-  boost::filesystem::path script_path(file_path);
+  fs::path script_path(file_path);
   std::string folder = script_path.parent_path().string();
   _name = script_path.stem().string();
 
   // append path to the module to sys.path list
   PyObject* module_path = PyUnicode_FromString(folder.c_str());
   PyObject* py_sys_path = PySys_GetObject((char*)"path");
-  PyList_Append(py_sys_path, module_path);
+  if (!PyObject_Contains(py_sys_path, module_path)) {
+#ifdef GM_DEBUG
+    SDL_Log("%s - adding %s to python modules path",
+      __METHOD_NAME__, folder.c_str());
+#endif
+    PyList_Append(py_sys_path, module_path);
+  }
   Py_DECREF(module_path);
 
   // load module object
@@ -51,7 +99,7 @@ script::script(const std::string file_path):
 
     SDLEx_LogError("%s - failed to load python script from %s",
       __METHOD_NAME__, file_path.c_str());
-    throw std::exception("Failed to load python script");
+    throw script_exception("Failed to load python script");
   }
 }
 
@@ -62,59 +110,167 @@ script::~script()
   }
 }
 
-/*
- * call_func_ex
- * Generic interface to call a function from
- * loaded python module
+/* 
+ * Convert PyObject to a value of json type
  */
-
-
-PyObject * call_func_ex(const script & src, const std::string & func_name, const script::arguments & args)
+static data::json * PyObject_AsJSON(PyObject * py)
 {
-  PyObject * func = PyObject_GetAttrString((PyObject*)src.module(), func_name.c_str());
-  if (func == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
+  data::json * p = nullptr;
 
-    SDLEx_LogError("%s - failed to find module attribute %s",
-      __METHOD_NAME__, func_name.c_str());
-    throw std::exception("Failed to find python module attribute");
+  /* number is interger */
+  if (PyLong_Check(py)) {
+    p = data::json::integer(PyLong_AsLong(py));
   }
 
-  if (!PyCallable_Check(func)) {
-    Py_XDECREF(func);
-
-    SDLEx_LogError("%s - python module attribute %s is not a function",
-      __METHOD_NAME__, func_name.c_str());
-    throw std::exception("Called python module attribute is not a function");
+  /* number is double */
+  if (PyFloat_Check(py)) {
+    p = data::json::real(PyFloat_AsDouble(py));
   }
 
-  // build key-value dict with args
-  PyObject * kwargs = PyDict_New();
-  PyObject * targs = PyTuple_New(0);
-  script::arguments::const_iterator it = args.begin();
-  for(; it != args.end(); ++it) {
-    PyObject * v = PyUnicode_FromString(it->second.c_str());
-    PyDict_SetItemString(kwargs, it->first.c_str(), v);
-    Py_DECREF(v);
+  /* boolean */
+  if (PyBool_Check(py)) {
+    p = data::json::boolean(PyObject_IsTrue(py) == 1);
+  }
+  
+  /* unicode string */
+  if (PyUnicode_Check(py)) {
+    Py_ssize_t sz = 0;
+    char * utf8 = PyUnicode_AsUTF8AndSize(py, &sz);
+    if (sz != 0) {
+      p = data::json::string(utf8);
+    }
   }
 
-  // call python
-  PyObject * ret = PyObject_Call(func, targs, kwargs);
-  Py_DECREF(targs);
-  Py_DECREF(kwargs);
-  if (ret == NULL) {
-    Py_XDECREF(ret);
-    if (PyErr_Occurred())
-      PyErr_Print();
+  /* tuple or list into array */
+  if (PyTuple_Check(py) || PyList_Check(py)) {
+    PyObject *iterator = PyObject_GetIter(py);
+    PyObject *item;
 
-    SDLEx_LogError("%s - python function call failed. %s:%s",
-      __METHOD_NAME__, src.name().c_str(), func_name.c_str());
-    throw std::exception("Python function call failed");
+    if (iterator == NULL) {
+      // proparate array error
+      return NULL;
+    }
+    // init new array
+    p = data::json::array();
+    while (item = PyIter_Next(iterator)) {
+      // prepare and set item  
+      data::json * jitem = PyObject_AsJSON(item);
+      Py_DECREF(item);
+      if (jitem == NULL) {
+        // proparate error
+        return NULL;
+      }
+      json_array_append(p, jitem);
+    }
+    Py_DECREF(iterator);
   }
 
-  return ret;
+  /* dict as object */
+  if (PyDict_Check(py)) {
+    PyObject *iterator = PyObject_GetIter(py);
+    PyObject *key = NULL, *value = NULL;
+
+    if (iterator == NULL) {
+      // proparate dict error
+      return NULL;
+    }
+    // init new dict
+    p = data::json::object();
+    while (key = PyIter_Next(iterator)) {
+      
+      // key must be a unicode string for 
+      // compatibility with JSON 
+      if (!PyUnicode_Check(key)) {
+        SDLEx_LogError("%s - cannot convert non-string key in object",
+          __METHOD_NAME__);
+        return NULL;
+      }
+
+      // get value
+      value = PyObject_GetItem(py, key);
+      if (value == NULL) {
+        // proparage key error
+        SDLEx_LogError("%s - failed to find value by key \"%s\"",
+          __METHOD_NAME__, key);
+        return NULL;
+      }
+
+      // convert key & value
+      char * key_str = PyUnicode_AsUTF8(key);
+      data::json * jval = PyObject_AsJSON(value);
+      Py_DECREF(value);
+      if (jval == NULL) {
+        // proparage value error
+        return NULL;
+      }
+      json_object_set(p, 
+                      key_str,
+                      jval);
+    }
+    Py_DECREF(iterator);
+  }
+
+  return p;
 }
+
+static PyObject * PyObject_FromJSON(const json_t * json)
+{
+  if (json_is_integer(json)) {
+    return PyLong_FromDouble(json_number_value(json));
+  }
+  if (json_is_real(json)) {
+    return PyFloat_FromDouble(json_number_value(json));
+  }
+  if (json_is_string(json)) {
+    return PyUnicode_FromString(json_string_value(json));
+  }
+  if (json_is_array(json)) {
+  }
+  if (json_is_object(json)) {
+  }
+
+  throw python::script::script_exception("Failed to convert data instance into python.");
+}
+
+/*
+ * Convert instance of data into PyDict or PyList
+ */
+PyObject * script::arguments::to_python() const
+{
+  PyObject * py = nullptr;
+
+  if (is_object()) {
+    // build kwargs
+    py = PyDict_New();
+  
+    data::object_iterator it = object_begin();
+    for(; it != object_end(); ++it) {
+      PyObject * v = PyObject_FromJSON(it.value());
+      PyDict_SetItemString(py, it.key(), v);
+      Py_DECREF(v);
+    }
+  }
+
+  if (is_array()) {
+    // build tuple args
+    py = PyList_New(length());
+
+    size_t idx = 0;
+    data::array_iterator it = array_begin();
+    for(; it != array_end(); ++it) {
+      PyObject * item = PyObject_FromJSON(it.item());
+      PyList_SetItem(py, idx, item);
+      Py_DECREF(item);
+      idx++;
+    }
+  }
+
+  if (py) return py;
+
+  // report error if nothing was created
+  throw script_exception("Invalid script arguments data type");
+}
+
 
 /*
  * python::script object interface
@@ -122,34 +278,78 @@ PyObject * call_func_ex(const script & src, const std::string & func_name, const
 
 void script::call_func(data & ret, const std::string & func_name) const
 {
-  arguments args;
+  arguments args = arguments::kwargs();
   call_func(ret, func_name, args);
+}
+
+/*
+ * callfunc and call_func_ex
+ * Generic interface to call a function from
+ * loaded python module
+ */
+PyObject * script::call_func_ex(const std::string & func_name, const script::arguments & args) const
+{
+  if (_py_module == nullptr) {
+    SDLEx_LogError("%s - module %s is not initalized. cannot call \"%s\"",
+      __METHOD_NAME__, _name.c_str(), func_name.c_str());
+    throw script_exception("Cannot call function. Module object is not initialized.");
+  }
+
+  if (!args.is_object()) {
+    SDLEx_LogError("%s - python function arguments must be a dictionary. cannot call \"%s\"",
+      __METHOD_NAME__, func_name.c_str());
+    throw script_exception("Cannot call function. Arguments object is not a dictionary.");
+  }
+
+  PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
+  if (func == NULL) {
+    SDLEx_LogError("%s - failed to find module attribute %s",
+      __METHOD_NAME__, func_name.c_str());
+    throw script_exception("Failed to find python module attribute");
+  }
+
+  if (!PyCallable_Check(func)) {
+    Py_XDECREF(func);
+
+    SDLEx_LogError("%s - python module attribute %s is not a function",
+      __METHOD_NAME__, func_name.c_str());
+    throw script_exception("Called python module attribute is not a function");
+  }
+
+  PyObject * kwargs = args.to_python();
+
+  // call python
+  PyObject * targs = PyTuple_New(0);
+  PyObject * ret = PyObject_Call(func, targs, kwargs);
+  Py_DECREF(targs);
+  Py_DECREF(kwargs);
+  if (ret == NULL) {
+    Py_XDECREF(ret);
+
+    SDLEx_LogError("%s - python function call failed. %s:%s",
+      __METHOD_NAME__, _name.c_str(), func_name.c_str());
+    throw script::script_exception("Python function call failed");
+  }
+
+  return ret;
 }
 
 void script::call_func(data & ret, const std::string & func_name, const arguments & args) const
 {
-  PyObject * py = call_func_ex(*this, func_name, args);
-  json_t * p = nullptr;
-  // convert PyObject to a value of json type
-  if (PyNumber_Check(py)) {
-    PyObject * exc = nullptr;
-    Py_ssize_t val = PyNumber_AsSsize_t(py, exc);
-    p = json_integer(val);
+  PyObject * py = call_func_ex(func_name, args);
+  data::json * jdata = PyObject_AsJSON(py);
+  if (jdata == NULL) {
+    SDLEx_LogError("%s - failed to convert returned value of %s:%s",
+      __METHOD_NAME__, _name.c_str(), func_name.c_str());
+    throw script_exception("Failed to convert value returned from Python");
   }
-  if (PyUnicode_Check(py)) {
-    Py_ssize_t sz = 0;
-    char * utf8 = PyUnicode_AsUTF8AndSize(py, &sz);
-    if (sz != 0) {
-      p = json_string(utf8);
-    }
-  }
+  Py_XDECREF(py);
 
-  if (p != nullptr) {
-    ret.set_owner_of(p);
-    json_decref(p);
-  }
-
-  Py_DECREF(py);
+  // pass json to caller
+  ret.assign(jdata);
+  json_decref(jdata);
 }
+
+
 
 };

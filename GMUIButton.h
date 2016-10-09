@@ -33,16 +33,16 @@ protected:
     v_align va = label::top);
 
   /* get button's frame by it's type */
-  const theme::button_frame * get_btn_frame() const { 
-    auto f = current_theme().get_frame(get_type_name());
-    auto cf = dynamic_cast<const theme::button_frame*>(f); 
+  const theme::button_skin * get_btn_skin() const { 
+    auto f = current_theme().get_skin(get_type_name());
+    auto cf = dynamic_cast<const theme::button_skin*>(f); 
     return cf;
   }
 
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
     // render button frame & back
-    current_theme().draw_button_frame(get_btn_frame(), r, dst);
+    current_theme().draw_button_skin(get_btn_skin(), r, dst);
   
     // render label contents on top
     label::render(r, dst);
@@ -65,13 +65,13 @@ public:
     v_align va = label::top):
   button("btn", pos, pad, ip, ha, va)
   {
-    set_font(get_btn_frame()->font_text);
-    set_idle_color(get_btn_frame()->color_text_idle);
-    set_highlight_color(get_btn_frame()->color_text_highlight);
+    set_font(get_btn_skin()->font_text);
+    set_idle_color(get_btn_skin()->color_text_idle);
+    set_highlight_color(get_btn_skin()->color_text_highlight);
 
     // change pos to reflect height of the frame sprites
-    size_t body_height = max(get_btn_frame()->left.height(),
-      get_btn_frame()->right.height());
+    size_t body_height = max(get_btn_skin()->left.height(),
+      get_btn_skin()->right.height());
     
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
@@ -90,13 +90,13 @@ public:
     v_align va = label::top):
   button("sbtn", pos, pad, ip, ha, va)
   {
-    set_font(get_btn_frame()->font_text);
-    set_idle_color(get_btn_frame()->color_text_idle);
-    set_highlight_color(get_btn_frame()->color_text_highlight);
+    set_font(get_btn_skin()->font_text);
+    set_idle_color(get_btn_skin()->color_text_idle);
+    set_highlight_color(get_btn_skin()->color_text_highlight);
 
     // change pos to reflect height of the frame sprites
-    size_t body_height = max(get_btn_frame()->left.height(),
-      get_btn_frame()->right.height());
+    size_t body_height = max(get_btn_skin()->left.height(),
+      get_btn_skin()->right.height());
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
 };
@@ -145,13 +145,13 @@ public:
   {
     // lbtn can have any rect size it wants
     // no need to update this->pos() in any way
-    set_font(get_btn_frame()->font_text);
-    set_idle_color(get_btn_frame()->color_idle);
-    set_highlight_color(get_btn_frame()->color_highlight);
+    set_font(get_btn_skin()->font_text);
+    set_idle_color(get_btn_skin()->color_idle);
+    set_highlight_color(get_btn_skin()->color_highlight);
   }
 
-  const theme::label_frame * get_btn_frame() { 
-    return dynamic_cast<const theme::label_frame*>(current_theme().get_frame("lbtn")); 
+  const theme::label_skin * get_btn_skin() { 
+    return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("lbtn")); 
   }
 
   void set_btn_shape(shape::shape_type s) { _btn_shape = s; }

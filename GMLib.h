@@ -458,6 +458,7 @@ public:
   const uint32_t      window_flags() const;
   const uint32_t      renderer_flags() const;
   const std::string   python_home() const;
+  const std::string   ui_theme() const;
 
   static int load(const std::string & cfg_file);
 };

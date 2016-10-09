@@ -63,9 +63,9 @@ public:
     virtual void render(SDL_Renderer * r, const rect & dst);
     virtual void update();
 
-    const theme::label_frame * get_frame()
+    const theme::label_skin * get_skin()
     {
-      return dynamic_cast<const theme::label_frame*> (current_theme().get_frame("scrollbar"));
+      return dynamic_cast<const theme::label_skin*> (current_theme().get_skin("scrollbar"));
     }
 
   private:
@@ -185,18 +185,18 @@ public:
   virtual void render(SDL_Renderer* r, const rect & dst);
   virtual void load(const data &);
 
-  const theme::container_frame * get_frame() {
+  const theme::container_skin * get_skin() {
     switch (_ps) {
       case panel_style::dialog:
-        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("dialog")); 
+        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("dialog")); 
       case panel_style::group:
-        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("group")); 
+        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("group")); 
       case panel_style::toolbox:
-        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("toolbox")); 
+        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("toolbox")); 
       case panel_style::window:
-        return dynamic_cast<const theme::container_frame*>(current_theme().get_frame("window"));
+        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("window"));
       default:
-        SDLEx_LogError("panel::get_frame - unknown panel style %d", _ps);
+        SDLEx_LogError("panel::get_skin - unknown panel style %d", _ps);
         throw std::exception("Uknown panel style");
         break;
     };
@@ -207,7 +207,7 @@ public:
   void panel::set_panel_style(const panel_style & ps)
   { 
     _ps = ps; 
-    set_background_color(get_frame()->color_back);
+    set_background_color(get_skin()->color_back);
   }
 
 private:

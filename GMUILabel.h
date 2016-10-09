@@ -166,8 +166,8 @@ public:
   void set_halign(const h_align & ha) { _ha = ha; }
   void set_valign(const v_align & va) { _va = va; }
 
-  const theme::label_frame * get_frame() const { 
-    return dynamic_cast<const theme::label_frame*>(current_theme().get_frame("label")); 
+  const theme::label_skin * get_skin() const { 
+    return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("label")); 
   }
   
 protected:

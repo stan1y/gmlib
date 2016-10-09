@@ -4,11 +4,11 @@ namespace ui {
 
 label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
-  _font_text(get_frame()->font_text),
+  _font_text(get_skin()->font_text),
   _font_style(font_style::blended),
-  _color_idle(get_frame()->color_idle),
-  _color_back(get_frame()->color_back),
-  _color_highlight(get_frame()->color_highlight),
+  _color_idle(get_skin()->color_idle),
+  _color_back(get_skin()->color_back),
+  _color_highlight(get_skin()->color_highlight),
   _hovered(false),
   _focused(false),
   _dirty(true),
@@ -26,11 +26,11 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
 
 label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
-  _font_text(get_frame()->font_text),
+  _font_text(get_skin()->font_text),
   _font_style(font_style::blended),
-  _color_idle(get_frame()->color_idle),
-  _color_back(get_frame()->color_back),
-  _color_highlight(get_frame()->color_highlight),
+  _color_idle(get_skin()->color_idle),
+  _color_back(get_skin()->color_back),
+  _color_highlight(get_skin()->color_highlight),
   _hovered(false),
   _focused(false),
   _dirty(true),
@@ -120,11 +120,11 @@ void label::load(const data & d)
   _icon_file = d.get("icon", "");
 
   if (d.has_key("v_align")) {
-    if (d["v_align"].is_number()) {
-      _va = (v_align)d["v_align"].as<uint32_t>();
+    if (d["v_align"].is_value_number()) {
+      _va = (v_align)d["v_align"].value<uint32_t>();
     }
-    if (d["v_align"].is_string()) {
-      std::string va = d["v_align"].as<std::string>();
+    if (d["v_align"].is_value_string()) {
+      std::string va = d["v_align"].value<std::string>();
       if (va == "top") {
         _va = v_align::top;
       }
@@ -141,11 +141,11 @@ void label::load(const data & d)
   }
 
   if (d.has_key("h_align")) {
-    if (d["h_align"].is_number()) {
-      _ha = (h_align)d["h_align"].as<uint32_t>();
+    if (d["h_align"].is_value_number()) {
+      _ha = (h_align)d["h_align"].value<uint32_t>();
     }
-    if (d["h_align"].is_string()) {
-      std::string ha = d["h_align"].as<std::string>();
+    if (d["h_align"].is_value_string()) {
+      std::string ha = d["h_align"].value<std::string>();
       if (ha == "left") {
         _ha = h_align::left;
       }
@@ -162,11 +162,11 @@ void label::load(const data & d)
   }
 
   if (d.has_key("icon_pos")) {
-    if (d["icon_pos"].is_number()) {
-      _ip = (icon_pos)d["icon_pos"].as<uint32_t>();
+    if (d["icon_pos"].is_value_number()) {
+      _ip = (icon_pos)d["icon_pos"].value<uint32_t>();
     }
-    if (d["icon_pos"].is_string()) {
-      std::string ip = d["icon_pos"].as<std::string>();
+    if (d["icon_pos"].is_value_string()) {
+      std::string ip = d["icon_pos"].value<std::string>();
       if (ip == "left") {
         _ip = icon_pos::icon_left;
       }
@@ -179,60 +179,60 @@ void label::load(const data & d)
     _ip = icon_pos::icon_left;
   }
 
-  if (d.has_key("icon_gap") && d["icon_gap"].is_number()) {
-    _icon_gap = d["icon_gap"].as<uint32_t>();
+  if (d.has_key("icon_gap") && d["icon_gap"].is_value_number()) {
+    _icon_gap = d["icon_gap"].value<uint32_t>();
   }
 
   if (d.has_key("font_text") && d.has_subkey("font_text.face") && d.has_subkey("font_text.size")) {
     std::string font_style = "blended";
     std::stringstream res_id;
-    res_id << d["font_text"]["face"].as<std::string>() \
+    res_id << d["font_text.face"].value<std::string>() \
            << ":" \
-           << d["font_text"]["size"].as<size_t>();
+           << d["font_text.size"].value<size_t>();
     _font_text = resources::get_font(res_id.str());
   }
   else {
     // use font from theme
-    _font_text = get_frame()->font_text;
+    _font_text = get_skin()->font_text;
   }
 
   if (d.has_key("color_back")) {
-    if (d["color_back"].is_string()) {
-      std::string sclr = d["color_back"].as<std::string>();
+    if (d["color_back"].is_value_string()) {
+      std::string sclr = d["color_back"].value<std::string>();
       _color_back = color::from_string(sclr);
     }
-    if (d["color_back"].is_array()) {
-      _color_back = d["color_back"].as<color>();
+    if (d["color_back"].is_value_array()) {
+      _color_back = d["color_back"].value<color>();
     }
   }
 
   if (d.has_key("color_idle")) {
-    if (d["color_idle"].is_string()) {
-      std::string sclr = d["color_idle"].as<std::string>();
+    if (d["color_idle"].is_value_string()) {
+      std::string sclr = d["color_idle"].value<std::string>();
       _color_idle = color::from_string(sclr);
     }
-    if (d["color_idle"].is_array()) {
-      _color_idle = d["color_idle"].as<color>();
+    if (d["color_idle"].is_value_array()) {
+      _color_idle = d["color_idle"].value<color>();
     }
   }
 
   if (d.has_key("color_highlight")) {
-    if (d["color_highlight"].is_string()) {
-      std::string sclr = d["color_highlight"].as<std::string>();
+    if (d["color_highlight"].is_value_string()) {
+      std::string sclr = d["color_highlight"].value<std::string>();
       _color_highlight = color::from_string(sclr);
     }
-    if (d["color_highlight"].is_array()) {
-      _color_highlight = d["color_highlight"].as<color>();
+    if (d["color_highlight"].is_value_array()) {
+      _color_highlight = d["color_highlight"].value<color>();
     }
   }
 
   if (d.has_key("margin")) {
-    data margin = d["margin"];
+    data margin = d["margin"].value();
     if (margin.is_array()) {
       margin.unpack("[iiii]", &_pad.top, &_pad.left, &_pad.bottom, &_pad.right);
     }
     if (margin.is_number()) {
-      _pad = margin_t(margin.as<uint32_t>());
+      _pad = margin_t(margin.as<unsigned int>());
     }
   }
   _icon_gap = d.get("icon_gap", 0);

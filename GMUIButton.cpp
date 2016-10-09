@@ -16,12 +16,12 @@ void lbtn::load(const data &d)
 
   // lbtn has several styles of renderering
   if (d.has_key("btn_shape")) {
-    if (d["btn_shape"].is_number()) {
-      shape::shape_type s = (shape::shape_type)d["btn_shape"].as<int>();
+    if (d["btn_shape"].is_value_number()) {
+      shape::shape_type s = (shape::shape_type)d["btn_shape"].value<int>();
       set_btn_shape(s);
     }
-    if (d["btn_shape"].is_string()) {
-      std::string s = d["btn_shape"].as<std::string>();
+    if (d["btn_shape"].is_value_string()) {
+      std::string s = d["btn_shape"].value<std::string>();
       if (s == "rectangle") {
         set_btn_shape(shape::rectangle);
       }

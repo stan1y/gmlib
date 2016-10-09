@@ -217,7 +217,8 @@ public:
   static const int ui_debug = 1;
 
   /* Initialize UI subsystem*/
-  static void initialize(rect & available_rect);
+  static void initialize(rect & available_rect, 
+                         const std::string & theme_name = GM_GetConfig()->ui_theme());
 
   /* Pointer to a currently processed event (during event handlers execution) */
   static const SDL_Event* current_event();
@@ -265,7 +266,7 @@ public:
   virtual std::string tostr() const;
 
 private:
-  manager(rect &  available_rect);
+  manager(rect &  available_rect, const std::string & theme_name);
   void set_hovered_control(control * target);
   void set_focused_control(control * target);
 

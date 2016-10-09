@@ -39,9 +39,9 @@ public:
 
 private:
 
-  const theme::push_button_frame * get_frame() const
+  const theme::push_button_skin * get_skin() const
   {
-    return dynamic_cast<const theme::push_button_frame*> (current_theme().get_frame("pushbtn"));
+    return dynamic_cast<const theme::push_button_skin*> (current_theme().get_skin("pushbtn"));
   }
 
   void on_disabled(control * target);

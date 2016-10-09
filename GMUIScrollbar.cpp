@@ -17,9 +17,9 @@ box::scrollbar::scrollbar(box * container,
   control("scrollbar", relpos),
   _type(type),
   _container(container),
-  _color_idle(get_frame()->color_idle),
-  _color_highlight(get_frame()->color_highlight),
-  _color_back(get_frame()->color_back)
+  _color_idle(get_skin()->color_idle),
+  _color_highlight(get_skin()->color_highlight),
+  _color_back(get_skin()->color_back)
 {
   if (_container == NULL) throw std::exception("NULL container specified for scrollbar");
   _drag = cursor_drag_state::stop;

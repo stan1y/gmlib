@@ -12,7 +12,7 @@ combo::combo(rect pos,
   text_input("combo", pos, valid, pad, ip, ha, va),
   _area_maxlen(area_maxlen),
   _expand_on_hover(false),
-  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_frame()->color_back))
+  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_skin()->color_back))
 { 
   _area->set_identifier( identifier() + std::string("_area") );
   _area->set_visible(false);
@@ -97,28 +97,28 @@ void combo::load(const data & d)
   text_input::load(d);
 
   if (d.has_key("area_maxlen")) {
-    _area_maxlen = d["area_maxlen"].as<int>();
+    _area_maxlen = d["area_maxlen"].value<int>();
   }
   if (d.has_key("area_color")) {
-    if (d["area_color"].is_string()) {
-      std::string sclr = d["area_color"].as<std::string>();
+    if (d["area_color"].is_value_string()) {
+      std::string sclr = d["area_color"].value<std::string>();
       _area->set_back_color(color::from_string(sclr));
     }
-    if (d["area_color"].is_array()) {
-      _area->set_back_color(d["area_color"].as<color>());
+    if (d["area_color"].is_value_array()) {
+      _area->set_back_color(d["area_color"].value<color>());
     }
   }
 
   if (d.has_key("items")) {
-    data items = d["items"];
+    data items = d["items"].value();
     if (items.is_array()) {
       for(size_t i = 0; i < items.length(); ++i) {
         data itm = items[i];
         if (itm.has_key("text")) {
-          size_t item = add_item(itm["text"].as<std::string>());
+          size_t item = add_item(itm["text"].value<std::string>());
           label * lbl = get_item(item);
           if (itm.has_key("icon"))
-            lbl->set_icon(itm["icon"].as<std::string>());
+            lbl->set_icon(itm["icon"].value<std::string>());
         }
       }
     }   

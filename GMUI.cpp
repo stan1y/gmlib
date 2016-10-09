@@ -26,10 +26,10 @@ static std::mutex g_message_mx;
 
 /** Manager **/
 
-void manager::initialize(rect & available_rect)
+void manager::initialize(rect & available_rect, const std::string & theme_name)
 {
   if (g_manager == NULL) {
-    g_manager = new manager(available_rect);
+    g_manager = new manager(available_rect, theme_name);
   }
   else {
     g_manager->set_pos(available_rect);
@@ -51,14 +51,11 @@ const SDL_Event* manager::current_event()
   return NULL;
 }
 
-manager::manager(rect & available_rect):
+manager::manager(rect & available_rect, const std::string & theme_name):
   control(),
   screen::component(NULL),
   _cur_event(NULL),
-  _theme(GM_GetConfigData().get<std::string>(
-    "ui_theme",    // key name
-    "default" )    // default value
-  ),
+  _theme(theme_name),
   _focused_cnt(NULL),
   _hovered_cnt(NULL)
 {
@@ -325,25 +322,24 @@ void manager::push_back(control * c)
   _children[idx] = tmp;
 }
 
-control* manager::build(data const * ptr)
+control* manager::build(data const * d)
 {
-  const data & d = *ptr;
-
-  if (!d.is_object()) {
+  if (!d->is_object() || !d->has_key("class")) {
     SDLEx_LogError("manager::build - given data is not a json object");
     throw std::exception("given data is not a json object");
   }
 
-  std::string class_id = d["class"].as<std::string>();
+  std::string class_id = d->get<std::string>("class");
+
   rect pos;
   // check "rect" propecty
-  if (d.has_key("rect")) {
-    pos = d["rect"].as<rect>();
+  if (d->has_key("rect")) {
+    pos = d->get<rect>("rect");
   }
   else {
     // check "size" property
-    if (d.has_key("size")) {
-      std::pair<int,int> size = d["size"].as<std::pair<int,int>>();
+    if (d->has_key("size")) {
+      std::pair<int, int> size = d->get< std::pair<int, int> >("size");
       pos.w = size.first;
       pos.h = size.second;
     }
@@ -352,17 +348,17 @@ control* manager::build(data const * ptr)
     }
 
     // check position property
-    if (d.has_key("position")) {
-      if ( d["position"].is_string()) {
-        std::string p = d["position"].as<std::string>();
+    if (d->has_key("position")) {
+      const data::json * position = d->get("position");
+      if ( json_is_string(position) ) {
+        std::string p = position->as<std::string>();
         if (p == "center") {
           pos.x = (manager::instance()->pos().w - pos.w) / 2;
           pos.y = (manager::instance()->pos().h - pos.h) / 2;
         }
       }
-      if (d["position"].is_array()) {
-        point pp = d["position"].as<point>();
-        pos.x = pp.x; pos.y = pp.y;
+      if ( json_is_array(position) ) {
+        pos += position->as<point>();
       }
     }
   }
@@ -375,16 +371,16 @@ control* manager::build(data const * ptr)
   }
 
   // let instance load it's props from data
-  inst->load(d);
+  const data & obj_data = *d;
+  inst->load(obj_data);
 
   // process children
-  if (d.has_key("children")) {
-    data children = d["children"];
-    if (children.is_array()) {
-      size_t len = children.length();
-      for(size_t i = 0; i < len; ++i) {
-        inst->add_child(build(&children[i]));
-      }
+  if (d->has_key("children") && json_is_array(d->get("children"))) {
+    data children(d->get("children"));
+    data::array_iterator child_it = children.array_begin();
+    for(; child_it != children.array_end(); ++child_it) {
+      data child_data(*child_it);
+      inst->add_child(build(&child_data));
     }
   }
 

@@ -169,12 +169,12 @@ void box::on_child_click(control * target)
 void box::load(const data & d)
 {
   if (d.has_key("type")) {
-    if (d["type"].is_number()) {
+    if (d["type"].is_value_number()) {
       uint32_t itype = d.get("type", (uint32_t)box_type::vbox);
       _type = (box_type)itype;
     }
-    if (d["type"].is_string()) {
-      std::string stype = d["type"].as<std::string>();
+    if (d["type"].is_value_string()) {
+      std::string stype = d["type"].value<std::string>();
       if (stype == "vbox") {
         _type = box_type::vbox;
       }
@@ -188,12 +188,12 @@ void box::load(const data & d)
   }
 
   if (d.has_key("style")) {
-    if (d["style"].is_number()) {
+    if (d["style"].is_value_number()) {
       uint32_t istyle = d.get("style", (uint32_t)box_style::center);
       _style = (box_style)istyle;
     }
-    if (d["style"].is_string()) {
-      std::string sstyle = d["style"].as<std::string>();
+    if (d["style"].is_value_string()) {
+      std::string sstyle = d["style"].value<std::string>();
       if (sstyle == "center") {
         _style = box_style::center;
       }
@@ -210,9 +210,9 @@ void box::load(const data & d)
   }
 
   if (d.has_key("scroll")) {
-    if (d["scroll"].is_string()) {
+    if (d["scroll"].is_value_string()) {
       scrollbar_type stype = scrollbar_type::scrollbar_hidden;
-      std::string scroll = d["scroll"].as<std::string>();
+      std::string scroll = d["scroll"].value<std::string>();
       if (scroll == "right")
         stype = scrollbar_type::scrollbar_right;
       if (scroll == "bottom")
@@ -220,8 +220,8 @@ void box::load(const data & d)
     
       int ssize = 16;
       if (d.has_key("scrollbar_size")) {
-        if (d["scrollbar_size"].is_number()) {
-          ssize = d["scrollbar_size"].as<int>();
+        if (d["scrollbar_size"].is_value_number()) {
+          ssize = d["scrollbar_size"].value<int>();
         }
       }
 
@@ -395,7 +395,7 @@ void box::update_children()
 panel::panel(rect pos, panel_style ps, box_type t, box_style s, int margin):
   box("panel", pos, t, s, margin),
   _ps(ps),
-  _color_back(get_frame()->color_back)
+  _color_back(get_skin()->color_back)
 {
 }
 
@@ -406,17 +406,17 @@ panel::~panel()
 void panel::load(const data & d)
 {
   if (d.has_key("color_back")) {
-    if (d["color_back"].is_array(4)) {
-      _color_back = d["color_back"].as<color>();
+    if (d["color_back"].is_value_array(4)) {
+      _color_back = d["color_back"].value<color>();
     }
-    if (d["color_back"].is_string()) {
-      _color_back = color::from_string(d["color_back"].as<std::string>());
+    if (d["color_back"].is_value_string()) {
+      _color_back = color::from_string(d["color_back"].value<std::string>());
     }
   }
 
   if (d.has_key("panel_style")) {
-    if (d["panel_style"].is_string()) {
-      std::string pstyle = d["panel_style"].as<std::string>();
+    if (d["panel_style"].is_value_string()) {
+      std::string pstyle = d["panel_style"].value<std::string>();
       if (pstyle == "dialog") {
         set_panel_style(panel_style::dialog);
       }
@@ -446,7 +446,7 @@ void panel::render(SDL_Renderer * r, const rect & dst)
   box::render(r, dst);
 
   // render box frame
-  current_theme().draw_container_frame(get_frame(), r, dst);
+  current_theme().draw_container_skin(get_skin(), r, dst);
 }
 
 } //namespace ui
