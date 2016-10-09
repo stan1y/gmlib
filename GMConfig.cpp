@@ -11,6 +11,7 @@ struct config_private : public data {
   std::string driver_name;
   std::string assets_path;
   std::string python_home;
+  std::string ui_theme;
   bool fullscreen;
 
   /** 
@@ -39,12 +40,6 @@ const config* GM_GetConfig() {
 }
 
 /** Public Interface **/
-
-const data & GM_GetConfigData()
-{
-  return (*g_config);
-}
-
 
 const rect config::screen_rect() const
 {
@@ -92,6 +87,11 @@ const std::string config::python_home() const
   return g_config->python_home;
 }
 
+const std::string config::ui_theme() const
+{
+  return g_config->ui_theme;
+}
+
 /** Private Interface **/
 
 config_private::config_private()
@@ -127,18 +127,21 @@ int config::load(const std::string& cfg_file)
     char* assets = NULL;
     char* driver = NULL;
     char* python_home = NULL;
-    g_config->unpack("{s:i s:i s:b s:s s:s s:s}",
+    char* ui_theme = NULL;
+    g_config->unpack("{s:i s:i s:b s:s s:s s:s s:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
         "fullscreen",       &g_config->fullscreen,
         "driver",           &driver,
         "python_home",      &python_home,
-        "assets_path",      &assets);
+        "assets_path",      &assets,
+        "ui_theme",         &ui_theme);
     
     //copy strings
     g_config->driver_name = std::string(driver);
     g_config->assets_path = std::string(assets);
     g_config->python_home = std::string(python_home);
+    g_config->ui_theme = std::string(ui_theme);
 
     //select driver
     if (driver) {
