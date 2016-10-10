@@ -460,12 +460,21 @@ public:
     assign(p);
   }
 
+  /* Assign a new instance of data with given json_t*
+   * The json_t object is expected to be a fresh instance
+   * with one ref count only.
+   */
+  data(json_t * p):_json(nullptr), _f(0)
+  {
+    assign( (json *) p);
+  }
+
   /* Create a copy of data instance with own copy of data::json */
-  data(data & d):_json((json*)json_copy(d.as_json())), _f(0)
+  data(data & d):_json( (json *) json_copy(d.as_json())), _f(0)
   {}
   
   /* Create a copy of data instance with own copy of data::json */
-  data(const json * p):_json((json*)json_copy((json_t*)p)), _f(0)
+  data(const json * p):_json( (json *) json_copy((json_t*)p)), _f(0)
   {}
 
   /* null constructor */
@@ -623,7 +632,7 @@ public:
     }
 
     if (it == NULL) {
-      SDLEx_LogError("%s - key %s does not exist",
+      SDLEx_LogError("%s - key \"%s\" does not exist",
         __METHOD_NAME__, key.c_str());
       throw json_exception("Key does not exist");
     }
