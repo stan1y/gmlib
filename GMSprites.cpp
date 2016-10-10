@@ -31,8 +31,8 @@ SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access, u
   Sprites Sheet 
   */
 
-sprites_sheet::sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_t sprite_h)
-  :texture(GM_LoadSurface(resources::find(res)),
+sprites_sheet::sprites_sheet(const std::string & resource, uint32_t sprite_w, uint32_t sprite_h)
+  :texture(GM_LoadSurface(resources::find(resource)),
            SDL_TEXTUREACCESS_STREAMING,
            SDL_BLENDMODE_BLEND)
 {
@@ -70,7 +70,7 @@ sprite::sprite()
   angle = 0;
 }
 
-sprite::sprite(size_t tex_idx, int px_w, int px_h, const sprites_sheet* sheet)
+sprite::sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet const* sheet)
 {
   idx = tex_idx;
   w = px_w; h = px_h;

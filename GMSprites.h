@@ -17,7 +17,7 @@
 
 class sprites_sheet : public texture {
 public:
-  sprites_sheet(const std::string & res, uint32_t sprite_w, uint32_t sprite_h);
+  sprites_sheet(const std::string & resource, uint32_t sprite_w, uint32_t sprite_h);
 
   rect get_sprite_cliprect(size_t idx) const;
   uint32_t sprite_width() const { return width() / _cols; }
@@ -61,7 +61,7 @@ public:
   sprite();
 
   /* create new sprite with texture index */
-  sprite(size_t tex_idx, int px_w, int px_h, const sprites_sheet* sheet);
+  sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet const * sheet);
   virtual ~sprite() {}
 
   /* get center point based on rect */
