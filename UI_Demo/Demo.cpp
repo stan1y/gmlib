@@ -51,7 +51,7 @@ public:
 
   ui::panel * build_panel()
   {
-    auto t = ui::current_theme();
+    const ui::theme & t = ui::current_theme();
     auto pnl = new ui::panel(rect(50, 100, 200, 150));
     pnl->set_box_style(ui::box::fill);
     

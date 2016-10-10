@@ -413,33 +413,6 @@ private:
 /* Define lock helper */
 #define lock_container(uv) mutex_lock uv_lock(uv.mutex())
 
-/* Safe 2D array */
-template<class T> 
-class safe_array2
-{
-private:
-  T** _arr;
-
-public:
-  safe_array2(size_t sz, T & init_value = T()) 
-  {
-      for (size_t i = 0; i < SIZE; i++)
-      {
-        _arr[i] = init_value;
-      }
-  }
-
-  int &operator[](size_t idx)
-  {
-      if (idx > SIZE)
-      {
-        SDLEx_LogError("safe_array::operator[] index %d out of bounds", idx); 
-        throw std::exception("index out of bounds");
-      }
-      return arr[i];
-  }
-};
-
 /*
  *
  * GMLib Core

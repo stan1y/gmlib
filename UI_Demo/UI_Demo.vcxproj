@@ -53,7 +53,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\GMLib;$(SolutionDir)\..\boost_1_58_0;$(SolutionDir)\CPython33\Include\PC;$(SolutionDir)\CPython33\Include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\cpython\include;$(SolutionDir)\cpython\PC;$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\GMLib;$(SolutionDir)\..\boost_1_58_0;$(SolutionDir)\CPython33\Include\PC;$(SolutionDir)\CPython33\Include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

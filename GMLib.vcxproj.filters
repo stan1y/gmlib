@@ -43,10 +43,10 @@
     <ClInclude Include="GMUITheme.h">
       <Filter>ui\include</Filter>
     </ClInclude>
-    <ClInclude Include="GMUtil.h">
-      <Filter>ui\include</Filter>
-    </ClInclude>
     <ClInclude Include="GMPython.h">
+      <Filter>core\inlcude</Filter>
+    </ClInclude>
+    <ClInclude Include="GMUtil.h">
       <Filter>core\inlcude</Filter>
     </ClInclude>
   </ItemGroup>
