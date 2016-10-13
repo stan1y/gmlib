@@ -40,6 +40,7 @@
 
 #include "GMLib.h"
 #include "GMTexture.h"
+#include "GMSprites.h"
 #include "GMData.h"
 #include "GMPython.h"
 
@@ -55,11 +56,17 @@ iresource const * get(const std::string & resource);
 /* Get texture from resources by identifier */
 texture const * get_texture(const std::string& resource);
 
+/* Get texture as sprites_sheet from resources by identifier */
+sprites_sheet const * get_sprites_sheet(const std::string& resource, 
+                                        size_t sprite_width,
+                                        size_t sprite_height);
+
 /* Get data from resources by identifier */
 data const * get_data(const std::string& resource);
 
 /* Get font from resources by identifier */
-ttf_font const * get_font(const std::string& resource);
+ttf_font const * get_font(const std::string& resource,
+                          size_t pt_size);
 
 /* Get script from resources by identifier */
 python::script const * get_script(const std::string& resource);

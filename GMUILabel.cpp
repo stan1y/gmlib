@@ -185,11 +185,8 @@ void label::load(const data & d)
 
   if (d.has_key("font_text") && d.has_subkey("font_text.face") && d.has_subkey("font_text.size")) {
     std::string font_style = "blended";
-    std::stringstream res_id;
-    res_id << d["font_text.face"].value<std::string>() \
-           << ":" \
-           << d["font_text.size"].value<size_t>();
-    _font_text = resources::get_font(res_id.str());
+    _font_text = resources::get_font(d["font_text.face"].value<std::string>(),
+                                    d["font_text.size"].value<size_t>());
   }
   else {
     // use font from theme

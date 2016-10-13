@@ -146,6 +146,9 @@ struct color : SDL_Color {
   static color cyan() { return color(0, 255, 255, 255); }
 };
 
+bool operator== (const color& a, const color& b);
+bool operator!= (const color& a, const color& b);
+
 /* SDL_Point wrapper */
 struct point : SDL_Point {
   point() { x = 0; y = 0; }
@@ -226,8 +229,8 @@ struct rect : SDL_Rect {
 };
 
 /* SDL_Rect & SDL_Point utils */
-bool operator== (rect& a, rect& b);
-bool operator!= (rect& a, rect& b);
+bool operator== (const rect& a, const rect& b);
+bool operator!= (const rect& a, const rect& b);
 
 rect operator+ (const rect& a, const rect& b);
 rect operator- (const rect& a, const rect& b);
@@ -241,14 +244,14 @@ rect operator- (const rect& r, const point& p);
 point operator+ (const point& a, const point& b);
 point operator- (const point& a, const point& b);
 
-bool operator== (point& a, point& b);
-bool operator!= (point& a, point& b);
+bool operator== (const point& a, const point& b);
+bool operator!= (const point& a, const point& b);
 
-void operator+= (rect& r, point& p);
-void operator-= (rect& r, point& p);
+void operator+= (rect& r, const point& p);
+void operator-= (rect& r, const point& p);
 
-void operator+= (point& a, point& b);
-void operator-= (point& a, point& b);
+void operator+= (point& a, const point& b);
+void operator-= (point& a, const point& b);
 
 bool operator< (rect& a, rect& b);
 bool operator<= (rect& a, rect& b);

@@ -756,7 +756,7 @@ public:
 
   /*
     * Get length of an indexable item
-    * such as a string or an array
+    * such as a string, an object or an array
     */
   size_t length() const
   {
@@ -770,6 +770,11 @@ public:
     if (is_array())
     {
       return json_array_size(_json);
+    }
+
+    if (is_object())
+    {
+      return json_object_size(_json);
     }
     throw json_exception("data is not indexable");
   }

@@ -148,7 +148,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //fps counter
     g_fps_color = color( 0, 255, 0, 255 );
-    g_fps_font = resources::get_font("terminus.ttf:12");
+    g_fps_font = resources::get_font("terminus.ttf", 12);
 
     printf("GMLib: ready\n");
     return 0;
@@ -404,11 +404,19 @@ bool point::collide_circle(const point & center, const int radius)
   return (square_dist <= double_to_sint32(std::pow(radius, 2)));
 }
 
-bool operator== (rect& a, rect& b) {
+bool operator== (const color& a, const color& b) {
+  return (a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a);
+}
+
+bool operator!= (const color& a, const color& b) {
+  return !(a == b);
+}
+
+bool operator== (const rect& a, const rect& b) {
   return (SDL_RectEquals(&a, &b) == SDL_TRUE);
 }
 
-bool operator!= (rect& a, rect& b) {
+bool operator!= (const rect& a, const rect& b) {
     return (SDL_RectEquals(&a, &b) != SDL_TRUE);
 }
 
@@ -446,27 +454,27 @@ point operator- (const point& a, const point& b) {
   return point(a.x - b.x, a.y - b.y);
 }
 
-bool operator== (point& a, point& b) {
+bool operator== (const point& a, const point& b) {
     return (a.x == b.x && a.y == b.y);
 }
 
-bool operator!= (point& a, point& b) {
+bool operator!= (const point& a, const point& b) {
     return (a.x != b.x || a.y != b.y);
 }
 
-void operator+= (point& a, point& b) {
+void operator+= (point& a, const point& b) {
   a.x += b.x; a.y += b.y;
 }
 
-void operator-= (point& a, point& b) {
+void operator-= (point& a, const point& b) {
   a.x -= b.x; a.y -= b.y;
 }
 
-void operator+= (rect& r, point& p) {
+void operator+= (rect& r, const point& p) {
   r.x += p.x; r.y += p.y;
 }
 
-void operator-= (rect& r, point& p) {
+void operator-= (rect& r, const point& p) {
   r.x -= p.x; r.y -= p.y;
 }
 

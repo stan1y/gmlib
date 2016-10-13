@@ -84,6 +84,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GMAnimation.h" />
     <ClInclude Include="GMData.h" />
     <ClInclude Include="GMEventHandler.h" />
     <ClInclude Include="GMLib.h" />
@@ -102,6 +103,7 @@
     <ClInclude Include="GMUI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GMAnimation.cpp" />
     <ClCompile Include="GMConfig.cpp" />
     <ClCompile Include="GMData.cpp" />
     <ClCompile Include="GMLib.cpp" />
@@ -119,7 +121,6 @@
     <ClCompile Include="GMUITextInputKeySyms.cpp" />
     <ClCompile Include="GMUITheme.cpp" />
     <ClCompile Include="RESLib.cpp" />
-    <ClCompile Include="GMUtil.cpp" />
     <ClCompile Include="GMSprites.cpp" />
   </ItemGroup>
   <ItemGroup>

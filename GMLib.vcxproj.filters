@@ -49,6 +49,9 @@
     <ClInclude Include="GMUtil.h">
       <Filter>core\inlcude</Filter>
     </ClInclude>
+    <ClInclude Include="GMAnimation.h">
+      <Filter>core\inlcude</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GMUI.cpp">
@@ -102,10 +105,10 @@
     <ClCompile Include="RESLib.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="GMUtil.cpp">
+    <ClCompile Include="GMPython.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="GMPython.cpp">
+    <ClCompile Include="GMAnimation.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

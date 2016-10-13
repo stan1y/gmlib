@@ -17,7 +17,14 @@
 
 class sprites_sheet : public texture {
 public:
-  sprites_sheet(const std::string & resource, uint32_t sprite_w, uint32_t sprite_h);
+  sprites_sheet(const std::string & file_path, uint32_t sprite_w, uint32_t sprite_h);
+
+  inline bool operator== (sprites_sheet & other) {
+    return (get_texture() == other.get_texture() && _rows == other._rows && _cols == other._cols);
+  }
+  inline bool operator!= (sprites_sheet & other) {
+    return !(*this == other);
+  }
 
   rect get_sprite_cliprect(size_t idx) const;
   uint32_t sprite_width() const { return width() / _cols; }
@@ -82,89 +89,5 @@ protected:
   /* sprites sheet*/
   const sprites_sheet* _sheet;
 };
-
-/*
-    Animations
-*/
-
-/* basic timer-based animation */
-class anim {
-public:
-  /* Animation consts */
-  static const uint32_t once = 0;
-  static const uint32_t repeat = 1;
-  static const uint32_t occilate = 2;
-  static const uint32_t linear = 3;
-
-  /* Animation item task properties */
-  int identifier;
-  bool is_running;
-  uint32_t mode;
-  uint32_t period_ms;
-  uint32_t last_updated;
-  uint32_t repeats; // 0 = repeat forever if mode != once
-
-  /* list of running animations */
-  static container<anim*> running;
-  /* animate running items */
-  static void update_running();
-
-  inline bool operator== (anim & other) {
-    return (identifier == other.identifier);
-  }
-  inline bool operator!= (anim & other) {
-    return !(*this == other);
-  }
-
-  /* start/stop animation task */
-  void start(uint32_t repeat = 0);
-  void stop();
-
-  /* reset state of the animation */
-  virtual void reset() { stop(); }
-
-  /* animate this item */
-  void update();
-
-  anim(size_t _base, size_t _from, size_t _to, size_t _step, 
-    uint32_t _period_ms, uint32_t _mode);
-  virtual ~anim() {};
-
-protected:
-  /* sub-class implementation of anumation step */
-  virtual void animate() = 0;
-
-  /* Animated frame info */
-  size_t base;
-  size_t step;
-  int from;
-  int to;
-  int current; //<current> = base + slide_index. slide_index => [from .. to] 
-  int modifier; //animation direction. <next> = slide_index + modifier. modifier => [-1; 1]
-};
-
-class sprite_anim : public anim {
-public:
-  /* Sprite(s) to animate */
-  sprite** target;
-  size_t targets_count;
-  void release_targets();
-
-  /* create new animation task */
-  sprite_anim(sprite* s, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
-  sprite_anim(sprite** ss, size_t _count, size_t _base, size_t _from, size_t _to, size_t _step, uint32_t _period_ms, uint32_t _mode);
-
-  virtual ~sprite_anim() {};
-  virtual void reset();
-
-protected:
-  /* animate step */
-  virtual void animate();
-
-private:
-  void init(sprite** s, size_t _count);
-
-};
-
 
 #endif //_GM_SPRITES_H_

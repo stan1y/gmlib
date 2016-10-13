@@ -136,6 +136,36 @@ texture const * get_texture(const std::string& resource)
   return tx;
 }
 
+/* Get texture as sprites_sheet from cache by path. Returns nullptr if not found */
+sprites_sheet const * get_sprites_sheet(const std::string& resource,
+                                  size_t sprite_width,
+                                  size_t sprite_height)
+{
+  iresource const * res = get(resource);
+  if (res == nullptr) {
+    std::string found_at = find(resource);
+    if (found_at.size()) {
+      res = new sprites_sheet(found_at, sprite_width, sprite_height);
+      add(resource, found_at, res);
+    }
+  }
+
+  if (res == nullptr) {
+    SDLEx_LogError("%s - failed find sprites sheet '%s'", 
+      __METHOD_NAME__,
+      resource.c_str());
+    throw std::exception("Failed to find sprites sheet");
+  }
+
+  sprites_sheet const * ss = dynamic_cast<sprites_sheet const *> (res);
+  if (ss == nullptr) {
+    SDLEx_LogError("%s - failed to cast iresource",
+      __METHOD_NAME__);
+    throw std::exception("Failed to cast iresource");
+  }
+  return ss;
+}
+
 /* Get data from cache by path. Returns nullptr if not found */
 data const * get_data(const std::string& resource)
 {
@@ -164,14 +194,19 @@ data const * get_data(const std::string& resource)
   return d;
 }
 
-ttf_font const * get_font(const std::string& resource)
+ttf_font const * get_font(const std::string& resource, size_t pt_size)
 {
-  iresource const * res = get(resource);
+  // font resource id
+  std::stringstream resids;
+  resids << resource << ":" << pt_size;
+  std::string resid = resids.str();
+
+  iresource const * res = get(resid);
   if (res == nullptr) {
-    std::string found_at = find(resource);
+    std::string found_at = find(resid);
     if (found_at.size()) {
-      resource_descriptor dsc(resource);
-      res = new ttf_font(found_at, atoi(dsc.resource_postfix.c_str()));
+      resource_descriptor dsc(resid);
+      res = new ttf_font(found_at, pt_size);
       add(resource, found_at, res);
     }
   }

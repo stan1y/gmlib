@@ -83,24 +83,8 @@ inline int32_t float_to_sint32(float f) {
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
-/*
- * Implementation of linear gradient
- * color - base color to start gradient
- * start - top left corner to start drawing
- * end - bottom right corner to stop drawing
- * xstep, ystep - gradient direction (i.e vertical growing gradient is xstep = 0, ystep = 1)
- * alpha - drawing alpha value
- */
-void render_vertical_gradient(SDL_Renderer* renderer,  const color & from, const color& to, const point & start, const point & end, uint8_t alpha);
 
-
-/* Executable path and folder functions */
-//std::string GM_GetExecutablePath();
-//std::string GM_GetCurrentPath();
-//void GM_EnumPath(const std::string& folder, std::vector<std::string>& files, bool recursive);
-//void GM_EnumPathEx(const std::string& folder, const std::string& ext, std::vector<std::string>& files, bool recursive);
-
-static std::vector<std::string> & split_string(const std::string &s, const char delim, std::vector<std::string> &elems) 
+inline std::vector<std::string> & split_string(const std::string &s, const char delim, std::vector<std::string> &elems) 
 {
   std::stringstream ss(s);
   std::string item;
@@ -110,8 +94,7 @@ static std::vector<std::string> & split_string(const std::string &s, const char 
   return elems;
 }
 
-
-static std::vector<std::string> split_string(const std::string &s, const char delim) 
+inline std::vector<std::string> split_string(const std::string &s, const char delim) 
 {
   std::vector<std::string> elems;
   split_string(s, delim, elems);
