@@ -218,7 +218,7 @@ public:
 
   /* Initialize UI subsystem*/
   static void initialize(rect & available_rect, 
-                         const std::string & theme_name = GM_GetConfig()->ui_theme());
+    const std::string & theme_name = config::current()->ui_theme());
 
   /* Pointer to a currently processed event (during event handlers execution) */
   static const SDL_Event* current_event();

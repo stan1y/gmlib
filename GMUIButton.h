@@ -70,8 +70,8 @@ public:
     set_highlight_color(get_btn_skin()->color_text_highlight);
 
     // change pos to reflect height of the frame sprites
-    size_t body_height = max(get_btn_skin()->left.height(),
-      get_btn_skin()->right.height());
+    size_t body_height = max(get_btn_skin()->left->height(),
+      get_btn_skin()->right->height());
     
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
@@ -95,8 +95,8 @@ public:
     set_highlight_color(get_btn_skin()->color_text_highlight);
 
     // change pos to reflect height of the frame sprites
-    size_t body_height = max(get_btn_skin()->left.height(),
-      get_btn_skin()->right.height());
+    size_t body_height = max(get_btn_skin()->left->height(),
+      get_btn_skin()->right->height());
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
 };

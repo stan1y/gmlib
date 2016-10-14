@@ -25,13 +25,13 @@ public:
   bool is_sticky() { return _sticky; }
   void set_sticky(bool s) { _sticky = s; }
 
-  void set_idle_icon(const std::string & file_path);
+  void set_idle_icon(const fs::path & file_path);
   void set_idle_icon(SDL_Texture* tex);
 
-  void set_disabled_icon(const std::string & file_path);
+  void set_disabled_icon(const fs::path & file_path);
   void set_disabled_icon(SDL_Texture* tex);
 
-  void set_pressed_icon(const std::string & file_path);
+  void set_pressed_icon(const fs::path & file_path);
   void set_pressed_icon(SDL_Texture* tex);
 
   virtual void load(const data &);
