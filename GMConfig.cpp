@@ -9,7 +9,7 @@ struct config_private : public data {
   int32_t display_height;
   uint32_t fps_cap;
   std::string driver_name;
-  std::string assets_path;
+  strings_list assets;
   std::string python_home;
   std::string ui_theme;
   bool fullscreen;
@@ -31,9 +31,9 @@ struct config_private : public data {
 };
 static config_private * g_config = NULL;
 
-const config* GM_GetConfig() {
+const config* config::current() {
   if (g_config == nullptr || g_config->_interface == nullptr) {
-    SDLEx_LogError("GM_GetConfig: not initialized");
+    SDLEx_LogError("config::current: not initialized");
     return nullptr;
   }
   return g_config->_interface;
@@ -57,9 +57,9 @@ const int32_t config::driver_index() const
   return g_config->driver_index;
 }
 
-const std::string config::assets_path() const
+const strings_list & config::assets() const
 {
-  return std::string(g_config->assets_path);
+  return g_config->assets;
 }
 
 const bool config::fullscreen() const
@@ -92,6 +92,15 @@ const std::string config::ui_theme() const
   return g_config->ui_theme;
 }
 
+//const config * config::current()
+//{
+//  if (g_config == nullptr) {
+//    SDLEx_LogError("%s - GMLib config was not loaded.");
+//    throw std::exception("GMLib config was not loaded.");
+//  }
+//  return g_config->_interface;
+//}
+
 /** Private Interface **/
 
 config_private::config_private()
@@ -100,12 +109,11 @@ config_private::config_private()
     display_width = 1024;
     display_height = 768;
     driver_name = "";
-    assets_path = "";
     fullscreen = false;
     fps_cap = 60;
 
     driver_index = -1;
-    window_flags = SDL_WINDOW_SHOWN;
+    window_flags = 0;
     renderer_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_PRESENTVSYNC;
 
     _interface = new config();
@@ -124,24 +132,30 @@ int config::load(const std::string& cfg_file)
     g_config = new config_private();
     g_config->load(cfg_file);
     
-    char* assets = NULL;
+    data::json* a = NULL;
     char* driver = NULL;
     char* python_home = NULL;
     char* ui_theme = NULL;
-    g_config->unpack("{s:i s:i s:b s:s s:s s:s s:s}",
+    g_config->unpack("{s:i s:i s:b s:s s:s s:o s:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
         "fullscreen",       &g_config->fullscreen,
         "driver",           &driver,
         "python_home",      &python_home,
-        "assets_path",      &assets,
+        "assets",           &a,
         "ui_theme",         &ui_theme);
     
     //copy strings
     g_config->driver_name = std::string(driver);
-    g_config->assets_path = std::string(assets);
     g_config->python_home = std::string(python_home);
     g_config->ui_theme = std::string(ui_theme);
+
+    // read assets list
+    data assets(a);
+    data::array_iterator ait = assets.array_begin();
+    for(; ait != assets.array_end(); ++ait) {
+      g_config->assets.push_back( (*ait)->as<std::string>() );
+    }
 
     //select driver
     if (driver) {
@@ -162,7 +176,7 @@ int config::load(const std::string& cfg_file)
         g_config->window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }
     else {
-        g_config->window_flags |= SDL_WINDOWPOS_CENTERED;
+        g_config->window_flags |= SDL_WINDOW_SHOWN;
     }
 
     return 0;
