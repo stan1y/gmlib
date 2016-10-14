@@ -68,15 +68,15 @@ theme::container_skin::container_skin(theme * t, const std::string & skin_name):
   }
 
   // load container borders & corners
-  corner_top_left.load(t->get_skin_resource(skin_name, "corner_top_left.png"));
-  corner_top_right.load(t->get_skin_resource(skin_name, "corner_top_right.png"));
-  corner_bottom_left.load(t->get_skin_resource(skin_name, "corner_bottom_left.png"));
-  corner_bottom_right.load(t->get_skin_resource(skin_name, "corner_bottom_right.png"));
+  corner_top_left = resources::get_texture(t->get_skin_resource(skin_name, "corner-top-left.png"));
+  corner_top_right = resources::get_texture(t->get_skin_resource(skin_name, "corner-top-right.png"));
+  corner_bottom_left = resources::get_texture(t->get_skin_resource(skin_name, "corner-bottom-left.png"));
+  corner_bottom_right = resources::get_texture(t->get_skin_resource(skin_name, "corner-bottom-right.png"));
 
-  border_top.load(t->get_skin_resource(skin_name, "border_top.png"));
-  border_bottom.load(t->get_skin_resource(skin_name, "border_bottom.png"));
-  border_left.load(t->get_skin_resource(skin_name, "border_left.png"));
-  border_right.load(t->get_skin_resource(skin_name, "border_right.png"));
+  border_top = resources::get_texture(t->get_skin_resource(skin_name, "border-top.png"));
+  border_bottom = resources::get_texture(t->get_skin_resource(skin_name, "border-bottom.png"));
+  border_left = resources::get_texture(t->get_skin_resource(skin_name, "border-left.png"));
+  border_right = resources::get_texture(t->get_skin_resource(skin_name, "border-right.png"));
 }
 
 theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
@@ -89,15 +89,15 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
   data skin_data = t->get_data()[skin_name].value();
 
   // load button's frame sprites
-  left.load(t->get_skin_resource(skin_name, "left.png"));
-  right.load(t->get_skin_resource(skin_name, "right.png"));
-  center.load(t->get_skin_resource(skin_name, "center.png"));
+  left = resources::get_texture(t->get_skin_resource(skin_name, "left.png"));
+  right = resources::get_texture(t->get_skin_resource(skin_name, "right.png"));
+  center = resources::get_texture(t->get_skin_resource(skin_name, "center.png"));
   
   // try loading optional hovered sprites
-  if (t->skin_resource_exists(skin_name, "left_hover.png")) {
-    left_hover.load(t->get_skin_resource(skin_name, "left_hover.png"));
-    right_hover.load(t->get_skin_resource(skin_name, "right_hover.png"));
-    center_hover.load(t->get_skin_resource(skin_name, "center_hover.png"));
+  if (t->skin_resource_exists(skin_name, "left-hover.png")) {
+    left_hover = resources::get_texture(t->get_skin_resource(skin_name, "left-hover.png"));
+    right_hover = resources::get_texture(t->get_skin_resource(skin_name, "right-hover.png"));
+    center_hover = resources::get_texture(t->get_skin_resource(skin_name, "center-hover.png"));
   }
 
   // load button text colors
@@ -116,8 +116,8 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
 
   // load button font
   if (skin_data.has_key("font_text") && skin_data.has_subkey("font_text.face") && skin_data.has_subkey("font_text.size")) {
-    font_text = new ttf_font(t->get_skin_resource(skin_name, skin_data["font_text.face"].value<std::string>()),
-                             skin_data["font_text.size"].value<int>());
+    font_text = resources::get_font(skin_data["font_text.face"].value<std::string>(),
+                                    skin_data["font_text.size"].value<int>());
     
   }
   else {
@@ -130,12 +130,12 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
 
 theme::push_button_skin::push_button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
 {
-  idle.load(t->get_skin_resource(skin_name, "idle.png"));
+  idle = resources::get_texture(t->get_skin_resource(skin_name, "idle.png"));
   if (t->skin_resource_exists(skin_name, "pressed.png")) {
-    pressed.load(t->get_skin_resource(skin_name, "pressed.png"));
+    pressed = resources::get_texture(t->get_skin_resource(skin_name, "pressed.png"));
   }
   if (t->skin_resource_exists(skin_name, "disabled.png")) {
-    disabled.load(t->get_skin_resource(skin_name, "disabled.png"));
+    disabled = resources::get_texture(t->get_skin_resource(skin_name, "disabled.png"));
   }
 }
 
@@ -149,8 +149,9 @@ theme::theme(const std::string & theme_name):
   _desc(),
   _name(theme_name)
 {
-  fs::path theme_root(get_root());
-  fs::path theme_descriptor = theme_root / "theme.json";
+  std::stringstream theme_descr_name;
+  theme_descr_name << _name << ".theme.json"; 
+  fs::path theme_descriptor = resources::find_file(theme_descr_name.str());
   if (!fs::exists(theme_descriptor) || !fs::is_regular_file(theme_descriptor)) {
     SDLEx_LogError("theme::theme - invalid theme name, descriptor is missing. '%s'",
       theme_descriptor.string().c_str());
@@ -159,6 +160,8 @@ theme::theme(const std::string & theme_name):
 #ifdef GM_DEBUG_UI
   SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.string().c_str());
 #endif
+
+  // load descriptor
   _desc.load(theme_descriptor.string());
 
   // load common default colors
@@ -182,8 +185,8 @@ theme::theme(const std::string & theme_name):
   }
   // load common default font
   if (_desc.has_key("font_text") && _desc.has_subkey("font_text.face") && _desc.has_subkey("font_text.size")) {
-    font_text = new ttf_font(get_resource(_desc["font_text.face"].value<std::string>()),
-                   _desc["font_text.size"].value<int>());
+    font_text = resources::get_font(_desc["font_text.face"].value<std::string>(),
+                                    _desc["font_text.size"].value<int>());
     
   }
   else {
@@ -206,16 +209,16 @@ theme::theme(const std::string & theme_name):
   add_skin(new push_button_skin(this, "pushbtn"));
 
   // load pointer
-  if (_desc.has_key("pointer") && _desc["pointer"].is_value_object()) {
-    char *norm = NULL, *rsz = NULL, *slt = NULL;
-    _desc["pointer"].value()->unpack("{s:s s:s s:s}", 
-      "normal", &norm, "resize", &rsz, "select", &slt);
-    ptr.tx_normal.load( (theme_root / fs::path(norm)).string() );
-    ptr.tx_resize.load( (theme_root / fs::path(rsz)).string() );
-    ptr.tx_select.load( (theme_root / fs::path(slt)).string() );
-    // disable SDL pointer rendering
-    SDL_ShowCursor(SDL_DISABLE);
-  }
+  //if (_desc.has_key("pointer") && _desc["pointer"].is_value_object()) {
+  //  char *norm = NULL, *rsz = NULL, *slt = NULL;
+  //  _desc["pointer"].value()->unpack("{s:s s:s s:s}", 
+  //    "normal", &norm, "resize", &rsz, "select", &slt);
+  //  ptr.tx_normal.load( (_root / fs::path(norm)).string() );
+  //  ptr.tx_resize.load( (_root / fs::path(rsz)).string() );
+  //  ptr.tx_select.load( (_root / fs::path(slt)).string() );
+  //  // disable SDL pointer rendering
+  //  SDL_ShowCursor(SDL_DISABLE);
+  //}
 }
 
 void theme::add_skin(const theme::base_skin * f)
@@ -235,50 +238,32 @@ const theme::base_skin * theme::get_skin(const std::string & name) const
   return it->second;
 }
 
-std::string theme::get_root() const
+resources::resource_id theme::get_skin_resource(const std::string & skin_name, const std::string & skin_res) const
 {
-  fs::path theme_root(resources::root_path());
-  theme_root /= "ui";
-  theme_root /= _name;
-  return theme_root.string();
-}
-
-std::string theme::get_skin_resource(const std::string & skin_name, const std::string & skin_res) const
-{
-  fs::path p(get_root());
-  p /= skin_name;
-  p /= skin_res;
-  if (!fs::exists(p)) {
-    SDLEx_LogError("theme:get_skin_resource - resource not found at [%s]", p.string().c_str());
-    throw std::exception("theme: skin resource does not exists");
-  }
-  return p.string();
+  std::stringstream skin_res_id;
+  skin_res_id << _name << "-" << skin_name << "-" << skin_res;
+  return skin_res_id.str();
 }
 
 bool theme::skin_resource_exists(const std::string & skin_name, const std::string & skin_res) const
 {
-  fs::path p(get_root());
-  p /= skin_name;
-  p /= skin_res;
-  return fs::exists(p);
+  resources::resource_id skin_res_id = get_skin_resource(skin_name, skin_res);
+  fs::path dummy;
+  return resources::find_resource(skin_res_id, dummy);
 }
 
-std::string theme::get_resource(const std::string & theme_res) const
+resources::resource_id theme::get_resource(const std::string & theme_res) const
 {
-  fs::path p(get_root());
-  p /= theme_res;
-  if (!fs::exists(p)) {
-    SDLEx_LogError("theme:get_resource - resource not found at [%s]", p.string().c_str());
-    throw std::exception("theme: root resource does not exists");
-  }
-  return p.string();
+  std::stringstream theme_res_id;
+  theme_res_id << _name << "-" << theme_res;
+  return theme_res_id.str();
 }
 
 bool theme::resource_exists(const std::string & theme_res) const
 {
-  fs::path p(get_root());
-  p /= theme_res;
-  return fs::exists(p);
+  resources::resource_id theme_res_id = get_resource(theme_res);
+  fs::path dummy;
+  return resources::find_resource(theme_res_id, dummy);
 }
 
 void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
@@ -312,8 +297,8 @@ void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
 void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, const rect & dst) const
 {
   // const
-  int BORDER_LENGTH = min(f->border_top.width(), f->border_left.height());
-  int BORDER_HEIGHT = min(f->corner_top_left.width(), f->corner_top_left.height());
+  int BORDER_LENGTH = min(f->border_top->width(), f->border_left->height());
+  int BORDER_HEIGHT = min(f->corner_top_left->width(), f->corner_top_left->height());
 
   // paint borders
   int bx = 0, xdiff = 0;
@@ -327,9 +312,9 @@ void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, cons
       bdst.w = xdiff;
       bsrc.w = xdiff;
     }
-    f->border_top.render(r, bsrc, bdst);
+    f->border_top->render(r, bsrc, bdst);
     bdst.y = dst.y + dst.h;
-    f->border_bottom.render(r, bsrc, bdst);
+    f->border_bottom->render(r, bsrc, bdst);
     bx += BORDER_LENGTH;
   }
   int by = 0, ydiff = 0;
@@ -349,9 +334,9 @@ void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, cons
       bdst.h = ydiff;
       bsrc.h = ydiff;
     }
-    f->border_left.render(r, bsrc, bdst);
+    f->border_left->render(r, bsrc, bdst);
     bdst.x = dst.x + dst.w;
-    f->border_right.render(r, bsrc, bdst);
+    f->border_right->render(r, bsrc, bdst);
     by += BORDER_LENGTH;
   }
     
@@ -364,27 +349,27 @@ void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, cons
   bdst.y = dst.y - BORDER_HEIGHT;
   bdst.w = BORDER_HEIGHT;
   bdst.h = BORDER_HEIGHT;
-  f->corner_top_left.render(r, bsrc, bdst);
+  f->corner_top_left->render(r, bsrc, bdst);
   bdst.y = dst.y + dst.h;
-  f->corner_bottom_left.render(r, bsrc, bdst);
+  f->corner_bottom_left->render(r, bsrc, bdst);
   bdst.x = dst.x + dst.w;
-  f->corner_bottom_right.render(r, bsrc, bdst);
+  f->corner_bottom_right->render(r, bsrc, bdst);
   bdst.y = dst.y - BORDER_HEIGHT;
-  f->corner_top_right.render(r, bsrc, bdst);
+  f->corner_top_right->render(r, bsrc, bdst);
 }
 
 void theme::draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const
 {
-  rect ldst(dst.x, dst.y, f->left.width(), dst.h);
-  f->left.render(r, ldst);
-  rect cdst(dst.x + f->left.width(), dst.y, f->center.width(), dst.h);
-  int center = dst.w - (f->right.width() + f->left.width());
+  rect ldst(dst.x, dst.y, f->left->width(), dst.h);
+  f->left->render(r, ldst);
+  rect cdst(dst.x + f->left->width(), dst.y, f->center->width(), dst.h);
+  int center = dst.w - (f->right->width() + f->left->width());
   for(int x = 0; x < center; ++x) {
-    cdst.x = dst.x + f->left.width() + x;
-    f->center.render(r, cdst);
+    cdst.x = dst.x + f->left->width() + x;
+    f->center->render(r, cdst);
   }
-  rect rdst(dst.x + f->left.width() + center, dst.y, f->right.width(), dst.h);
-  f->right.render(r, rdst);
+  rect rdst(dst.x + f->left->width() + center, dst.y, f->right->width(), dst.h);
+  f->right->render(r, rdst);
 }
 
 } //namespace ui

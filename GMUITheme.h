@@ -75,19 +75,19 @@ public:
     color color_back;
     color color_idle;
     color color_highlight;
-    ttf_font const * font_text;
+    const ttf_font * font_text;
   };
 
   /* Frames declarations */
   struct container_skin : public base_skin {
-     texture corner_top_left;
-     texture corner_top_right;
-     texture corner_bottom_left;
-     texture corner_bottom_right;
-     texture border_top;
-     texture border_bottom;
-     texture border_left;
-     texture border_right;
+     const texture * corner_top_left;
+     const texture * corner_top_right;
+     const texture * corner_bottom_left;
+     const texture * corner_bottom_right;
+     const texture * border_top;
+     const texture * border_bottom;
+     const texture * border_left;
+     const texture * border_right;
      color color_back;
 
      container_skin(theme * t, const std::string & skin_name);
@@ -95,13 +95,13 @@ public:
 
    class button_skin: public base_skin {
    public:
-     texture left;
-     texture right;
-     texture center;
+     const texture * left;
+     const texture * right;
+     const texture * center;
 
-     texture left_hover;
-     texture right_hover;
-     texture center_hover;
+     const texture * left_hover;
+     const texture * right_hover;
+     const texture * center_hover;
 
      ttf_font const * font_text;
      color color_text_idle;
@@ -112,9 +112,9 @@ public:
 
    class push_button_skin: public base_skin {
    public:
-     texture idle;
-     texture disabled;
-     texture pressed;
+     const texture * idle;
+     const texture * disabled;
+     const texture * pressed;
 
      push_button_skin(theme * t, const std::string & skin_name);
    };
@@ -123,7 +123,7 @@ public:
   color color_back;
   color color_idle;
   color color_highlight;
-  ttf_font const * font_text;
+  const ttf_font * font_text;
 
   /* Pointer */
   pointer ptr;
@@ -134,7 +134,6 @@ public:
 
   /* Get path to theme resource */
   const data & get_data() const;
-  std::string get_root() const;
   
   std::string get_skin_resource(const std::string & skin_name, const std::string & skin_res) const;
   bool skin_resource_exists(const std::string & skin_name, const std::string & skin_res) const;
