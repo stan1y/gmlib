@@ -75,11 +75,15 @@
 #define GM_FPS_CAP 60
 #endif
 
+
 /*
  *
  * Core classes framework
  *
  */
+
+// list of strings for various things everywhere
+typedef std::vector<std::string> strings_list;
 
 /* create SDL resources */
 SDL_Surface* GM_CreateSurface(int width, int height);
@@ -425,10 +429,11 @@ private:
 /* Global Config */
 struct config {
 public:
+
+  // public config settings
   const rect          screen_rect() const;
   const std::string   driver_name() const;
   const int32_t       driver_index() const;
-  const std::string   assets_path() const;
   const bool          fullscreen() const;
   const int           fps_cap() const;
   const uint32_t      window_flags() const;
@@ -436,7 +441,14 @@ public:
   const std::string   python_home() const;
   const std::string   ui_theme() const;
 
+  // list of assets roots used
+  const strings_list &    assets() const;
+
+  // load into engine from file path
   static int load(const std::string & cfg_file);
+
+  // get current config instance, if it was loaded before
+  static const config* current();
 };
 
 /* Init GMLib */
@@ -447,7 +459,7 @@ int GM_Init(const std::string & cfg_path,
 void GM_Quit();
 
 /* Get pointer to applied configuration */
-const config* GM_GetConfig(); 
+//const config* GM_GetConfig(); 
 
 /* Get main SDL Window */
 SDL_Window* GM_GetWindow();

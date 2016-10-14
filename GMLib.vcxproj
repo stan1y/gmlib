@@ -49,7 +49,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;GM_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\cpython\include;$(SolutionDir)\cpython\PC;$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\..\boost_1_58_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\libs\cpython\include;$(SolutionDir)\libs\cpython\PC;$(SolutionDir)\libs\sdl\include;$(SolutionDir)\libs\sdl_image;$(SolutionDir)\libs\sdl_ttf;$(SolutionDir)\libs\sdl_ex;$(SolutionDir)\libs\jansson\include;$(SolutionDir)\libs\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,6 +124,7 @@
     <ClCompile Include="GMSprites.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\media\ui\default\default.theme.json" />
     <None Include="GMUI_Reference.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

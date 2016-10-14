@@ -53,13 +53,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\cpython\include;$(SolutionDir)\cpython\PC;$(SolutionDir)\SDL\include;$(SolutionDir)\SDL_image;$(SolutionDir)\SDL_ttf;$(SolutionDir)\SDLEx;$(SolutionDir)\jansson-2.4\src;$(SolutionDir)\GMLib;$(SolutionDir)\..\boost_1_58_0;$(SolutionDir)\CPython33\Include\PC;$(SolutionDir)\CPython33\Include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\libs\cpython\include;$(SolutionDir)\libs\cpython\PC;$(SolutionDir)\libs\sdl\include;$(SolutionDir)\libs\sdl_image;$(SolutionDir)\libs\sdl_ttf;$(SolutionDir)\libs\sdl_ex;$(SolutionDir)\libs\jansson\include;$(SolutionDir)\libs\boost;$(SolutionDir)\libs\gmlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\cpython\PCBuild\$(Platform);$(SolutionDir)\bin\$(Configuration)\;$(SolutionDir)\libboost</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libboost_filesystem-vc110-mt-gd-1_58.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDLEx.lib;GMLib.lib;libjansson.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\cpython\PCBuild\$(Platform);$(SolutionDir)\libs\boost-libs;$(SolutionDir)\bin\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libboost_filesystem-vc110-mt-gd-1_58.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDLEx.lib;GMLib.lib;jansson_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>$(SolutionDir)\copylibs.cmd $(PlatformShortName) $(PlatformName) $(Configuration) $(SolutionDir)</Command>

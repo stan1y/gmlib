@@ -101,12 +101,12 @@ texture::~texture()
   release();
 }
 
-void texture::load(const std::string& file_path)
+void texture::load(const fs::path & file_path)
 {
-  SDL_Surface* src = GM_LoadSurface(file_path);
+  SDL_Surface* src = GM_LoadSurface(file_path.string());
   convert_surface(src);
 
-  if (file_path.find(".png") == std::string::npos) {
+  if (file_path.extension() != ".png") {
     // convert pixels to transparent for non-PNG files
     uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
     uint8_t r = 0, g = 0, b = 0;

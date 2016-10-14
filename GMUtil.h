@@ -1,9 +1,17 @@
 #ifndef GM_UTIL_H
 #define GM_UTIL_H
 
-#include <boost/lexical_cast.hpp>
-
 #include "GMLib.h"
+
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+
+// access to boost::filesystem utils
+namespace fs = boost::filesystem;
+
+// list of paths used in some helpers
+typedef std::vector<fs::path> paths_list;
 
 /* Define min/max funcs as expected */
 #ifndef max
@@ -83,8 +91,7 @@ inline int32_t float_to_sint32(float f) {
 /** Error log wrapper */
 #define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
-
-inline std::vector<std::string> & split_string(const std::string &s, const char delim, std::vector<std::string> &elems) 
+inline strings_list & split_string(const std::string &s, const char delim, strings_list &elems) 
 {
   std::stringstream ss(s);
   std::string item;
@@ -94,9 +101,9 @@ inline std::vector<std::string> & split_string(const std::string &s, const char 
   return elems;
 }
 
-inline std::vector<std::string> split_string(const std::string &s, const char delim) 
+inline strings_list split_string(const std::string &s, const char delim) 
 {
-  std::vector<std::string> elems;
+  strings_list elems;
   split_string(s, delim, elems);
   return elems;
 }

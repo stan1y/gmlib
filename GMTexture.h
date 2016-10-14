@@ -14,6 +14,7 @@
 #define _GM_TEXTURE_H_
 
 #include "GMLib.h"
+#include "GMUtil.h"
 
 /**
    Class texture 
@@ -82,7 +83,7 @@ public:
   void release();
 
   /* load texture from resource (see GM_LoadTexture) */
-  void load(const std::string& file_path);
+  void load(const fs::path & file_path);
   
   /* load texture data from surface */
   void set_surface(SDL_Surface* src);

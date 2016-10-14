@@ -91,7 +91,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     }
     boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
     config::load(abspath.string());
-    const config * cfg = GM_GetConfig();
+    const config * cfg = config::current();
     
     //init SDL window & renderer
     const rect srect = cfg->screen_rect();
@@ -122,7 +122,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
       renderer_info.name);
 #endif
     // resources cache
-    resources::initialize(GM_GetConfig()->assets_path());
+    resources::initialize(config::current()->assets());
 
     //setup random
     srand((unsigned int)time(NULL));
