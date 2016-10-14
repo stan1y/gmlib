@@ -2,11 +2,11 @@
 #include "GMUtil.h"
 #include "RESLib.h"
 
-data::json* GM_LoadJSON(const std::string& file_path)
+data::json * GM_LoadJSON(const std::string& file_path)
 {
     data::json * json_data = nullptr;
     json_error_t jerr;
-    json_data = (data::json*) json_load_file(file_path.c_str(), 0, &jerr);
+    json_data = (data::json *) json_load_file(file_path.c_str(), 0, &jerr);
     if (json_data == nullptr) {
         SDLEx_LogError("GM_LoadJSON: failed to load %s. %s. line: %d, column: %d, position: %d",
           file_path.c_str(), jerr.text,
@@ -22,7 +22,7 @@ data::data(const std::string & json_string, uint32_t parser_flags):
   _f(parser_flags)
 {
   json_error_t jerr;
-  _json = (json*) json_loadb(json_string.c_str(), 
+  _json = (data::json *) json_loadb(json_string.c_str(), 
                              json_string.length(),
                              parser_flags,
                              &jerr);
@@ -56,6 +56,11 @@ void data::load(const std::string & json_file)
   SDL_Log("data::load - reading %s\n", json_file.c_str()); 
 #endif
   assign(GM_LoadJSON(json_file));
+  // decref after assign
+  json_decref(_json);
+  if (_json->refcount != 1) {
+    throw json_exception("Unexpected ref count after assignment of loaded data");
+  }
 }
 
 
@@ -84,7 +89,7 @@ void data::json::unpack(const char *fmt, ...) const
   va_list ap;
 
   va_start(ap, fmt);
-  ret = json_vunpack_ex((json_t*)this, &jerr, 0, fmt, ap);
+  ret = json_vunpack_ex((json_t *)this, &jerr, 0, fmt, ap);
   va_end(ap);
   if (ret != 0)
   {
@@ -95,23 +100,21 @@ void data::json::unpack(const char *fmt, ...) const
   }
 }
 
-void * data::find_iter_recursive(const char* key, json ** found) const
+void * data::find_iter_recursive(const char* key, data::json *& found) const
 {
-  std::vector<std::string> subkeys = split_string(key, '.');
+  strings_list subkeys = split_string(key, '.');
   auto ikey = subkeys.begin();
   void * it = nullptr;
-  json * current = _json;
+  data::json * current = _json;
   for(; ikey != subkeys.end(); ++ikey) {
     it = json_object_iter_at(current, ikey->c_str());
     if (it != nullptr) {
       // found this level
-      current = (json*)json_object_iter_value(it);
+      current = (data::json *) json_object_iter_value(it);
     }
   }
     
-  if (found != nullptr) {
-    found = &current;
-  }
+  found = current;
 
   return it;
 }

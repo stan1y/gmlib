@@ -38,7 +38,7 @@ inline uint8_t jint_to_uint8(json_int_t i) {
     return (uint8_t)i;
 }
 
-/** pebble::data
+/** class data
     A JSON json_t opaque data storage for 
     structured data in files and memory.
 **/
@@ -84,12 +84,16 @@ public:
     /*
      * Create new instances
      */
-    static json * array() { return (json*) json_array(); }
-    static json * object() { return (json*) json_object(); }
-    static json * integer(json_int_t ival) { return (json*) json_integer(ival); }
-    static json * real(double dval) { return (json*) json_real(dval); }
-    static json * boolean(bool bval) { return (json*) json_boolean(bval); }
-    static json * string(const char * sval) { return (json*) json_string(sval); }
+    static data::json * array() { return (data::json *) json_array(); }
+    static data::json * object() { return (data::json *) json_object(); }
+    static data::json * integer(json_int_t ival) { return (data::json *) json_integer(ival); }
+    static data::json * real(double dval) { return (data::json *) json_real(dval); }
+    static data::json * boolean(bool bval) { return (data::json *) json_boolean(bval); }
+    static data::json * string(const char * sval) { return (data::json *) json_string(sval); }
+    
+    // copy is in fact read-only
+    static data::json * copy(const json_t * other) { return (data::json *) json_deep_copy(other); }
+    static data::json * copy(const data::json * other) { return (data::json *) json_deep_copy(other); }
 
     /* Unpack contained JSON with provided format */
     void unpack(const char *fmt, ...) const;
@@ -215,13 +219,13 @@ public:
   {
   public:
     // new iterator with given values
-    explicit object_iterator(json * p, void * i): 
+    explicit object_iterator(data::json * p, void * i): 
       _p(p),
       _i(i)
     {}
     // new iterator from the fist key of the dict
     explicit object_iterator(const data & d): 
-      _p(d.as_json()),
+      _p(*d),
       _i(json_object_iter(_p))
     {}
 
@@ -253,18 +257,13 @@ public:
     template<class T> T value() const { return value()->as<T>(); }
 
     // get dict value -> data::json
-    json * value() const {
-      return (json *) json_object_iter_value(_i);
-    }
-
-    // get dict value -> data
-    data as_data() const {
-      return data( (json *) json_copy(value()) );
+    data::json * value() const {
+      return (data::json *) json_object_iter_value(_i);
     }
 
     // assign json_t value to this key
     // the instance of json_t is expected to be a newly created one
-    void set_value(json * val)
+    void set_value(data::json * val)
     {
       json_object_iter_set(_p, _i, val);
     }
@@ -280,13 +279,13 @@ public:
     void operator=(const data& val) 
     {
       // assign a copy of val
-      json_object_iter_set_new(_p, _i, val.as_json());
+      json_object_iter_set_new(_p, _i, json_deep_copy(*val));
     }
 
     template<>
     void operator=(const bool & bval)
     {
-      json * val = json::boolean(bval);
+      data::json * val = json::boolean(bval);
       set_value(val);
       json_decref(val);
     }
@@ -294,7 +293,7 @@ public:
     template<>
     void operator=(const std::string & sval)
     {
-      json * val = json::string(sval.c_str());
+      data::json * val = json::string(sval.c_str());
       set_value(val);
       json_decref(val);
     }
@@ -302,7 +301,7 @@ public:
     template<>
     void operator=(const int& ival)
     {
-      json * val = json::integer(ival);
+      data::json * val = json::integer(ival);
       set_value(val);
       json_decref(val);
     }
@@ -315,12 +314,12 @@ public:
     bool is_value_object() { return json_is_object(value()); }
     bool is_value_array(size_t of_size = 0) 
     { 
-      json * val = value();
+      data::json * val = value();
       return (json_is_array(val) && (of_size > 0 ? json_array_size(val) == of_size : true) ); 
     }
 
   private:
-    json * _p;
+    data::json * _p;
     void * _i;
   };
 
@@ -336,17 +335,17 @@ public:
                          const data,                // value_type
                          int,                      // difference_type
                          const data*,               // pointer -> a value of the data
-                         const data::json*>         // reference -> a const value of data::json
+                         const data::json *>         // reference -> a const value of data::json
   {
   public:
     // new iterator with given values
-    explicit array_iterator(json * p, size_t i): 
+    explicit array_iterator(data::json * p, size_t i): 
       _p(p),
       _i(i)
     {}
     // new iterator from the fist key of the dict
     explicit array_iterator(const data & d): 
-      _p(d.as_json()),
+      _p(*d),
       _i(0)
     {}
 
@@ -360,7 +359,7 @@ public:
 
     // assign json_t value to this key
     // the instance of json_t is expected to be a newly created one
-    void set(json * val)
+    void set(data::json * val)
     {
       json_array_set(_p, _i, val);
     }
@@ -380,7 +379,7 @@ public:
 
     // get pointer to the underlying data::json
     array_iterator::reference item() const {
-      data::json * item = (data::json*) json_array_get(_p, _i);
+      data::json * item = (data::json *) json_array_get(_p, _i);
       return item;
     }
 
@@ -398,13 +397,13 @@ public:
     void operator=(const data& val) 
     {
       // assign a copy of val
-      json_array_set_new(_p, _i, val.as_json());
+      json_array_set_new(_p, _i, json_deep_copy( *val ));
     }
 
     template<>
     void operator=(const bool & bval)
     {
-      json * val = json::boolean(bval);
+      data::json * val = json::boolean(bval);
       set(val);
       json_decref(val);
     }
@@ -412,7 +411,7 @@ public:
     template<>
     void operator=(const std::string & sval)
     {
-      json * val = json::string(sval.c_str());
+      data::json * val = json::string(sval.c_str());
       set(val);
       json_decref(val);
     }
@@ -420,7 +419,7 @@ public:
     template<>
     void operator=(const int& ival)
     {
-      json * val = json::integer(ival);
+      data::json * val = json::integer(ival);
       set(val);
       json_decref(val);
     }
@@ -433,12 +432,12 @@ public:
     bool is_value_object() { return json_is_object(item()); }
     bool is_value_array(size_t of_size = 0) 
     { 
-      const json * val = item();
+      const data::json * val = item();
       return (json_is_array(val) && (of_size > 0 ? json_array_size(val) == of_size : true) ); 
     }
 
   private:
-    json * _p;
+    data::json * _p;
     size_t _i;
   };
 
@@ -450,42 +449,46 @@ public:
    * from jansson library.
    */
 
-
-  /* Assign a new instance of data with given json_t*
-   * The json_t object is expected to be a fresh instance
-   * with one ref count only.
+  /* Assign a new instance of data with given json_t *
+     This instance will take ownership by incref-ing
+     the refcount of passed data::json
    */
-  data(json* p):_json(nullptr), _f(0)
+  data(data::json * p):_json(nullptr), _f(0)
   {
     assign(p);
   }
 
-  /* Assign a new instance of data with given json_t*
-   * The json_t object is expected to be a fresh instance
-   * with one ref count only.
+  /* Assign a new instance of data with given json_t *
+     This instance will take ownership by incref-ing
+     the refcount of passed data::
    */
   data(json_t * p):_json(nullptr), _f(0)
   {
-    assign( (json *) p);
+    assign( (data::json *) p);
   }
 
-  /* Create a copy of data instance with own copy of data::json */
-  data(data & d):_json( (json *) json_copy(d.as_json())), _f(0)
-  {}
+  /* Create a new instance with full copy of given const data */
+  data(const data & d):_json(nullptr), _f(0)
+  {
+    json_t * j = json_deep_copy( *d );
+    assign( (data::json *) j);
+    json_decref(j);
+  }
   
-  /* Create a copy of data instance with own copy of data::json */
-  data(const json * p):_json( (json *) json_copy((json_t*)p)), _f(0)
-  {}
+  /* Create a new instance with full copy of given const json */
+  data(const data::json * p):_json(nullptr), _f(0)
+  {
+    data::json * j = (data::json *) json_deep_copy(p);
+    assign(j);
+    json_decref(j);
+  }
 
   /* null constructor */
   data():_json(nullptr), _f(0)
   {}
 
-  /* Assign this instance with given json_t 
-   * the pointer to json_t is expected to be
-   * fresh isntance with refcount = 1
-   */
-  void assign(json * p)
+  /* Assign this instance with given json and incref it*/
+  void assign(data::json * p)
   {
     if (p == nullptr)
       return;
@@ -502,19 +505,29 @@ public:
   }
 
   /* parse json string */
-  data(const std::string & json, uint32_t parser_flags);
+  data(const std::string & json_string, uint32_t parser_flags);
 
   /* serialize this data as json string */
   std::string tostr(int ident = 2) const;
   
-  /* load from a resource */
-  data(const std::string & json_res);
+  /* load from a file at some given path */
+  data(const std::string & json_file);
 
   /* Load json data from a file given by path */
   virtual void load(const std::string & json_file);
 
   /* Get access to the data::json inner value */
-  json * as_json() const { return _json; }
+  data::json * operator*() const {
+    if (!_json)
+      throw json_exception("Access to a data object with no json pointer");
+    return _json;
+  }
+
+  data::json & value() const {
+    if (!_json)
+      throw json_exception("Access to a data object with no json pointer");
+    return *_json;
+  }
 
   /*
    * Iterate object via keys 
@@ -530,7 +543,7 @@ public:
     if (!_json || !json_is_object(_json))
       throw json_exception("data is not a object");
 
-    json_t* j = json_object_get(_json, key.c_str());
+    json_t * j = json_object_get(_json, key.c_str());
     return (j != NULL);
   }
 
@@ -543,8 +556,8 @@ public:
     if (!_json || !json_is_object(_json)) 
       throw json_exception("data is not a object");
 
-    json * val = nullptr;
-    void * it = find_iter_recursive(key.c_str(), &val);
+    data::json * val = nullptr;
+    void * it = find_iter_recursive(key.c_str(), val);
     if (it == nullptr) {
       // not found
       return false;
@@ -592,20 +605,20 @@ public:
   }
 
   /* Get dictionary item by string key */
-  json * get(const char* key) const
+  data::json * get(const char* key) const
   {
     if (!_json || !json_is_object(_json)) {
       SDLEx_LogError("data::get - instance is not an object");
       throw json_exception("instance is not a object");
     }
-    return (json *) json_object_get(_json, key);
+    return (data::json *) json_object_get(_json, key);
   }
   
   /* Get dictionary item by string key */
   template<typename T>
   T get(const char* key, T def_value = T()) const
   {
-    json * p = get(key);
+    data::json * p = get(key);
     if (p == NULL) 
       return def_value;
     return p->as<T>();
@@ -627,8 +640,9 @@ public:
       it = json_object_iter_at(_json, key.c_str()); 
     }
     else {
-      // check sublevels 
-      it = find_iter_recursive(key.c_str(), NULL);
+      // check sublevels
+      data::json * dummy = nullptr;
+      it = find_iter_recursive(key.c_str(), dummy);
     }
 
     if (it == NULL) {
@@ -704,7 +718,7 @@ public:
       SDLEx_LogError("data::operator[size_t] - index is out of range");
       throw json_exception("index out of data array range");
     }
-    return data( (json*) json_array_get(_json, idx));
+    return data( (data::json *) json_array_get(_json, idx));
   }
 
   /*
@@ -764,8 +778,7 @@ public:
       throw json_exception("Null value does not have length");
 
     if (is_string()) {
-      const char* s = json_string_value(_json);
-      return SDL_strlen(s);
+      return SDL_strlen(json_string_value(_json));
     }
     if (is_array())
     {
@@ -794,15 +807,15 @@ public:
   /* Unpack contained JSON with provided format */
   void unpack(const char *fmt, ...) const;
   
-private:
+protected:
   // lookup in dictionary
-  void * find_iter_recursive(const char* key, json ** found) const;
+  void * find_iter_recursive(const char* key, data::json *& found) const;
 
   data::json * _json;
   uint32_t _f;
 };
 
 /* Load json object from resources */
-data::json*      GM_LoadJSON(const std::string& file);
+data::json *      GM_LoadJSON(const std::string& file);
 
 #endif //_GM_DATA_H_
