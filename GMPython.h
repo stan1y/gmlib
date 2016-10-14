@@ -35,7 +35,9 @@ public:
     PyObject * to_python() const;
 
   private:
-    arguments(json * p):data(p) { json_decref(as_json()); };
+    arguments(json * p):data(p) { 
+      json_decref(_json); 
+    };
   };
 
   // load python script from path

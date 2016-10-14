@@ -3,46 +3,6 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
-namespace python {
-
-/*
- * Python exception
- * collects python's error details
- */
-script::script_exception::script_exception(const char * msg):
-  exception(msg)
-{
-  if (!PyErr_Occurred()) {
-    return;
-  }
-
-  // Get python error traceback
-  PyErr_Print();
-}
-
-
-void initialize(const config * cfg) 
-{
-  auto python_home = fs::current_path();
-  wchar_t * wpython_home = Py_DecodeLocale(python_home.string().c_str(), NULL);
-  Py_SetPythonHome(wpython_home);
-
-  //auto python_lib = python_home / "lib";
-  //wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
-  //Py_SetPath(wpython_lib);
-
-  Py_SetStandardStreamEncoding("utf-8", "utf-8");
-  Py_Initialize();
-#ifdef GM_DEBUG_PYTHON
-  SDL_Log("python::initialize - done %s", Py_GetVersion());
-#endif
-}
-
-void shutdown()
-{
-  Py_Finalize();
-}
-
 /* Check if list or tuple contain an object */
 bool PyObject_Contains(PyObject * obj, PyObject * needle)
 {
@@ -69,14 +29,9 @@ bool PyObject_Contains(PyObject * obj, PyObject * needle)
   return found;
 }
 
-script::script(const std::string file_path):
-  _py_module(NULL)
+/* Add a path to a folder to sys.path list if it is not present */
+void Py_AddModulePath(const std::string & folder)
 {
-  fs::path script_path(file_path);
-  std::string folder = script_path.parent_path().string();
-  _name = script_path.stem().string();
-
-  // append path to the module to sys.path list
   PyObject* module_path = PyUnicode_FromString(folder.c_str());
   PyObject* py_sys_path = PySys_GetObject((char*)"path");
   if (!PyObject_Contains(py_sys_path, module_path)) {
@@ -87,6 +42,106 @@ script::script(const std::string file_path):
     PyList_Append(py_sys_path, module_path);
   }
   Py_DECREF(module_path);
+}
+
+/* create PyObject from json data */
+static PyObject * PyObject_FromJSON(const json_t * json_data)
+{
+  if (json_is_integer(json_data)) {
+    return PyLong_FromDouble(json_number_value(json_data));
+  }
+  if (json_is_real(json_data)) {
+    return PyFloat_FromDouble(json_number_value(json_data));
+  }
+  if (json_is_string(json_data)) {
+    return PyUnicode_FromString(json_string_value(json_data));
+  }
+  if (json_is_array(json_data)) {
+    size_t sz = json_array_size(json_data);
+    PyObject * arr = PyList_New(sz);
+    for(size_t i = 0; i < sz; ++i) {
+      PyObject * item = PyObject_FromJSON(json_array_get(json_data, i));
+      PyList_SetItem(arr, i, item);
+      Py_DECREF(item);
+    }
+    return arr;
+  }
+  if (json_is_object(json_data)) {
+    PyObject * dict = PyDict_New();
+    void * it = json_object_iter((json_t *) json_data);
+    for(; it != nullptr; it = json_object_iter_next((json_t *) json_data, it)) {
+      PyObject * key = PyUnicode_FromString(json_object_iter_key(it));
+      PyObject * val = PyObject_FromJSON(json_object_iter_value(it));
+      PyDict_SetItem(dict, key, val);
+      Py_DECREF(key);
+      Py_DECREF(val);
+    }
+    return dict;
+  }
+
+  throw python::script::script_exception("Failed to convert data instance into python.");
+}
+
+namespace python {
+
+
+/*
+ * Python exception
+ * collects python's error details
+ */
+script::script_exception::script_exception(const char * msg):
+  exception(msg)
+{
+  if (!PyErr_Occurred()) {
+    return;
+  }
+
+  // Get python error traceback
+  PyErr_Print();
+}
+
+
+void initialize(const config * cfg) 
+{
+  fs::path python_home = cfg->python_home();
+  if (!fs::is_directory(python_home)) {
+    throw std::exception("Python home is not a directory");
+  }
+
+#ifdef GM_DEBUG
+  SDL_Log("%s - python home is \"%s\"",
+    __METHOD_NAME__,
+    fs::absolute(python_home).string().c_str() );
+#endif
+
+  wchar_t * wpython_home = Py_DecodeLocale(python_home.string().c_str(), NULL);
+  Py_SetPythonHome(wpython_home);
+
+  //auto python_lib = python_home / "lib";
+  //wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
+  //Py_SetPath(wpython_lib);
+
+  Py_SetStandardStreamEncoding("utf-8", "utf-8");
+  Py_Initialize();
+#ifdef GM_DEBUG
+  SDL_Log("%s - ready %s", __METHOD_NAME__, Py_GetVersion());
+#endif
+}
+
+void shutdown()
+{
+  Py_Finalize();
+}
+
+
+script::script(const std::string file_path):
+  _py_module(NULL)
+{
+  fs::path script_path(file_path);
+  _name = script_path.stem().string();
+
+  // append path to the module to sys.path list
+  Py_AddModulePath(script_path.parent_path().string());
 
   // load module object
   PyObject* module_name = PyUnicode_FromString(_name.c_str());
@@ -211,25 +266,6 @@ static data::json * PyObject_AsJSON(PyObject * py)
   }
 
   return p;
-}
-
-static PyObject * PyObject_FromJSON(const json_t * json)
-{
-  if (json_is_integer(json)) {
-    return PyLong_FromDouble(json_number_value(json));
-  }
-  if (json_is_real(json)) {
-    return PyFloat_FromDouble(json_number_value(json));
-  }
-  if (json_is_string(json)) {
-    return PyUnicode_FromString(json_string_value(json));
-  }
-  if (json_is_array(json)) {
-  }
-  if (json_is_object(json)) {
-  }
-
-  throw python::script::script_exception("Failed to convert data instance into python.");
 }
 
 /*
