@@ -4,21 +4,11 @@ namespace ui {
 
 /** UI BOX Container Implementation **/
 
-box::box(rect pos, box_type t, box_style s, int margin):
-    control("box", pos), _margin(margin), _type(t), _style(s),
+box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & gap):
+    control(pos), _pad(pad), _gap(gap), _type(t), _ha(ha), _va(va),
     _scroll(NULL)
 {
-  _children_rect = rect(0, 0, _margin, _margin);
-  _selected_ctl = NULL;
-  _dirty = false;
-  mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
-}
-
-box::box(const std::string & type_name, rect pos, box_type t, box_style s, int margin):
-    control(type_name, pos), _margin(margin), _type(t), _style(s),
-    _scroll(NULL)
-{
-  _children_rect = rect(0, 0, _margin, _margin);
+  _children_rect = rect(0, 0, _pad.top, _pad.left);
   _selected_ctl = NULL;
   _dirty = false;
   mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
@@ -32,11 +22,6 @@ void box::scroll_to_point(const point & pnt)
   do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
 }
 
-void box::set_box_style(const box_style & s)
-{
-  _style = s;
-  update_children();
-}
 
 void box::set_sbar(scrollbar_type t, uint32_t ssize) 
 {
@@ -56,6 +41,47 @@ void box::set_sbar(scrollbar_type t, uint32_t ssize)
   // display new type of scrollbar if configured now
   if (_scroll) {
     add_child(_scroll);
+  }
+}
+
+void box::render_debug_frame(SDL_Renderer * r, const rect & dst)
+{
+  const control * hovered = ui::get_hovered_control();
+  control_list::const_iterator child = find_child(hovered);
+  
+  if (this == hovered || child != _children.end()) {
+
+    color self_color = color::red().set_alpha(128);
+    if (child != _children.end()) {
+      self_color = color::dark_red().set_alpha(128);
+      // hovered child frame
+      rect child_rect = (*child)->pos() + dst.topleft();
+      color::red().set_alpha(128).apply(r);
+      SDL_RenderDrawRect(r, &child_rect);
+    }
+
+    if (!is_scrollbar_visible()) {
+      // no offscreen rendering
+      color::green().set_alpha(128).apply(r);
+      SDL_RenderDrawRect(r, &dst);
+      
+      color::yellow().set_alpha(128).apply(r);
+      rect area = theme::get_container_user_area(get_skin(), dst);
+      SDL_RenderDrawRect(r, &area);
+    }
+    else {
+      // with offset rendering
+      self_color.set_alpha(128).apply(r);
+      SDL_RenderDrawRect(r, &dst);
+
+      color::yellow().set_alpha(128).apply(r);
+      rect area = theme::get_container_user_area(get_skin(), dst);
+      SDL_RenderDrawRect(r, &area);
+
+      color::green().set_alpha(128).apply(r);
+      rect scrollbar_rect = _scroll->pos() + dst.topleft();
+      SDL_RenderDrawRect(r, &scrollbar_rect);
+    }
   }
 }
 
@@ -86,16 +112,16 @@ void box::render(SDL_Renderer * r, const rect & dst)
     // render scrollbar
     rect scrollbar_rect = _scroll->pos() + dst.topleft();
     _scroll->render(r, scrollbar_rect);
-
-    // debug rendering on top of offset texture
-#if GM_DEBUG_UI
-      render_debug_frame(r, dst);
-#endif
   }
   else {
     // direct children rendering
     control::render(r, dst);
   }
+
+  // debug rendering on top of offset texture
+#if GM_DEBUG_UI
+  render_debug_frame(r, dst);
+#endif
 }
 
 void box::clear_children()
@@ -103,6 +129,7 @@ void box::clear_children()
   // take snapshot of childrens state under lock
   {
     lock_container(_children);
+    // tmp copy dies in this scope
     std::vector<control*> children_copy(_children.get());
     // iterate over copy
     control_list::iterator it = children_copy.begin();
@@ -151,7 +178,7 @@ void box::on_child_wheel(control * target)
 
 void box::on_child_hover_changed(control * target)
 {
-  //rebuild on child hover change
+  // rebuild on child hover change
   _dirty = true;
 }
 
@@ -168,6 +195,10 @@ void box::on_child_click(control * target)
 
 void box::load(const data & d)
 {
+  control::load(d);
+
+  // optionally override whatever contol had set
+
   if (d.has_key("type")) {
     if (d["type"].is_value_number()) {
       uint32_t itype = d.get("type", (uint32_t)box_type::vbox);
@@ -187,26 +218,28 @@ void box::load(const data & d)
     _type = box_type::none;
   }
 
-  if (d.has_key("style")) {
-    if (d["style"].is_value_number()) {
-      uint32_t istyle = d.get("style", (uint32_t)box_style::center);
-      _style = (box_style)istyle;
+  if (d.has_key("v_align")) {
+    if (d["v_align"].is_value_number()) {
+      _va = (v_align)d["v_align"].value<uint32_t>();
     }
-    if (d["style"].is_value_string()) {
-      std::string sstyle = d["style"].value<std::string>();
-      if (sstyle == "center") {
-        _style = box_style::center;
-      }
-      if (sstyle == "fill") {
-        _style = box_style::fill;
-      }
-      if (sstyle == "pack_start") {
-        _style = box_style::pack_start;
-      }
-      if (sstyle == "pack_end") {
-        _style = box_style::pack_end;
-      }
+    if (d["v_align"].is_value_string()) {
+      _va = valign_from_str(d["v_align"].value<std::string>());
     }
+  }
+  else {
+    _va = v_align::middle;
+  }
+
+  if (d.has_key("h_align")) {
+    if (d["h_align"].is_value_number()) {
+      _ha = (h_align)d["h_align"].value<uint32_t>();
+    }
+    if (d["h_align"].is_value_string()) {
+      _ha = halign_from_str(d["h_align"].value<std::string>());
+    }
+  }
+  else {
+    _ha = h_align::center;
   }
 
   if (d.has_key("scroll")) {
@@ -235,9 +268,19 @@ void box::load(const data & d)
     );
   }
 
-  _margin = d.get("margin", 0);
+  if (d.has_key("padding")) {
+    data::json * pad = d["padding"].value();
+    if (json_is_array(pad)) {
+      pad->unpack("[iiii]", &_pad.top, &_pad.left, &_pad.bottom, &_pad.right);
+    }
+    if (json_is_integer(pad)) {
+      _pad = padding(pad->as<int>());
+    }
+  }
 
-  control::load(d);
+  if (d.has_key("gap") && d["gap"].is_value_integer()) {
+    _gap = d["gap"].value<int>();
+  }
 }
 
 void box::switch_selection(control * target)
@@ -275,101 +318,194 @@ void box::do_scroll(int dx, int dy)
 #endif
 }
 
+std::string box::get_box_type_name() const
+{
+  switch (_type) {
+  case box_type::none:
+    return "none";
+  case box_type::vbox:
+    return "vbox";
+  case box_type::hbox:
+    return "hbox";
+  default:
+    throw std::exception("Unkown box type");
+  };
+}
+
 void box::update_children()
 {
   lock_container(_children);
-  //std::sort(_children.begin(), _children.end());
-  int last_pos = _margin;
-  _children_rect.w = last_pos;
-  _children_rect.h = last_pos;
+
+  // get available area for children
+  // all box rect is available by default
+  const theme::container_skin * sk = get_skin();
+  rect area(0, 0, _pos.w, _pos.h);
+  if (sk != theme::container_skin::dummy()) {
+    area = theme::get_container_user_area(sk, area);
+  }
+
+#ifdef GM_DEBUG_UI
+  SDL_Log("%s(%d) - type: %s, h_align: %s, v_align: %s, area: %s/%s",
+    __METHOD_NAME__,
+    _children.size(),
+    get_box_type_name().c_str(),
+    halign_to_str(_ha).c_str(),
+    valign_to_str(_va).c_str(),
+    area.tostr().c_str(),
+    _pos.tostr().c_str());
+#endif
+
+  // minimum size
+  _children_rect.w = _pad.left + _pad.right;
+  _children_rect.h = _pad.top + _pad.bottom;
+
+  // last positioned control 
+  rect last_pos;
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control* child = (*it);
+    
     // skip locked children of this box
     if (child->locked())
       continue;
     // skip hidden
     if (!child->visible())
       continue;
+    
     rect pos = child->pos();
-    // position type
     switch(_type) {
+
     case box::none:
-      _children_rect.w = max(pos.x + pos.w, _children_rect.w);
-      _children_rect.h = max(pos.y + pos.h, _children_rect.h);
+      // take control size of it is less then area
+      _children_rect.w = max(_pad.left + pos.x + pos.w + _pad.right, area.w);
+      _children_rect.h = max(_pad.top + pos.y + pos.h + _pad.bottom, area.h);
       break;
+
     case box::vbox:
-      pos.x = _margin;
-      pos.y = last_pos;
-      last_pos += pos.h + _margin;
-      _children_rect.h = last_pos;
+      {
+        switch(_ha) {
+        default:
+          SDLEx_LogError("%s - unsupported h_align value \"%d\" for vbox",
+            __METHOD_NAME__, _ha);
+          throw std::exception("Unsupported h_align value for vbox");
+
+        case h_align::left:
+          // position child on the left side of the vbox
+          pos.x = area.x + _pad.left;
+          break;
+
+        case h_align::right:
+          // position child on the right side of the vbox
+          pos.x = area.x + area.w - _pad.right - pos.w;
+          break;
+
+        case h_align::center:
+          // position child in the center of the vbox
+          pos.x = area.x + (area.w - pos.w) / 2;
+          break;
+
+        case h_align::expand:
+          SDLEx_LogError("FIXME");
+          break;
+        };
+
+        switch(_va) {
+        default:
+          SDLEx_LogError("%s - unsupported v_align value \"%d\" for vbox",
+            __METHOD_NAME__, _ha);
+          throw std::exception("Unsupported v_align value for vbox");
+
+        // ignore middle and fill in v_align for vbox
+        // default to the top
+        case v_align::middle:
+        case v_align::fill:
+        case v_align::top:
+          // append from the top
+          if (last_pos.y == 0)
+            last_pos.y = area.y + _pad.top;
+          pos.y = last_pos.y + last_pos.h + _gap;
+          break;
+
+        case v_align::bottom:
+          // append at the bottom
+          if (last_pos.y == 0)
+            last_pos.y = area.y + area.h - _pad.bottom;
+          pos.y = last_pos.y - _gap - pos.h;
+          break;
+        }; 
+      }
       break;
+
     case box::hbox:
-      pos.x = last_pos;
-      pos.y = _margin;
-      last_pos += pos.w + _margin;
-      _children_rect.w += last_pos;
-      break;
-    default:
-      SDLEx_LogError("box::update_children unknown box type value = %d", _type);
-      throw std::exception("unknown box type value");
-      break;
-    };
-    // position by style
-    switch(_style) {
-    case box::pack_start:
-      if (_type == box::vbox) {
-        //align left
-        pos.x = _margin;
-      }
-      if (_type == box::hbox) {
-        //align up
-        pos.y = _margin;
-      }
-      break;
-    case box::pack_end:
-      if (_type == box::vbox) {
-        //align right
-        pos.x = _pos.w - _margin - pos.w;
-      }
-      if (_type == box::hbox) {
-        //align down
-        pos.y = _pos.h - _margin - pos.h;
-      }
-      break;
-    case box::center:
-      if (_type == box::vbox) {
-        pos.x = (_pos.w - pos.w) / 2;
-      }
-      if (_type == box::hbox) {
-        pos.y = (_pos.h - pos.h) / 2;
-      }
-      break;
-    case box::fill:
-      if (_type == box::vbox) {
-        pos.w = _pos.w - 2 * _margin;
-      }
-      if (_type == box::hbox) {
-        pos.h = _pos.h - 2 * _margin;
-      }
+      {
+        switch(_va) {
+        default:
+          SDLEx_LogError("%s - unsupported v_align value \"%d\" for hbox",
+            __METHOD_NAME__, _ha);
+          throw std::exception("Unsupported v_align value for hbox");
 
-      break;
-    case box::no_style:
+        case v_align::top:
+          // position child at the top of the hbox
+          pos.y = area.y + _pad.top;
+          break;
+
+        case v_align::bottom:
+          // position child at the bottom of the hbox
+          pos.y = area.y + area.h - _pad.bottom - pos.h;
+          break;
+
+        case v_align::middle:
+          // position child in he center of the hbox
+          pos.y = area.y + (area.h - pos.h) / 2;
+          break;
+
+        case v_align::fill:
+          SDLEx_LogError("FIXME");
+          break;
+        };
+        
+        switch(_ha) {
+        default:
+          SDLEx_LogError("%s - unsupported h_align value \"%d\" for hbox",
+            __METHOD_NAME__, _ha);
+          throw std::exception("Unsupported h_align value for hbox");
+
+        // ignore center and expand in h_align for hbox
+        // 
+        case h_align::center:
+        case h_align::expand:
+        case h_align::left:
+          if (last_pos.x == 0)
+            last_pos.x = area.x + _pad.left;
+          pos.x = last_pos.x + _gap;
+          break;
+
+        case h_align::right:
+          if (last_pos.x == 0)
+            last_pos.x = area.x + area.w - _pad.right;
+          pos.x = last_pos.x - _gap - pos.w;
+          break;
+        };
+      }
       break;
     default:
-      SDLEx_LogError("box::update_children unknown box type value = %d", _type);
-      throw std::exception("unknown box type value");
+      SDLEx_LogError("%s - unknown box type value \"%d\"", __METHOD_NAME__, _type);
+      throw std::exception("Unknown box type value");
       break;
     };
-    //update child position (rect)
+
+    // update child position (rect) & remember it
     child->set_pos(pos);
-
-#ifdef GM_DEBUG_UI
-    SDL_Log("box::update_children {%s} type(%d) style(%d) - place child {%s} at %s",
-      identifier().c_str(), _type, _style,
+    SDL_Log("%s - place %s %s at %s, last = %s",
+      __METHOD_NAME__,
+      child->get_type_name().c_str(),
       child->identifier().c_str(),
-      pos.tostr().c_str());
-#endif
+      pos.tostr().c_str(), last_pos.tostr().c_str());
+    last_pos = pos;
+
+    // update total width & height
+    _children_rect.w = max(_children_rect.w, last_pos.x + last_pos.w);
+    _children_rect.h = max(_children_rect.h, last_pos.y + last_pos.h);
   }
 
   // normalize children rect
@@ -392,8 +528,14 @@ void box::update_children()
   UI Panel box
   */
 
-panel::panel(rect pos, panel_style ps, box_type t, box_style s, int margin):
-  box("panel", pos, t, s, margin),
+panel::panel(const rect & pos, 
+             const panel_style & ps, 
+             const box_type & t,
+             const h_align & ha, 
+             const v_align & va,
+             const padding & pad,
+             const int & gap):
+  box(pos, t, ha, va, pad, gap),
   _ps(ps),
   _color_back(get_skin()->color_back)
 {
@@ -439,14 +581,16 @@ void panel::load(const data & d)
 void panel::render(SDL_Renderer * r, const rect & dst)
 {
   // render background
+  const theme::container_skin * s = get_skin();
+  rect user_area = theme::get_container_user_area(s, dst);
   _color_back.apply(r);
-  SDL_RenderFillRect(r, &dst);
+  SDL_RenderFillRect(r, &user_area);
 
   // render box content
   box::render(r, dst);
 
   // render box frame
-  current_theme().draw_container_skin(get_skin(), r, dst);
+  current_theme().draw_container_skin(s, r, dst);
 }
 
 } //namespace ui

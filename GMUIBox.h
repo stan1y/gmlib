@@ -18,15 +18,6 @@ public:
     hbox = 2
   } box_type;
 
-  typedef enum {
-    no_style   = 0,
-    center     = 1,
-    fill       = 2,
-    pack_start = 3, /* left-right for vbox*/
-    pack_end   = 4  /* up-down for hbox */
-  } box_style;
-
-
   /**
     Box scrollbar
   */
@@ -48,6 +39,8 @@ public:
     scrollbar(box * container, rect pos,
       /* horizontal or vertical */
       scrollbar_type type);
+
+    virtual std::string get_type_name() const { return "scrollbar"; }
 
     void set_type(scrollbar_type t) { _type = t; }
     scrollbar_type type() const { return _type; }
@@ -85,8 +78,15 @@ public:
   };
 
   /* Public constructor of a new box container of given type */
-  box(rect pos, box_type t = box::vbox, 
-    box_style s = box::no_style, int margin = 0);
+  box(const rect & pos,
+    const box_type & t = box::vbox,
+    const h_align & ha = h_align::center,
+    const v_align & va = v_align::top,
+    const padding & pad = padding(),
+    const int & gap = 2);
+
+  virtual std::string get_type_name() const { return "box"; }
+  std::string get_box_type_name() const;
 
   virtual ~box() 
   {
@@ -95,17 +95,36 @@ public:
     }
   }
 
+  /* skin of this box */
+  virtual const theme::container_skin * get_skin() { return theme::container_skin::dummy(); }
+
+  /* if this box displays scroll bar */
   bool is_scrollbar_visible() 
   { 
     return (sbar() != scrollbar_type::scrollbar_hidden);
   }
 
+  /* get and set scrollbar state for this box */
   scrollbar_type sbar() { return (_scroll == NULL ? scrollbar_type::scrollbar_hidden : _scroll->type()); }
   void set_sbar(scrollbar_type t, uint32_t ssize);
 
-  /** Control protocol overrides */
+  /* get and set box alignment setup */
+  const h_align & get_halign() const { return _ha; }
+  const v_align & get_valign() const { return _va; }
+
+  void set_halign(const h_align & ha) { _ha = ha; }
+  void set_valign(const v_align & va) { _va = va; }
+
+  // render this box contents
   virtual void render(SDL_Renderer* r, const rect & dst);
+
+  // render debug frame
+  void render_debug_frame(SDL_Renderer * r, const rect & dst);
+
+  // add and auto-postion child on this box
   virtual void add_child(control* child);
+
+  // remove child and reposition children
   virtual void remove_child(control* child);
 
   /* Returns a size of the offscreen texture used to rendered all children */
@@ -130,18 +149,10 @@ public:
   // remove all children of this box
   void clear_children();
 
-  const box_style get_box_style() const { return _style; }
-  void set_box_style(const box_style & s);
-
 protected:
-  /* Public constructor of a new box container of given type */
-  box(const std::string & type_name,
-    rect pos, box_type t = box::vbox, 
-    box_style s = box::no_style, int margin = 0);
 
   // update selection on the box
   void switch_selection(control * target);
-
   
   /* box need to handle events from it's children */
   void on_child_click(control * target);
@@ -150,15 +161,27 @@ protected:
   void on_box_wheel(control * target);
 
   // box settings
-  int _margin;
   box_type _type;
-  box_style _style;
-  scrollbar * _scroll;
+  // child allignment in a box
+  // h_align effective for vbox
+  h_align _ha;
+  // v_align effective for hbox
+  v_align _va;
 
   // body texture (children's render target)
   texture _body;
   bool _dirty;
+
+  // children available area bounds
+  padding _pad;
+  // actual area occupied by children
   rect _children_rect;
+  // step in px between children in positioning
+  // both for vertical and horizontal layout
+  int _gap;
+  
+  // scroll control
+  scrollbar * _scroll;
 
   // box selection
   control * _selected_ctl;
@@ -176,8 +199,16 @@ public:
     window  = 4
   } panel_style;
 
-  panel(rect pos, panel_style ps = panel_style::dialog, box_type t = box::vbox, box_style s = box::no_style, int margin = 0);
+  panel(const rect & pos, 
+        const panel_style & ps = panel_style::dialog, 
+        const box_type & t = box::vbox,
+        const h_align & ha = h_align::center, 
+        const v_align & ba = v_align::top, 
+        const padding & pad = padding(2),
+        const int & gap = 2);
   virtual ~panel();
+
+  virtual std::string get_type_name() const { return "panel"; }
 
   color get_background_color() { return _color_back; }
   void set_background_color(const color & c) { _color_back = c; }
