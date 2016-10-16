@@ -14,7 +14,7 @@ namespace ui {
 box::scrollbar::scrollbar(box * container, 
                           rect relpos,
                           scrollbar_type type):
-  control("scrollbar", relpos),
+  control(relpos),
   _type(type),
   _container(container),
   _color_idle(get_skin()->color_idle),

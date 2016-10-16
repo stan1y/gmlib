@@ -11,17 +11,6 @@ namespace ui {
 */
 class label: public control {
 public:
-  typedef enum {
-    left,
-    right,
-    center,
-  } h_align;
-
-  typedef enum {
-    top,
-    bottom,
-    middle
-  } v_align;
 
   // this is the position of
   // label icon if used
@@ -30,52 +19,35 @@ public:
     icon_left
   } icon_pos;
 
-  // this structure defines a padding around a controls
-  // children area
-  typedef struct margin_t {
-    int top;
-    int left;
-    int bottom;
-    int right;
-
-    margin_t() {
-      top = 0; left = 0;
-      bottom = 0; right = 0;
-    }
-    margin_t(int m) {
-      top = m; left = m;
-      bottom = m; right = m;
-    }
-    margin_t(int t, int l, int b, int r) {
-      top = t; left = l;
-      bottom = b; right = r;
-    }
-  } margin;
-
   // the style of label's font rendering
   typedef enum {
     solid   = 0,
     blended = 1
   } font_style;
 
+  static font_style font_style_from_str(const std::string & s);
+
   /* Public constructor for labels */
-  label(rect pos, 
-    margin pad = margin(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top);
+  label(const rect & pos, 
+    const icon_pos & ip = icon_pos::icon_left,
+    const h_align & ha = h_align::left, 
+    const v_align & va = v_align::top,
+    const padding & pad = padding(2));
 
   virtual ~label();
 
-  void set_margin(uint32_t pad) 
+  virtual std::string get_type_name() const { return "label"; }
+
+  /* label contents padding */
+  void set_padding(uint32_t pad) 
   { 
     _pad.top = pad; 
     _pad.left = pad;
     _pad.bottom = pad;
     _pad.right = pad;
   }
-  void set_margin(margin & pad) { _pad = pad; }
-  margin & get_margin() { return _pad; }
+  void set_padding(padding & pad) { _pad = pad; }
+  const padding & get_padding() { return _pad; }
 
   virtual void load(const data &);
 
@@ -157,27 +129,20 @@ public:
   virtual void update();
   void toggle(int step = 25);
 
-  const h_align get_halign() const { return _ha; }
-  const v_align get_valign() const { return _va; }
-
-  const bool is_hovered() const { return _hovered; }
-  const bool is_focused() const { return _focused; }
+  const h_align & get_halign() const { return _ha; }
+  const v_align & get_valign() const { return _va; }
 
   void set_halign(const h_align & ha) { _ha = ha; }
   void set_valign(const v_align & va) { _va = va; }
+
+  const bool is_hovered() const { return _hovered; }
+  const bool is_focused() const { return _focused; }
 
   const theme::label_skin * get_skin() const { 
     return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("label")); 
   }
   
 protected:
-  /* Private contructor for sub-classes to specify different type_name */
-  label(const std::string & type_name,
-    rect pos, 
-    margin pad = margin(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top);
 
   virtual void paint(SDL_Renderer * r);
 
@@ -194,7 +159,7 @@ private:
   void on_focus_lost(control * target);
 
   icon_pos _ip;
-  margin _pad;
+  padding _pad;
   h_align _ha;
   v_align _va;
 

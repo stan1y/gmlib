@@ -11,7 +11,9 @@ public:
 
   class area: public box {
   public:
-    area(rect pos, const color & clr):box(pos, ui::box::vbox, ui::box::fill, 0), _back(clr)
+    area(const rect & pos, const color & clr):
+      box(pos, ui::box::vbox, h_align::left, v_align::middle, 0),
+      _back(clr)
     {}
 
     virtual void render(SDL_Renderer* r, const rect & dst);
@@ -23,18 +25,24 @@ public:
     color _back;
   };
 
-  combo(rect pos,
-    int area_maxlen = 100, 
-    input_validation valid = (input_validation)alphanum,
-    margin pad = margin(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top);
+  combo(const rect & pos,
+        const int max_box_height = 100,
+        const int item_height = 32,
+        const input_validation & valid = (input_validation)alphanum,
+        const icon_pos & ip = icon_pos::icon_left,
+        const h_align & ha = h_align::left, 
+        const v_align & va = v_align::middle,
+        const padding & pad = padding(2));
+
+  virtual std::string get_type_name() const { return "combo"; }
 
   virtual ~combo();
 
   label * get_item(size_t item);
-  size_t add_item(const std::string & text, margin pad = margin(0), h_align ha = h_align::left, v_align va = v_align::middle);
+  size_t add_item(const std::string & text,
+                  const padding & pad = padding(0),
+                  const h_align & ha = h_align::left,
+                  const v_align & va = v_align::middle);
   void delete_item(size_t item);
   
   int find_text(const std::string & text);
@@ -61,7 +69,8 @@ private:
   void on_item_mouseup(control * target);
 
   bool _expand_on_hover;
-  int _area_maxlen;
+  int _max_box_height;
+  int _item_height;
   area * _area;
 };
 

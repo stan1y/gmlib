@@ -129,6 +129,12 @@ struct color : SDL_Color {
   color(const SDL_Color & clr) { r = clr.r; g = clr.g; b = clr.b; a = clr.a; }
   color(uint8_t rr, uint8_t gg, uint8_t bb, uint8_t aa) { r = rr; g = gg; b = bb; a = aa; }
 
+  // function chaining
+  color & set_red(const uint8_t & v) { r = v; return *this; }
+  color & set_green(const uint8_t & v) { g = v; return *this; }
+  color & set_blue(const uint8_t & v) { b = v; return *this; }
+  color & set_alpha(const uint8_t & v) { a = v; return *this; }
+
   void apply(SDL_Renderer* rnd) const;
   void apply() const;
 

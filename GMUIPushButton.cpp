@@ -3,53 +3,53 @@
 
 namespace ui {
 
-push_btn::push_btn(std::string idle_icon_file_path,
-                         std::string disabled_icon_file_path,
-                         std::string pressed_icon_file_path):
-control("push_btn", rect()),
+push_btn::push_btn(std::string idle_icon_icon_path,
+                   std::string disabled_icon_icon_path,
+                   std::string pressed_icon_icon_path):
+  control(rect()),
   _is_pressed(false),
   _sticky(false)
 {
   // load primary idle icon
-  if (idle_icon_file_path.length() <= 0) {
+  if (idle_icon_icon_path.length() <= 0) {
     SDLEx_LogError("push_btn::push_btn - no idle icon specified for push button");
     throw std::exception("No idle icon specified for push button");
   }
-  set_idle_icon(idle_icon_file_path);
+  set_idle_icon(idle_icon_icon_path);
 
   // update own size to reflect idle frame sprite
   const texture * body = get_skin()->idle;
-  set_pos(rect(pos().x, pos().y, body->width(), body->height()));
+  set_pos(rect(0, 0, body->width(), body->height()));
 
   // try to load optional icons
-  if (disabled_icon_file_path.length() > 0)
-    set_disabled_icon(disabled_icon_file_path);
-  if (pressed_icon_file_path.length() > 0)
-    set_pressed_icon(pressed_icon_file_path);
+  if (disabled_icon_icon_path.length() > 0)
+    set_disabled_icon(disabled_icon_icon_path);
+  if (pressed_icon_icon_path.length() > 0)
+    set_pressed_icon(pressed_icon_icon_path);
 
   mouse_up += boost::bind( &push_btn::on_mouse_up, this, _1 );
   mouse_down += boost::bind( &push_btn::on_mouse_down, this, _1 );
 }
 
-push_btn::push_btn(rect pos,
-                         std::string idle_file_path,
-                         std::string disabled_file_path,
-                         std::string pressed_file_path):
-  control("push_btn", pos),
+push_btn::push_btn(const rect & pos,
+                  std::string idle_icon_path,
+                  std::string disabled_icon_path,
+                  std::string pressed_icon_path):
+  control(pos),
   _is_pressed(false),
   _sticky(false)
 {
   // load primary idle icon
-  if (idle_file_path.length() <= 0) {
+  if (idle_icon_path.length() <= 0) {
     SDLEx_LogError("push_btn::push_btn - no idle icon specified for push button");
     throw std::exception("No idle icon specified for push button");
   }
-  set_idle_icon(idle_file_path);
+  set_idle_icon(idle_icon_path);
   // try to load optional icons
-  if (disabled_file_path.length() > 0)
-    set_disabled_icon(disabled_file_path);
-  if (pressed_file_path.length() > 0)
-    set_pressed_icon(pressed_file_path);
+  if (disabled_icon_path.length() > 0)
+    set_disabled_icon(disabled_icon_path);
+  if (pressed_icon_path.length() > 0)
+    set_pressed_icon(pressed_icon_path);
 
   mouse_up += boost::bind( &push_btn::on_mouse_up, this, _1 );
   mouse_down += boost::bind( &push_btn::on_mouse_down, this, _1 );

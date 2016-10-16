@@ -2,15 +2,17 @@
 
 namespace ui {
 
-combo::combo(rect pos,
-            int area_maxlen, 
-            input_validation valid,
-            margin pad,
-            icon_pos ip,
-            h_align ha, 
-            v_align va):
-  text_input("combo", pos, valid, pad, ip, ha, va),
-  _area_maxlen(area_maxlen),
+combo::combo(const rect & pos,
+             const int max_box_height,
+             const int item_height,
+             const input_validation & filter,
+             const icon_pos & ip,
+             const h_align & ha, 
+             const v_align & va,
+             const padding & pad):
+  text_input(pos, filter, ip, ha, va, pad),
+  _max_box_height(max_box_height),
+  _item_height(item_height),
   _expand_on_hover(false),
   _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_skin()->color_back))
 { 
@@ -41,13 +43,13 @@ label * combo::get_item(size_t item)
 void combo::resize_area()
 {
   control_list::const_iterator it = _area->children().begin();
-  margin & pad = get_margin();
+  const padding & pad = get_padding();
   int area_len = pad.top + pad.bottom;
   for(; it != _area->children().end(); ++it) {
     area_len += (*it)->pos().h;
   }
   rect area_pos = _area->pos();
-  if (area_len < _area_maxlen) {
+  if (area_len < _max_box_height) {
     // still can resize area
     area_pos.h = area_len;
     _area->set_pos(area_pos);
@@ -59,20 +61,18 @@ void combo::resize_area()
   }
 }
   
-size_t combo::add_item(const std::string & text, margin pad, h_align ha, v_align va)
+size_t combo::add_item(const std::string & text, const padding & pad, const h_align & ha, const v_align & va)
 {
-  label * lbl = new label(rect(0, 0, _pos.w, 20), pad, icon_left, ha, va);
-  lbl->set_text(text);
-  lbl->set_font(get_font());
-  lbl->set_idle_color(get_idle_color());
-  lbl->mouse_up += boost::bind(&combo::on_item_mouseup, this, _1);
+  label * item = new label(rect(0, 0, _pos.w, _item_height), icon_left, ha, va, pad);
+  item->set_text(text);
+  item->set_font(get_font());
+  item->set_idle_color(get_idle_color());
+  item->mouse_up += boost::bind(&combo::on_item_mouseup, this, _1);
   
-  _area->add_child(lbl);
-  size_t item = _area->children().size() - 1;
-  
+  _area->add_child(item);
   resize_area();
-  
-  return item;
+
+  return _area->children().size() - 1;
 }
 
 void combo::delete_item(size_t item)
@@ -96,8 +96,8 @@ void combo::load(const data & d)
 {
   text_input::load(d);
 
-  if (d.has_key("area_maxlen")) {
-    _area_maxlen = d["area_maxlen"].value<int>();
+  if (d.has_key("max_box_height")) {
+    _max_box_height = d["max_box_height"].value<int>();
   }
   if (d.has_key("area_color")) {
     if (d["area_color"].is_value_string()) {

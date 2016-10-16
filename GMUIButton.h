@@ -19,18 +19,17 @@ public:
   void set_checked(bool c) { _checked = c; }
 
   virtual void load(const data &d) { label::load(d); }
+  virtual std::string get_type_name() const = 0;
 
 protected:
   /* Protected constructor for button sub-classes. 
      No direct 'button' instances allowed this way.
   */
-  button(
-    const std::string & button_subtype_name,
-    rect pos, 
-    margin pad = margin_t(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top);
+  button(const rect & pos,
+    const icon_pos & ip = icon_pos::icon_left,
+    const h_align & ha = h_align::left, 
+    const v_align & va = v_align::top,
+    const padding & pad = padding());
 
   /* get button's frame by it's type */
   const theme::button_skin * get_btn_skin() const { 
@@ -58,12 +57,12 @@ protected:
 */
 class btn : public button {
 public:
-  btn(rect pos, 
-    margin pad = margin_t(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top):
-  button("btn", pos, pad, ip, ha, va)
+  btn(const rect & pos, 
+    const icon_pos & ip = icon_pos::icon_left,
+    const h_align & ha = h_align::left, 
+    const v_align & va = v_align::middle,
+    const padding & pad = padding()):
+  button(pos, ip, ha, va, pad)
   {
     set_font(get_btn_skin()->font_text);
     set_idle_color(get_btn_skin()->color_text_idle);
@@ -75,6 +74,8 @@ public:
     
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
+
+  virtual std::string get_type_name() const { return "btn"; }
 };
 
 /**
@@ -83,12 +84,12 @@ public:
 */
 class sbtn : public button {
 public:
-  sbtn(rect pos, 
-    margin pad = margin_t(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top):
-  button("sbtn", pos, pad, ip, ha, va)
+  sbtn(const rect & pos,
+    const icon_pos & ip = icon_pos::icon_left,
+    const h_align & ha = h_align::left, 
+    const v_align & va = v_align::middle,
+    const padding & pad = padding()):
+  button(pos, ip, ha, va, pad)
   {
     set_font(get_btn_skin()->font_text);
     set_idle_color(get_btn_skin()->color_text_idle);
@@ -99,6 +100,8 @@ public:
       get_btn_skin()->right->height());
     set_pos(rect(pos.x, pos.y, pos.w, body_height));
   }
+
+  virtual std::string get_type_name() const { return "sbtn"; }
 };
 
 class shape {
@@ -136,12 +139,12 @@ public:
 */
 class lbtn : public button {
 public:
-  lbtn(rect pos, 
-    margin pad = margin_t(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::top):
-  button("lbtn", pos, pad, ip, ha, va)
+  lbtn(const rect & pos, 
+    const icon_pos & ip = icon_pos::icon_left,
+    const h_align & ha = h_align::left, 
+    const v_align & va = v_align::middle,
+    const padding & pad = padding()):
+  button(pos, ip, ha, va, pad)
   {
     // lbtn can have any rect size it wants
     // no need to update this->pos() in any way
@@ -149,6 +152,8 @@ public:
     set_idle_color(get_btn_skin()->color_idle);
     set_highlight_color(get_btn_skin()->color_highlight);
   }
+
+  virtual std::string get_type_name() const { return "lbtn"; }
 
   const theme::label_skin * get_btn_skin() { 
     return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("lbtn")); 

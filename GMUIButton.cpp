@@ -2,8 +2,12 @@
 
 namespace ui {
 
-button::button(const std::string & button_subtype_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
-  label(button_subtype_name, pos, pad, ip, ha, va),
+button::button(const rect & pos,
+               const icon_pos & ip,
+               const h_align & ha,
+               const v_align & va,
+               const padding & pad):
+  label(pos, ip, ha, va, pad),
   _checked(false)
 {
   // enable text highlight for buttons

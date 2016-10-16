@@ -53,11 +53,12 @@ public:
   {
     const ui::theme & t = ui::current_theme();
     auto pnl = new ui::panel(rect(50, 100, 200, 150));
-    pnl->set_box_style(ui::box::fill);
+    pnl->set_halign(ui::h_align::center);
+    pnl->set_valign(ui::v_align::middle);
     
     auto lbl = new ui::label(rect(200, 0, 80, 20));
-    lbl->set_halign(ui::label::center);
-    lbl->set_valign(ui::label::middle);
+    lbl->set_halign(ui::h_align::center);
+    lbl->set_valign(ui::v_align::middle);
     lbl->set_idle_color(color::green());
     lbl->set_highlight_color(color::cyan());
     lbl->set_text("The Label with text in VBox");
@@ -66,26 +67,26 @@ public:
     auto btn = new ui::btn(rect(0, 0, 0, 40));
     btn->set_idle_color(color::red());
     btn->set_highlight_color(color::magenta());
-    btn->set_halign(ui::label::center);
-    btn->set_valign(ui::label::middle);
+    btn->set_halign(ui::h_align::center);
+    btn->set_valign(ui::v_align::middle);
     btn->set_text("Click Me!");
     pnl->add_child(btn);
     
     btn->mouse_up += boost::bind(&demo_screen::on_btn_clickme_clicked, this, _1);
     
     auto input = new ui::text_input(rect(0, 0, 200, 40));
-    input->set_margin(2);
+    input->set_padding(4);
     input->set_text("alphanum text input");
     pnl->add_child(input);
     
-    auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox, ui::box::box_style::pack_end, 5);
+    auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox);
     // here we specify path to the file with icon with help of theme's relative resources path api
     // in json, the value for "icon_idle" and others is a resource id for simplification of the declarative use
-    btn_group->add_child(new ui::push_btn(t.get_resource("pushbtn/Icons/ArrowLeft.png")));
-    auto info_btn = new ui::push_btn(t.get_resource("pushbtn/Icons/InfoIcon.png"));
+    btn_group->add_child(new ui::push_btn(resources::find_file("default-icon-left.png").string()));
+    auto info_btn = new ui::push_btn(resources::find_file("default-icon-info.png").string());
     info_btn->set_disabled(true);
     btn_group->add_child(info_btn);
-    btn_group->add_child(new ui::push_btn(t.get_resource("pushbtn/Icons/ArrowRight.png")));
+    btn_group->add_child(new ui::push_btn(resources::find_file("default-icon-right.png").string()));
     pnl->add_child(btn_group);
     
     return pnl;

@@ -48,7 +48,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;GM_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_LIB;_CRT_SECURE_NO_WARNINGS;_DEBUG;GM_DEBUG;GM_DEBUG_UI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\libs\cpython\include;$(SolutionDir)\libs\cpython\PC;$(SolutionDir)\libs\sdl\include;$(SolutionDir)\libs\sdl_image;$(SolutionDir)\libs\sdl_ttf;$(SolutionDir)\libs\sdl_ex;$(SolutionDir)\libs\jansson\include;$(SolutionDir)\libs\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

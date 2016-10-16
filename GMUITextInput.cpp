@@ -3,14 +3,15 @@
 
 namespace ui {
 
-text_input::text_input(rect pos,
-                       input_validation valid,
-                       margin pad,
-                       icon_pos ip,
-                       h_align ha, 
-                       v_align va):
-label("input", pos, pad, ip, ha, va),
-  _valid(valid),
+text_input::text_input(const rect & pos,
+                       const input_validation & filter,
+                       const icon_pos & ip,
+                       const h_align & ha, 
+                       const v_align & va,
+                       const padding & pad):
+
+label(pos, ip, ha, va, pad),
+  _filter(filter),
   _inp_shape(shape::rectangle),
   _cursor(0),
   _cursor_alpha(255),
@@ -24,26 +25,6 @@ label("input", pos, pad, ip, ha, va),
   focused += boost::bind(&text_input::on_focused, this, _1);
 }
 
-text_input::text_input(const std::string & type_name, 
-                       rect pos,
-                       input_validation valid,
-                       margin pad,
-                       icon_pos ip,
-                       h_align ha, 
-                       v_align va):
-label(type_name, pos, pad, ip, ha, va),
-  _valid(valid),
-  _cursor(0),
-  _cursor_alpha(255),
-  _blink_phase(-1),
-  _readonly(false),
-  _draw_frame(true),
-  _timer()
-{
-  enable_hightlight_on_focus();
-  kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
-  focused += boost::bind(&text_input::on_focused, this, _1);
-}
 
 text_input::~text_input()
 {
@@ -108,11 +89,11 @@ void text_input::on_kbd_up(control * target)
   ) {
     std::string s = translate_sym(kbdstate, kbd.keysym.sym);
     for(size_t i = 0; i < s.length(); ++i) {
-      if ( (std::isalpha(s[i]) | std::isspace(s[i])) && !(_valid & input_validation::alpha))
+      if ( (std::isalpha(s[i]) | std::isspace(s[i])) && !(_filter & input_validation::alpha))
         return;
-      if (std::isdigit(s[i]) && !(_valid & input_validation::numbers))
+      if (std::isdigit(s[i]) && !(_filter & input_validation::numbers))
         return;
-      if ( (std::iscntrl(s[i]) || std::ispunct(s[i])) && !(_valid & input_validation::whitespace) )
+      if ( (std::iscntrl(s[i]) || std::ispunct(s[i])) && !(_filter & input_validation::whitespace) )
         return;
     }
     insert_at(_cursor, s);

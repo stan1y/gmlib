@@ -7,8 +7,7 @@ namespace ui {
 /** Control **/
 
 // regular control constructor. manager is a parent by default
-control::control(const std::string & type_name, rect pos):
-  _type(type_name),
+control::control(const rect & pos):
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
   _pos(pos), _parent(NULL), _id(newid()),
@@ -21,8 +20,7 @@ control::control(const std::string & type_name, rect pos):
 }
 
 // regular control constructor. manager is a parent by default with custom ID
-control::control(const std::string & type_name, rect pos, const std::string id):
-  _type(type_name),
+control::control(const rect & pos, const std::string id):
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
   _pos(pos), _parent(NULL), _id(id),
@@ -36,7 +34,7 @@ control::control(const std::string & type_name, rect pos, const std::string id):
 
 // manager's constructor
 control::control():
-  _type("manager"), _id("root"), _parent(NULL), 
+  _id("root"), _parent(NULL), 
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
   _pos(rect(GM_GetDisplayRect())), 
@@ -149,7 +147,7 @@ void control::set_parent(control* parent)
   _parent = parent;
 }
 
-size_t control::find_child_index(control * c)
+size_t control::find_child_index(const control * c)
 {
   return find_child(c) - _children.begin();
 }
@@ -194,7 +192,14 @@ control * control::find_child_at(const point & at)
   return NULL;
 }
 
-control_list::iterator control::find_child(control* child)
+control_list::const_iterator control::find_child(const control * child)
+{
+  control_list::const_iterator start = _children.begin();
+  control_list::const_iterator finish = _children.end();
+  return std::find(start, finish, child);
+}
+
+control_list::iterator control::find_child(control * child)
 {
   return std::find(_children.begin(), _children.end(), child);
 }
@@ -236,23 +241,6 @@ void control::insert_child(size_t idx, control * c)
   _children.insert(_children.begin() + idx, c);
 }
 
-void control::render_debug_frame(SDL_Renderer* r, const rect & dst)
-{
-  if (manager::instance()->get_hovered_control() == this) {
-    static color red(255, 0, 0, 255);
-    static color green(0, 255, 0, 255);
-    red.apply(r);
-      
-    SDL_RenderDrawRect(r, &dst);
-    if (_parent) {
-      rect pdst = _parent->get_absolute_pos();
-      pdst = pdst + rect(-1, -1, 2, 2);
-      green.apply(r);
-      SDL_RenderDrawRect(r, &pdst);
-    }
-  }
-}
-
 void control::render(SDL_Renderer* r, const rect & dst)
 {
   lock_container(_children);
@@ -264,10 +252,6 @@ void control::render(SDL_Renderer* r, const rect & dst)
     rect control_dst = c->get_absolute_pos();
     c->render(r, control_dst);
   }
-  
-#ifdef GM_DEBUG_UI
-    render_debug_frame(r, dst);
-#endif
 }
 
 void control::update()

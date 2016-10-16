@@ -9,16 +9,17 @@ class push_btn : public control {
 public:
 
   // create push_btn with specific rect
-  push_btn(rect pos, 
-              std::string idle_file_path,
-              std::string disabled_file_path = "",
-              std::string pressed_file_path = "");
+  push_btn(const rect & pos, 
+          std::string idle_file_path,
+          std::string disabled_file_path = "",
+          std::string pressed_file_path = "");
 
   // create push_btn with size of the idle icon
   push_btn(std::string idle_file_path,
-              std::string disabled_file_path = "",
-              std::string pressed_file_path = "");
+          std::string disabled_file_path = "",
+          std::string pressed_file_path = "");
 
+  virtual std::string get_type_name() const { return "pushbtn"; }
 
   virtual ~push_btn();
 

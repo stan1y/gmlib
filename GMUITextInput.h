@@ -19,12 +19,12 @@ public:
   static const int everything = (input_validation::alpha | input_validation::numbers | input_validation::whitespace);
 
   /* Public constructor for text_input controls */
-  text_input(rect pos,
-    input_validation valid = (input_validation)alphanum,
-    margin pad = margin(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::middle);
+  text_input(const rect & pos,
+             const input_validation & valid = (input_validation)alphanum,
+             const icon_pos & ip = icon_pos::icon_left,
+             const h_align & ha = h_align::left, 
+             const v_align & va = v_align::middle,
+             const padding & pad = padding(2));
 
   virtual ~text_input();
 
@@ -38,24 +38,13 @@ public:
   void set_readonly(bool state) { _readonly = state; }
   bool is_readonly() { return _readonly; }
 
-  const input_validation & get_validation() { return _valid; }
-  void set_validation(const input_validation & v) { _valid = v; }
+  const input_validation & get_validation() { return _filter; }
+  void set_validation(const input_validation & v) { _filter = v; }
   
   void set_draw_frame(bool state) { _draw_frame = state; }
   bool get_draw_frame() { return _draw_frame; }
 
 protected:
-
-  /* Private constructor for sub-classes to specify different type_name */
-  text_input(
-    const std::string & type_name,
-    rect pos,
-    input_validation valid = (input_validation)alphanum,
-    margin pad = margin(),
-    icon_pos ip = icon_pos::icon_left,
-    h_align ha = label::left, 
-    v_align va = label::middle);
-
   void blink_cursor();
   point get_cursor_pos(const rect & dst);
   void erase_at(size_t c);
@@ -70,7 +59,7 @@ protected:
 
   shape::shape_type _inp_shape;
   size_t _cursor;
-  input_validation _valid;
+  input_validation _filter;
   uint8_t _cursor_alpha;
   timer _timer;
   int _blink_phase; // +1 or -1

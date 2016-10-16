@@ -2,7 +2,11 @@
 
 namespace ui {
 
-label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
+label::label(const rect & pos,
+             const icon_pos & ip,
+             const h_align & ha,
+             const v_align & va,
+             const padding & pad):
   _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
   _font_text(get_skin()->font_text),
   _font_style(font_style::blended),
@@ -16,29 +20,7 @@ label::label(rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
   _highlight_on_hover(false),
   _highlight_on_focus(false),
   _alpha(255),
-  control("label", pos)
-{
-  hovered += boost::bind( &label::on_hovered, this, _1 );
-  hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
-  focused += boost::bind( &label::on_focused, this, _1 );
-  focus_lost += boost::bind( &label::on_focus_lost, this, _1 );
-}
-
-label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h_align ha, v_align va):
-  _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
-  _font_text(get_skin()->font_text),
-  _font_style(font_style::blended),
-  _color_idle(get_skin()->color_idle),
-  _color_back(get_skin()->color_back),
-  _color_highlight(get_skin()->color_highlight),
-  _hovered(false),
-  _focused(false),
-  _dirty(true),
-  _animating(false),
-  _highlight_on_hover(false),
-  _highlight_on_focus(false),
-  _alpha(255),
-  control(type_name, pos)
+  control(pos)
 {
   hovered += boost::bind( &label::on_hovered, this, _1 );
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
@@ -48,6 +30,16 @@ label::label(const std::string & type_name, rect pos, margin pad, icon_pos ip, h
 
 label::~label()
 {
+}
+
+label::font_style label::font_style_from_str(const std::string & s)
+{
+  if (s == "solid")
+    return font_style::solid;
+  else if (s == "blended")
+    return font_style::blended;
+  else
+    throw std::exception("Failed to convert string to font_style");
 }
 
 void label::set_text(const std::string& txt)
@@ -114,6 +106,7 @@ void label::on_focus_lost(control * target)
   _dirty = true;
 }
 
+
 void label::load(const data & d)
 {
   _text = d.get("text", "");
@@ -124,16 +117,7 @@ void label::load(const data & d)
       _va = (v_align)d["v_align"].value<uint32_t>();
     }
     if (d["v_align"].is_value_string()) {
-      std::string va = d["v_align"].value<std::string>();
-      if (va == "top") {
-        _va = v_align::top;
-      }
-      if (va == "bottom") {
-        _va = v_align::bottom;
-      }
-      if (va == "middle") {
-        _va = v_align::middle;
-      }
+      _va = valign_from_str(d["v_align"].value<std::string>());
     }
   }
   else {
@@ -145,16 +129,7 @@ void label::load(const data & d)
       _ha = (h_align)d["h_align"].value<uint32_t>();
     }
     if (d["h_align"].is_value_string()) {
-      std::string ha = d["h_align"].value<std::string>();
-      if (ha == "left") {
-        _ha = h_align::left;
-      }
-      if (ha == "right") {
-        _ha = h_align::right;
-      }
-      if (ha == "center") {
-        _ha = h_align::center;
-      }
+      _ha = halign_from_str(d["h_align"].value<std::string>());
     }
   }
   else {
@@ -184,13 +159,10 @@ void label::load(const data & d)
   }
 
   if (d.has_key("font_text") && d.has_subkey("font_text.face") && d.has_subkey("font_text.size")) {
-    std::string font_style = "blended";
     _font_text = resources::get_font(d["font_text.face"].value<std::string>(),
                                     d["font_text.size"].value<size_t>());
-  }
-  else {
-    // use font from theme
-    _font_text = get_skin()->font_text;
+    if (d.has_subkey("font_text.style"))
+      _font_style = font_style_from_str(d["font_text.style"].value<std::string>());
   }
 
   if (d.has_key("color_back")) {
@@ -223,15 +195,16 @@ void label::load(const data & d)
     }
   }
 
-  if (d.has_key("margin")) {
-    data margin = d["margin"].value();
-    if (margin.is_array()) {
-      margin.unpack("[iiii]", &_pad.top, &_pad.left, &_pad.bottom, &_pad.right);
+  if (d.has_key("padding")) {
+    data::json * pad = d["padding"].value();
+    if (json_is_array(pad)) {
+      pad->unpack("[iiii]", &_pad.top, &_pad.left, &_pad.bottom, &_pad.right);
     }
-    if (margin.is_number()) {
-      _pad = margin_t(margin.as<unsigned int>());
+    if (json_is_integer(pad)) {
+      _pad = padding(pad->as<int>());
     }
   }
+
   _icon_gap = d.get("icon_gap", 0);
 
   control::load(d);
