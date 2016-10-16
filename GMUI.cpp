@@ -1,11 +1,12 @@
-#include "GMUtil.h"
 #include "GMUI.h"
+#include "GMUtil.h"
+#include "GMData.h"
 #include "GMUIBox.h"
 #include "GMUILabel.h"
 #include "GMUIButton.h"
 #include "GMUITextInput.h"
 #include "GMUICombo.h"
-#include "GMData.h"
+#include "GMUIPushButton.h"
 
 /** User Idle Counter **/
 
@@ -271,10 +272,13 @@ control* create_control(const std::string type_id, rect & pos)
   if (type_id == "lbtn") {
     return new lbtn(pos);
   }
-  if (type_id == "text_input") {
+  /*if (type_id == "push_btn") {
+    return new push_btn(pos, );
+  }*/
+  if (type_id == "input") {
     return new text_input(pos);
   }
-  if (type_id == "combo_box") {
+  if (type_id == "combo") {
     return new combo(pos);
   }
   return NULL;
@@ -402,7 +406,7 @@ theme::pointer::pointer_type manager::get_pointer_type()
   */
 message::message(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms):
   _timeout_ms(timeout_ms),
-  control("message", texture::get_string_rect(text, f->fnt()))
+  control(texture::get_string_rect(text, f->fnt()))
 {
   reset(text, f, c, timeout_ms);
 }

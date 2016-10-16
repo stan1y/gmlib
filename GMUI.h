@@ -43,12 +43,12 @@ public:
   static std::string newid();
 
   /* Create new control */
-  control(const std::string & type_name, rect pos);
-  control(const std::string & type_name, rect pos, const std::string id);
+  control(const rect & pos);
+  control(const rect & pos, const std::string id);
   virtual ~control();
   
   /* Returns string name of this control type */
-  const std::string & get_type_name() const { return _type; }
+  virtual std::string get_type_name() const { return "control"; }
 
   /* Returns string description of this control instance */
   virtual std::string tostr() const;
@@ -65,9 +65,11 @@ public:
   virtual void load(const data &);
 
   /* returns an iterator corresponding to a direct child control of this control */
+  control_list::const_iterator find_child(const control* child);
   control_list::iterator find_child(control* child);
+
   /* returns index of the child control */
-  size_t find_child_index(control* child);
+  size_t find_child_index(const control* child);
   /* returns order this control is drawn on parent */
   size_t zlevel();
 
@@ -158,8 +160,6 @@ protected:
   // own position relative to the parent's position
   rect _pos;
 
-  void render_debug_frame(SDL_Renderer* r, const rect & dst);
-
   // own children
   void insert_child(size_t idx, control* child);
   control_list _children;
@@ -171,7 +171,6 @@ protected:
   bool _locked;
   bool _destroyed;
   bool _disabled;
-  std::string _type;
 
 private:
   /* control unique id */
@@ -359,9 +358,102 @@ static const theme & current_theme()
 }
 
 /*
- * Core Controls 
+ * Core classes 
  */
 
+// this structure defines a padding around a controls
+// children area
+typedef struct s_padding {
+  int top;
+  int left;
+  int bottom;
+  int right;
+
+  s_padding(int m = 0) {
+    top = m; left = m;
+    bottom = m; right = m;
+  }
+  s_padding(int t, int l, int b, int r) {
+    top = t; left = l;
+    bottom = b; right = r;
+  }
+} padding;
+
+// horizontal alignment selection
+typedef enum h_align_t {
+  left,
+  right,
+  center,
+  expand
+} h_align;
+
+// vertical alignment selection
+typedef enum v_align_t {
+  top,
+  bottom,
+  middle,
+  fill
+} v_align;
+
+inline std::string halign_to_str(const h_align & ha)
+{
+  switch(ha) {
+  case h_align::left:
+    return "left";
+  case h_align::right:
+    return "right";
+  case h_align::center:
+    return "center";
+  case h_align::expand:
+    return "expand";
+  default:
+    throw std::exception("Can not convert unknown h_align value");
+  };
+}
+
+inline h_align halign_from_str(const std::string & s)
+{
+  if (s == "left")
+    return h_align::left;
+  else if (s == "right")
+    return h_align::right;
+  else if (s == "center")
+    return h_align::center;
+  else if (s == "expand")
+    return h_align::expand;
+  else
+    throw std::exception("Can not convert string to h_align");
+}
+
+inline std::string valign_to_str(const v_align & va)
+{
+  switch(va) {
+  case v_align::top:
+    return "top";
+  case v_align::bottom:
+    return "bottom";
+  case v_align::middle:
+    return "middle";
+  case v_align::fill:
+    return "fill";
+  default:
+    throw std::exception("Can not convert unknown v_align value");
+  };
+}
+
+inline v_align valign_from_str(const std::string & s)
+{
+  if (s == "top")
+    return v_align::top;
+  else if (s == "bottom")
+    return v_align::bottom;
+  else if (s == "middle")
+    return v_align::middle;
+  else if (s == "fill")
+    return v_align::fill;
+  else
+    throw std::exception("Can not convert string to v_align");
+}
 
 /*
   UI Message control.
@@ -374,6 +466,8 @@ public:
   virtual void render(SDL_Renderer * r, const rect & dst);
   virtual void update();
   void show();
+
+  virtual std::string get_type_name() const { return "message"; }
 
   /* show global alert */
   static void alert_ex(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms);
