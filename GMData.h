@@ -308,7 +308,7 @@ public:
 
     // query value type helpers
     bool is_value_number() { return json_is_number(value()); }
-    bool is_value_interger() { return json_is_integer(value()); }
+    bool is_value_integer() { return json_is_integer(value()); }
     bool is_value_real() { return json_is_real(value()); }
     bool is_value_string() { return json_is_string(value()); }
     bool is_value_object() { return json_is_object(value()); }
@@ -426,7 +426,7 @@ public:
 
     // query value type helpers
     bool is_value_number() { return json_is_number(item()); }
-    bool is_value_interger() { return json_is_integer(item()); }
+    bool is_value_integer() { return json_is_integer(item()); }
     bool is_value_real() { return json_is_real(item()); }
     bool is_value_string() { return json_is_string(item()); }
     bool is_value_object() { return json_is_object(item()); }
