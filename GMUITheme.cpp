@@ -44,10 +44,6 @@ theme::label_skin::label_skin(theme * t, const std::string & skin_name):
     font_text = new ttf_font(t->get_skin_resource(skin_name, skin_data["font_text.face"].value<std::string>()),
                                 skin_data["font_text.size"].value<size_t>());
   }
-  else {
-    // use default font
-    font_text = t->font_text;
-  }
 }
 
 theme::container_skin::container_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
@@ -120,12 +116,6 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
                                     skin_data["font_text.size"].value<int>());
     
   }
-  else {
-    // use default font from the theme
-    font_text = t->font_text;
-  }
-
-
 }
 
 theme::push_button_skin::push_button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
@@ -294,68 +284,42 @@ void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
   }
 }
 
+rect theme::get_container_user_area(const container_skin * f, const rect & control_rect)
+{
+  return rect(control_rect.x + f->corner_top_left->width(),
+              control_rect.y + f->corner_top_left->height(),
+              control_rect.w - f->corner_top_left->width() - f->corner_bottom_right->width(),
+              control_rect.h - f->corner_top_left->height() - f->corner_bottom_right->height());
+              
+}
+
 void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, const rect & dst) const
 {
-  // const
-  int BORDER_LENGTH = min(f->border_top->width(), f->border_left->height());
-  int BORDER_HEIGHT = min(f->corner_top_left->width(), f->corner_top_left->height());
+  // draw corners first
+  f->corner_top_left->render(r, dst.topleft());
+  f->corner_top_right->render(r, point(dst.x + dst.w - f->corner_top_right->width(), dst.y));
+  f->corner_bottom_left->render(r, point(dst.x, 
+                                         dst.y + dst.h - f->corner_bottom_left->height()));
+  f->corner_bottom_right->render(r, point(dst.x + dst.w - f->corner_bottom_left->width(),
+                                          dst.y + dst.h - f->corner_bottom_left->height()));
 
-  // paint borders
-  int bx = 0, xdiff = 0;
-  rect bsrc(0, 0, BORDER_LENGTH, BORDER_HEIGHT);
-  rect bdst(0, 0, BORDER_LENGTH, BORDER_HEIGHT);
-  while (bx < dst.w) {
-    bdst.x = dst.x + bx;
-    bdst.y = dst.y - BORDER_HEIGHT;
-    xdiff = dst.w - bx;
-    if (xdiff < BORDER_LENGTH) {
-      bdst.w = xdiff;
-      bsrc.w = xdiff;
-    }
-    f->border_top->render(r, bsrc, bdst);
-    bdst.y = dst.y + dst.h;
-    f->border_bottom->render(r, bsrc, bdst);
-    bx += BORDER_LENGTH;
-  }
-  int by = 0, ydiff = 0;
-  bsrc.x = 0;
-  bsrc.y = 0;
-  bsrc.w = BORDER_HEIGHT;
-  bsrc.h = BORDER_LENGTH;
-  bdst.x = 0;
-  bdst.y = 0;
-  bdst.w = BORDER_HEIGHT;
-  bdst.h = BORDER_LENGTH;
-  while (by < dst.h) {
-    bdst.x = dst.x - BORDER_HEIGHT;
-    bdst.y = dst.y + by;
-    ydiff = dst.h - by;
-    if (ydiff < BORDER_LENGTH) {
-      bdst.h = ydiff;
-      bsrc.h = ydiff;
-    }
-    f->border_left->render(r, bsrc, bdst);
-    bdst.x = dst.x + dst.w;
-    f->border_right->render(r, bsrc, bdst);
-    by += BORDER_LENGTH;
-  }
-    
-  // paint corners
-  bsrc.x = 0;
-  bsrc.y = 0;
-  bsrc.w = BORDER_HEIGHT;
-  bsrc.h = BORDER_HEIGHT;
-  bdst.x = dst.x - BORDER_HEIGHT;
-  bdst.y = dst.y - BORDER_HEIGHT;
-  bdst.w = BORDER_HEIGHT;
-  bdst.h = BORDER_HEIGHT;
-  f->corner_top_left->render(r, bsrc, bdst);
-  bdst.y = dst.y + dst.h;
-  f->corner_bottom_left->render(r, bsrc, bdst);
-  bdst.x = dst.x + dst.w;
-  f->corner_bottom_right->render(r, bsrc, bdst);
-  bdst.y = dst.y - BORDER_HEIGHT;
-  f->corner_top_right->render(r, bsrc, bdst);
+  // draw borders between corners by stretching them
+  f->border_top->render(r, rect(dst.x + f->corner_top_left->width(),
+                                dst.y,
+                                dst.w - (f->corner_top_left->width() + f->corner_top_right->width()),
+                                f->border_top->height()));
+  f->border_bottom->render(r, rect(dst.x + f->corner_bottom_left->width(),
+                                dst.y + dst.h - f->border_bottom->height(),
+                                dst.w - (f->corner_bottom_left->width() + f->corner_bottom_right->width()),
+                                f->border_bottom->height()));
+  f->border_left->render(r, rect(dst.x,
+                                 dst.y + f->corner_top_left->height(),
+                                 f->border_left->width(),
+                                 dst.h - (f->corner_top_left->height() + f->corner_bottom_left->height())));
+  f->border_right->render(r, rect(dst.x + dst.w - f->border_right->width(),
+                                  dst.y + f->corner_top_right->height(),
+                                  f->border_right->width(),
+                                  dst.h - (f->corner_top_right->height() + f->corner_bottom_right->height())));
 }
 
 void theme::draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const

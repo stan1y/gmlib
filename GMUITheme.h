@@ -91,6 +91,8 @@ public:
      color color_back;
 
      container_skin(theme * t, const std::string & skin_name);
+
+     static const container_skin * dummy() { return nullptr; }
    };
 
    class button_skin: public base_skin {
@@ -142,6 +144,7 @@ public:
   bool resource_exists(const std::string & skin_res) const;
 
   /** Theme Drawing APIs */
+  static rect get_container_user_area(const container_skin * f, const rect & control_rect);
   void draw_container_skin(const container_skin * f, SDL_Renderer * r, const rect & dst) const;
   void draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const;
   void draw_pointer(SDL_Renderer* r, const rect & dst);
