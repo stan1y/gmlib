@@ -27,8 +27,8 @@ protected:
   */
   button(const rect & pos,
     const icon_pos & ip = icon_pos::icon_left,
-    const h_align & ha = h_align::left, 
-    const v_align & va = v_align::top,
+    const h_align & ha = h_align::center, 
+    const v_align & va = v_align::middle,
     const padding & pad = padding());
 
   /* get button's frame by it's type */
@@ -59,7 +59,7 @@ class btn : public button {
 public:
   btn(const rect & pos, 
     const icon_pos & ip = icon_pos::icon_left,
-    const h_align & ha = h_align::left, 
+    const h_align & ha = h_align::center, 
     const v_align & va = v_align::middle,
     const padding & pad = padding()):
   button(pos, ip, ha, va, pad)
@@ -141,7 +141,7 @@ class lbtn : public button {
 public:
   lbtn(const rect & pos, 
     const icon_pos & ip = icon_pos::icon_left,
-    const h_align & ha = h_align::left, 
+    const h_align & ha = h_align::center, 
     const v_align & va = v_align::middle,
     const padding & pad = padding()):
   button(pos, ip, ha, va, pad)

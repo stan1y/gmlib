@@ -29,10 +29,11 @@ public:
 
   /* Public constructor for labels */
   label(const rect & pos, 
-    const icon_pos & ip = icon_pos::icon_left,
+    const icon_pos & icon = icon_pos::icon_left,
     const h_align & ha = h_align::left, 
     const v_align & va = v_align::top,
-    const padding & pad = padding(2));
+    const padding & pad = padding(2),
+    const int gap = 2);
 
   virtual ~label();
 
@@ -158,7 +159,6 @@ private:
   void on_focused(control * target);
   void on_focus_lost(control * target);
 
-  icon_pos _ip;
   padding _pad;
   h_align _ha;
   v_align _va;
@@ -167,24 +167,28 @@ private:
   point _text_offset;
   texture _text_tx;
   
-  point _icon_offset;
+  icon_pos _icon_pos;
   uint32_t _icon_gap;
-  texture _icon_tx;
   std::string _icon_file;
   color _icon_color;
+
+  point _icon_offset;
+  texture _icon_tx;
   
   ttf_font const * _font_text;
   font_style _font_style;
+
   color _color_idle;
   color _color_highlight;
   color _color_back;
   
   bool _dirty;
-  bool _animating;
   bool _hovered;
   bool _highlight_on_hover;
   bool _focused;
   bool _highlight_on_focus;
+
+  bool _animating;
   int _alpha;
   int _alpha_step;
 };

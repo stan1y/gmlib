@@ -48,6 +48,10 @@ void box::render_debug_frame(SDL_Renderer * r, const rect & dst)
 {
   const control * hovered = ui::get_hovered_control();
   control_list::const_iterator child = find_child(hovered);
+
+  if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL]) {
+    return;
+  }
   
   if (this == hovered || child != _children.end()) {
 
@@ -214,9 +218,6 @@ void box::load(const data & d)
       }
     }
   }
-  else {
-    _type = box_type::none;
-  }
 
   if (d.has_key("v_align")) {
     if (d["v_align"].is_value_number()) {
@@ -226,9 +227,6 @@ void box::load(const data & d)
       _va = valign_from_str(d["v_align"].value<std::string>());
     }
   }
-  else {
-    _va = v_align::middle;
-  }
 
   if (d.has_key("h_align")) {
     if (d["h_align"].is_value_number()) {
@@ -237,9 +235,6 @@ void box::load(const data & d)
     if (d["h_align"].is_value_string()) {
       _ha = halign_from_str(d["h_align"].value<std::string>());
     }
-  }
-  else {
-    _ha = h_align::center;
   }
 
   if (d.has_key("scroll")) {
@@ -260,12 +255,6 @@ void box::load(const data & d)
 
       set_sbar(stype, ssize);
     }
-  }
-  else {
-    set_sbar(
-      scrollbar_type::scrollbar_hidden,
-      d.get("scrollbar_size", 0)
-    );
   }
 
   if (d.has_key("padding")) {

@@ -286,6 +286,9 @@ void theme::draw_pointer(SDL_Renderer* r, const rect & dst)
 
 rect theme::get_container_user_area(const container_skin * f, const rect & control_rect)
 {
+  if (f == container_skin::dummy()) {
+    return control_rect;
+  }
   return rect(control_rect.x + f->corner_top_left->width(),
               control_rect.y + f->corner_top_left->height(),
               control_rect.w - f->corner_top_left->width() - f->corner_bottom_right->width(),

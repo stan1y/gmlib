@@ -3,11 +3,12 @@
 namespace ui {
 
 label::label(const rect & pos,
-             const icon_pos & ip,
+             const icon_pos & icon,
              const h_align & ha,
              const v_align & va,
-             const padding & pad):
-  _pad(pad), _ip(ip), _ha(ha), _va(va), _icon_gap(0),
+             const padding & pad,
+             const int gap):
+  _pad(pad), _icon_pos(icon), _ha(ha), _va(va), _icon_gap(gap),
   _font_text(get_skin()->font_text),
   _font_style(font_style::blended),
   _color_idle(get_skin()->color_idle),
@@ -120,9 +121,6 @@ void label::load(const data & d)
       _va = valign_from_str(d["v_align"].value<std::string>());
     }
   }
-  else {
-    _va = v_align::middle;
-  }
 
   if (d.has_key("h_align")) {
     if (d["h_align"].is_value_number()) {
@@ -132,26 +130,20 @@ void label::load(const data & d)
       _ha = halign_from_str(d["h_align"].value<std::string>());
     }
   }
-  else {
-    _ha = h_align::center;
-  }
 
   if (d.has_key("icon_pos")) {
     if (d["icon_pos"].is_value_number()) {
-      _ip = (icon_pos)d["icon_pos"].value<uint32_t>();
+      _icon_pos = (icon_pos)d["icon_pos"].value<uint32_t>();
     }
     if (d["icon_pos"].is_value_string()) {
       std::string ip = d["icon_pos"].value<std::string>();
       if (ip == "left") {
-        _ip = icon_pos::icon_left;
+        _icon_pos = icon_pos::icon_left;
       }
       if (ip == "right") {
-        _ip = icon_pos::icon_right;
+        _icon_pos = icon_pos::icon_right;
       }
     }
-  }
-  else {
-    _ip = icon_pos::icon_left;
   }
 
   if (d.has_key("icon_gap") && d["icon_gap"].is_value_number()) {
@@ -204,8 +196,9 @@ void label::load(const data & d)
       _pad = padding(pad->as<int>());
     }
   }
-
-  _icon_gap = d.get("icon_gap", 0);
+  if (d.has_key("icon_gap")) {
+    _icon_gap = d.get("icon_gap", 0);
+  }
 
   control::load(d);
 }
@@ -300,36 +293,36 @@ void label::paint(SDL_Renderer * r)
 
   // horizontal alignment
   if (_ha == h_align::center) {
-    if (_ip == icon_pos::icon_left) {
+    if (_icon_pos == icon_pos::icon_left) {
       // icon first
       _icon_offset.x = _pad.left + (total_avail_w - total_label_w) / 2;
       _text_offset.x = _icon_offset.x + _icon_tx.width() + _icon_gap;
     }
-    if (_ip == icon_pos::icon_right) {
+    if (_icon_pos == icon_pos::icon_right) {
       // text first
       _text_offset.x = _pad.left + (total_avail_w - total_label_w) / 2;
       _icon_offset.x = _text_offset.x + _text_tx.width() + _icon_gap;
     }
   }
   if (_ha == h_align::left) {
-    if (_ip == icon_pos::icon_left) {
+    if (_icon_pos == icon_pos::icon_left) {
       // icon first
       _icon_offset.x = _pad.left;
       _text_offset.x = _icon_offset.x + _icon_tx.width() + _icon_gap;
     }
-    if (_ip == icon_pos::icon_right) {
+    if (_icon_pos == icon_pos::icon_right) {
       // text first
       _text_offset.x = _pad.left;
       _icon_offset.x = _text_offset.x + _text_tx.width() + _icon_gap;
     }
   }
   if (_ha == h_align::right) {
-    if (_ip == icon_pos::icon_left) {
+    if (_icon_pos == icon_pos::icon_left) {
       // icon first
       _text_offset.x = _pos.w - _text_tx.width() - _pad.right;
       _icon_offset.x = _text_offset.x -_icon_tx.width() - _icon_gap;
     }
-    if (_ip == icon_pos::icon_right) {
+    if (_icon_pos == icon_pos::icon_right) {
       // text first
       _icon_offset.x = _pos.w - _icon_tx.width() - _pad.right;
       _text_offset.x = _icon_offset.x - _text_tx.width() - _icon_gap;
