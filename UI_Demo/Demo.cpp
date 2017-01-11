@@ -31,11 +31,11 @@ public:
     
     // build UI automatically from ui.json file
     _panel_from_json = ui::build<ui::panel>(resources::get_data("demo.ui.json"));
-    _panel_from_json->find_child("btn_one")->mouse_down \
+    _panel_from_json->find_child("btn_one")->mouse_up \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
-    _panel_from_json->find_child("btn_two")->mouse_down \
+    _panel_from_json->find_child("btn_two")->mouse_up \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
-    _panel_from_json->find_child("btn_three")->mouse_down \
+    _panel_from_json->find_child("btn_three")->mouse_up \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     
     // populate list panel with some items
