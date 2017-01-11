@@ -7,11 +7,8 @@ button::button(const rect & pos,
                const h_align & ha,
                const v_align & va,
                const padding & pad):
-  label(pos, ip, ha, va, pad),
-  _checked(false)
+  label(pos, ip, ha, va, pad)
 {
-  // enable text highlight for buttons
-  enable_hightlight_on_hover();
 }
 
 void lbtn::load(const data &d) 

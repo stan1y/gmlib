@@ -16,6 +16,7 @@ label::label(const rect & pos,
   _color_highlight(get_skin()->color_highlight),
   _hovered(false),
   _focused(false),
+  _pressed(false),
   _dirty(true),
   _animating(false),
   _highlight_on_hover(false),
@@ -27,6 +28,8 @@ label::label(const rect & pos,
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
   focused += boost::bind( &label::on_focused, this, _1 );
   focus_lost += boost::bind( &label::on_focus_lost, this, _1 );
+  mouse_up += boost::bind( &label::on_mouse_up, this, _1 );
+  mouse_down += boost::bind( &label::on_mouse_down, this, _1 );
 }
 
 label::~label()
@@ -92,6 +95,7 @@ void label::on_hovered(control * target)
 void label::on_hover_lost(control * target)
 {
   _hovered = false;
+  _pressed = false;
   _dirty = true;
 }
 
@@ -104,9 +108,21 @@ void label::on_focused(control * target)
 void label::on_focus_lost(control * target)
 {
   _focused = false;
+  _pressed = false;
   _dirty = true;
 }
 
+void label::on_mouse_up(control * target)
+{
+  _pressed = false;
+  _dirty = true;
+}
+
+void label::on_mouse_down(control * target)
+{
+  _pressed = true;
+  _dirty = true;
+}
 
 void label::load(const data & d)
 {

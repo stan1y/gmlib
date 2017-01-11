@@ -89,11 +89,26 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
   right = resources::get_texture(t->get_skin_resource(skin_name, "right.png"));
   center = resources::get_texture(t->get_skin_resource(skin_name, "center.png"));
   
+  // try loading optional sprites
+  if (t->skin_resource_exists(skin_name, "hovered-left.png")) {
+    left_hovered = resources::get_texture(t->get_skin_resource(skin_name, "hovered-left.png"));
+  }
+  if (t->skin_resource_exists(skin_name, "hovered-right.png")) {
+    right_hovered = resources::get_texture(t->get_skin_resource(skin_name, "hovered-right.png"));
+  }
+  if (t->skin_resource_exists(skin_name, "hovered-center.png")) {
+    center_hovered = resources::get_texture(t->get_skin_resource(skin_name, "hovered-center.png"));
+  }
+
   // try loading optional hovered sprites
-  if (t->skin_resource_exists(skin_name, "left-hover.png")) {
-    left_hover = resources::get_texture(t->get_skin_resource(skin_name, "left-hover.png"));
-    right_hover = resources::get_texture(t->get_skin_resource(skin_name, "right-hover.png"));
-    center_hover = resources::get_texture(t->get_skin_resource(skin_name, "center-hover.png"));
+  if (t->skin_resource_exists(skin_name, "pressed-left.png")) {
+    left_pressed = resources::get_texture(t->get_skin_resource(skin_name, "pressed-left.png"));
+  }
+  if (t->skin_resource_exists(skin_name, "pressed-right.png")) {
+    right_pressed = resources::get_texture(t->get_skin_resource(skin_name, "pressed-right.png"));
+  }
+  if (t->skin_resource_exists(skin_name, "pressed-center.png")) {
+    center_pressed = resources::get_texture(t->get_skin_resource(skin_name, "pressed-center.png"));
   }
 
   // load button text colors
@@ -114,7 +129,9 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
   if (skin_data.has_key("font_text") && skin_data.has_subkey("font_text.face") && skin_data.has_subkey("font_text.size")) {
     font_text = resources::get_font(skin_data["font_text.face"].value<std::string>(),
                                     skin_data["font_text.size"].value<int>());
-    
+  }
+  else {
+    font_text = t->font_text;
   }
 }
 
@@ -325,18 +342,33 @@ void theme::draw_container_skin(const container_skin * f, SDL_Renderer * r, cons
                                   dst.h - (f->corner_top_right->height() + f->corner_bottom_right->height())));
 }
 
-void theme::draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const
+void theme::draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst, bool hovered, bool pressed) const
 {
-  rect ldst(dst.x, dst.y, f->left->width(), dst.h);
-  f->left->render(r, ldst);
-  rect cdst(dst.x + f->left->width(), dst.y, f->center->width(), dst.h);
-  int center = dst.w - (f->right->width() + f->left->width());
-  for(int x = 0; x < center; ++x) {
-    cdst.x = dst.x + f->left->width() + x;
-    f->center->render(r, cdst);
+  const texture * left = f->left;
+  const texture * right = f->right;
+  const texture * center = f->center;
+  if (hovered && f->left_hovered && f->right_hovered && f->center_hovered) {
+    left = f->left_hovered;
+    right = f->right_hovered;
+    center = f->center_hovered;
   }
-  rect rdst(dst.x + f->left->width() + center, dst.y, f->right->width(), dst.h);
-  f->right->render(r, rdst);
+
+  if (pressed && f->left_pressed && f->right_pressed && f->center_pressed) {
+    left = f->left_pressed;
+    right = f->right_pressed;
+    center = f->center_pressed;
+  }
+
+  rect ldst(dst.x, dst.y, f->left->width(), dst.h);
+  left->render(r, ldst);
+  rect cdst(dst.x + left->width(), dst.y, center->width(), dst.h);
+  int middle = dst.w - (right->width() + left->width());
+  for(int x = 0; x < middle; ++x) {
+    cdst.x = dst.x + left->width() + x;
+    center->render(r, cdst);
+  }
+  rect rdst(dst.x + left->width() + middle, dst.y, right->width(), dst.h);
+  right->render(r, rdst);
 }
 
 } //namespace ui

@@ -101,9 +101,13 @@ public:
      const texture * right;
      const texture * center;
 
-     const texture * left_hover;
-     const texture * right_hover;
-     const texture * center_hover;
+     const texture * left_hovered;
+     const texture * right_hovered;
+     const texture * center_hovered;
+
+     const texture * left_pressed;
+     const texture * right_pressed;
+     const texture * center_pressed;
 
      ttf_font const * font_text;
      color color_text_idle;
@@ -146,7 +150,7 @@ public:
   /** Theme Drawing APIs */
   static rect get_container_user_area(const container_skin * f, const rect & control_rect);
   void draw_container_skin(const container_skin * f, SDL_Renderer * r, const rect & dst) const;
-  void draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst) const;
+  void draw_button_skin(const button_skin * f, SDL_Renderer * r, const rect & dst, bool hovered = false, bool pressed = false) const;
   void draw_pointer(SDL_Renderer* r, const rect & dst);
 
   const data & get_desc() const { return _desc; }

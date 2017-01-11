@@ -138,6 +138,7 @@ public:
 
   const bool is_hovered() const { return _hovered; }
   const bool is_focused() const { return _focused; }
+  const bool is_pressed() const { return _pressed; }
 
   const theme::label_skin * get_skin() const { 
     return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("label")); 
@@ -158,6 +159,9 @@ private:
 
   void on_focused(control * target);
   void on_focus_lost(control * target);
+
+  void on_mouse_up(control * target);
+  void on_mouse_down(control * target);
 
   padding _pad;
   h_align _ha;
@@ -182,11 +186,15 @@ private:
   color _color_highlight;
   color _color_back;
   
+  // call ::paint if this control
+  // is dirty in ::render stage
   bool _dirty;
+
   bool _hovered;
   bool _highlight_on_hover;
   bool _focused;
   bool _highlight_on_focus;
+  bool _pressed;
 
   bool _animating;
   int _alpha;

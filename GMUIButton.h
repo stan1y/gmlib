@@ -14,10 +14,6 @@ class button : public label {
 public:
   virtual ~button() {}
 
-  /* toggle this button on or off */
-  bool checked() { return _checked; }
-  void set_checked(bool c) { _checked = c; }
-
   virtual void load(const data &d) { label::load(d); }
   virtual std::string get_type_name() const = 0;
 
@@ -41,19 +37,17 @@ protected:
   virtual void render(SDL_Renderer * r, const rect & dst)
   {
     // render button frame & back
-    current_theme().draw_button_skin(get_btn_skin(), r, dst);
+    current_theme().draw_button_skin(get_btn_skin(), r, dst, 
+      is_hovered(), is_pressed());
   
     // render label contents on top
     label::render(r, dst);
   }
-
-  /* button can be togged on/off */
-  bool _checked;
 };
 
 /**
   UI Standard size button. 
-  It is using "btn" frame from theme
+  It is using "btn" skin from theme
 */
 class btn : public button {
 public:
@@ -80,13 +74,13 @@ public:
 
 /**
   UI Small size button.
-  It is using "sbtn" frame from theme
+  It is using "sbtn" skin from theme
 */
 class sbtn : public button {
 public:
   sbtn(const rect & pos,
     const icon_pos & ip = icon_pos::icon_left,
-    const h_align & ha = h_align::left, 
+    const h_align & ha = h_align::center, 
     const v_align & va = v_align::middle,
     const padding & pad = padding()):
   button(pos, ip, ha, va, pad)
@@ -134,23 +128,26 @@ public:
 };
 
 /**
-  UI Small size button.
+  UI Small size button / toolbox.
   It is rendered with privitive rect, roundedrect, and so on
 */
 class lbtn : public button {
 public:
-  lbtn(const rect & pos, 
-    const icon_pos & ip = icon_pos::icon_left,
-    const h_align & ha = h_align::center, 
-    const v_align & va = v_align::middle,
-    const padding & pad = padding()):
-  button(pos, ip, ha, va, pad)
+  lbtn(const rect & pos,
+       const shape::shape_type & s = shape::shape_type::rectangle,
+       const icon_pos & ip = icon_pos::icon_left,
+       const h_align & ha = h_align::center, 
+       const v_align & va = v_align::middle,
+       const padding & pad = padding()):
+  button(pos, ip, ha, va, pad), _btn_shape(s)
   {
     // lbtn can have any rect size it wants
     // no need to update this->pos() in any way
     set_font(get_btn_skin()->font_text);
     set_idle_color(get_btn_skin()->color_idle);
     set_highlight_color(get_btn_skin()->color_highlight);
+    // enable text highlight for lbtns
+    enable_hightlight_on_hover();
   }
 
   virtual std::string get_type_name() const { return "lbtn"; }
