@@ -84,44 +84,44 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GMAnimation.h" />
-    <ClInclude Include="GMData.h" />
-    <ClInclude Include="GMEventHandler.h" />
-    <ClInclude Include="GMLib.h" />
-    <ClInclude Include="GMPython.h" />
-    <ClInclude Include="GMSprites.h" />
-    <ClInclude Include="GMTexture.h" />
-    <ClInclude Include="GMUIBox.h" />
-    <ClInclude Include="GMUIButton.h" />
-    <ClInclude Include="GMUICombo.h" />
-    <ClInclude Include="GMUILabel.h" />
-    <ClInclude Include="GMUIPushButton.h" />
-    <ClInclude Include="GMUITextInput.h" />
-    <ClInclude Include="GMUITheme.h" />
-    <ClInclude Include="GMUtil.h" />
-    <ClInclude Include="RESLib.h" />
-    <ClInclude Include="GMUI.h" />
+    <ClInclude Include="include/GMAnimation.h" />
+    <ClInclude Include="include/GMData.h" />
+    <ClInclude Include="include/GMEventHandler.h" />
+    <ClInclude Include="include/GMLib.h" />
+    <ClInclude Include="include/GMPython.h" />
+    <ClInclude Include="include/GMSprites.h" />
+    <ClInclude Include="include/GMTexture.h" />
+    <ClInclude Include="include/GMUIBox.h" />
+    <ClInclude Include="include/GMUIButton.h" />
+    <ClInclude Include="include/GMUICombo.h" />
+    <ClInclude Include="include/GMUILabel.h" />
+    <ClInclude Include="include/GMUIPushButton.h" />
+    <ClInclude Include="include/GMUITextInput.h" />
+    <ClInclude Include="include/GMUITheme.h" />
+    <ClInclude Include="include/GMUtil.h" />
+    <ClInclude Include="include/RESLib.h" />
+    <ClInclude Include="include/GMUI.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GMAnimation.cpp" />
-    <ClCompile Include="GMConfig.cpp" />
-    <ClCompile Include="GMData.cpp" />
-    <ClCompile Include="GMLib.cpp" />
-    <ClCompile Include="GMPython.cpp" />
-    <ClCompile Include="GMTexture.cpp" />
-    <ClCompile Include="GMUI.cpp" />
-    <ClCompile Include="GMUIButton.cpp" />
-    <ClCompile Include="GMUICombo.cpp" />
-    <ClCompile Include="GMUIControl.cpp" />
-    <ClCompile Include="GMUILabel.cpp" />
-    <ClCompile Include="GMUIBox.cpp" />
-    <ClCompile Include="GMUIPushButton.cpp" />
-    <ClCompile Include="GMUIScrollbar.cpp" />
-    <ClCompile Include="GMUITextInput.cpp" />
-    <ClCompile Include="GMUITextInputKeySyms.cpp" />
-    <ClCompile Include="GMUITheme.cpp" />
-    <ClCompile Include="RESLib.cpp" />
-    <ClCompile Include="GMSprites.cpp" />
+    <ClCompile Include="src/GMAnimation.cpp" />
+    <ClCompile Include="src/GMConfig.cpp" />
+    <ClCompile Include="src/GMData.cpp" />
+    <ClCompile Include="src/GMLib.cpp" />
+    <ClCompile Include="src/GMPython.cpp" />
+    <ClCompile Include="src/GMTexture.cpp" />
+    <ClCompile Include="src/GMUI.cpp" />
+    <ClCompile Include="src/GMUIButton.cpp" />
+    <ClCompile Include="src/GMUICombo.cpp" />
+    <ClCompile Include="src/GMUIControl.cpp" />
+    <ClCompile Include="src/GMUILabel.cpp" />
+    <ClCompile Include="src/GMUIBox.cpp" />
+    <ClCompile Include="src/GMUIPushButton.cpp" />
+    <ClCompile Include="src/GMUIScrollbar.cpp" />
+    <ClCompile Include="src/GMUITextInput.cpp" />
+    <ClCompile Include="src/GMUITextInputKeySyms.cpp" />
+    <ClCompile Include="src/GMUITheme.cpp" />
+    <ClCompile Include="src/RESLib.cpp" />
+    <ClCompile Include="src/GMSprites.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GMUI_Reference.md" />

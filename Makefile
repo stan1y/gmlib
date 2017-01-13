@@ -1,18 +1,19 @@
 # GMLib Build 
+VERSION=1.0
 
 CC?=c++
 PREFIX?=/usr/local
 OBJDIR?=obj
-GMLIB=libgm
+GMLIB=libgm.so
 INSTALL_DIR=$(PREFIX)/lib/
 INCLUDE_DIR=$(PREFIX)/include/gmlib
 
-S_SRC= $(wildcard *.cpp)
+S_SRC= $(wildcard src/*.cpp) $(wildcard sdl_ex/*.cpp)
 
 CFLAGS+=-Wall -Werror -std=c++11 -pedantic
 CFLAGS+=-Wsign-compare -Wshadow -Wpointer-arith -Wcast-qual
 CFLAGS+=-DPREFIX='"$(PREFIX)"'
-CFLAGS+=-I. -I/usr/local/include
+CFLAGS+=-I./include -I./sdl_ex -I/usr/local/include
 LDFLAGS=-shared
 
 # User defined paths to includes
@@ -41,8 +42,8 @@ endif
 
 S_OBJS=	$(S_SRC:%.cpp=$(OBJDIR)/%.o)
 
-$(GMLIB): $(OBJDIR) $(S_OBJS)
-	$(CC) $(S_OBJS) $(LDFLAGS) -o $(GMLIB)
+gmlib: $(OBJDIR) $(S_OBJS)
+	$(CC) -shared $(S_OBJS) $(LDFLAGS) -o $(GMLIB)
 
 objects: $(OBJDIR) $(S_OBJS)
 
@@ -54,8 +55,9 @@ $(OBJDIR):
 install:
 	mkdir -p $(INCLUDE_DIR)
 	mkdir -p $(INSTALL_DIR)
-	install -m 555 $(GMLIB) $(INSTALL_DIR)/$(GMLIB)
+	install -m 555 $(GMLIB) $(INSTALL_DIR)/$(GMLIB).$(VERSION)
 	install -m 644 *.h $(INCLUDE_DIR)
+	ln -s $(INSTALL_DIR)/$(GMLIB).$(VERSION) $(INSTALL_DIR)/$(GMLIB)
 
 uninstall:
 	rm -f $(INSTALL_DIR)/$(GMLIB)
