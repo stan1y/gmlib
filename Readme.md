@@ -1,7 +1,7 @@
 # GMLib library
 
 GMLib is a C++ utilities toolkit around SDL and satellite projects 
-SDL_ttf and SDL_img. Together with these libraries and Boost, GMLib depends on
+SDL_ttf and SDL_image. Together with these libraries and Boost, GMLib depends on
 several other smaller libraries providing platform independent features.
 
 The goal of GMLib is to provide comprehensive one stop SDL wrapper utility
@@ -15,7 +15,7 @@ native support for C++ data classes into python objects serialization.
 
 GMLib uses the following libraries:
 
-* `SDL`, `SDL_ttf` and `SDL_img` - Simple Direct Layer libraries
+* `SDL`, `SDL_ttf` and `SDL_image` - Simple Direct Layer libraries
 * `boost` - Most of the cross platform needs
 * `jansson` - Fast JSON parser
 * `freetype` - Used by SDL_ttf
@@ -41,7 +41,7 @@ GMLib support build on Windows, Linux and Mac OS X.
 
 You need to build Boost or get a precompiled version for your target platform before building anything else. Refer to Boost documentation on how to build a shared libraries version for your platform.
 
-Also you need to build or get SDL, SDL_ttf, SDL_img libraries. Refer to SDL documentation on how to build it for your platform, however it is usually just a CMake.
+Also you need to build or get SDL, SDL_ttf, SDL_image libraries. Refer to SDL documentation on how to build it for your platform, however it is usually just a CMake.
 
 ### Building on Windows
 
