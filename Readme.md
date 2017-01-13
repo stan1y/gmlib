@@ -35,10 +35,21 @@ There is a brief [documentation of GMLib architecture and classes](https://githu
 
 ## Building
 
-GMLib support build on Windows, Linux and Mac OS X
+GMLib support build on Windows, Linux and Mac OS X.
+
+##### Prerequisites
+
+You need to build Boost or get a precompiled version for your target platform before building anything else. Refer to Boost documentation on how to build a shared libraries version for your platform.
+
+Also you need to build or get SDL, SDL_ttf, SDL_img libraries. Refer to SDL documentation on how to build it for your platform, however it is usually just a CMake.
 
 ### Building on Windows
 
-### Building on Linux
+To build on Windows use GMLib.vcproj file. Make sure you modify it accoring to your environment.
 
-### Building on Mac OS X
+### Building on Linux & Mac OS X
+
+Refer to Makefile for configurable build settings and defines recognized by GMLib.
+
+    $ make 
+    $ sudo make install
