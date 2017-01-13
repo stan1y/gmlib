@@ -274,10 +274,19 @@ void label::render(SDL_Renderer * r, const rect & dst)
   control::render(r, dst);
 }
 
+void label::paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr)
+{
+  if (_font_style == font_style::blended)
+    tx.load_text_blended(text.length() > 0 ? text : " ", fnt, clr);
+  else
+    tx.load_text_solid(text.length() > 0 ? text : " ", fnt, clr);
+}
+
 void label::paint(SDL_Renderer * r)
 {
   if (!_dirty) return;
-  // render text, it can be empty string
+
+  
   color clr = _color_idle;
   if (is_focused() && _highlight_on_focus) {
     clr = _color_highlight;
@@ -286,10 +295,9 @@ void label::paint(SDL_Renderer * r)
     clr = _color_highlight;
   }
 
-  if (_font_style == font_style::blended)
-    _text_tx.load_text_blended(_text.length() > 0 ? _text : " ", _font_text, clr);
-  else
-    _text_tx.load_text_solid(_text.length() > 0 ? _text : " ", _font_text, clr);
+  rect sz = texture::get_string_rect(_text, _font_text->fnt());
+  _text_tx.blank(sz.w > 0 ? sz.w : 5, sz.h > 0 ? sz.h : 5);
+  paint_text(_text_tx, _text, _font_text, clr);
 
   // load icon as resource only if given
   if (_icon_file.size() > 0) {

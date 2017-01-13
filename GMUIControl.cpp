@@ -79,19 +79,20 @@ control::~control()
 std::string control::tostr() const
 {
   std::stringstream ss;
-  if (_destroyed)
+  if (_destroyed) {
     ss << "{" << get_type_name() \
        << " id=" << _id \
        << ", !zombie}";
-  else if (_proxy)
-    if (_destroyed)
-      ss << "{" << get_type_name() \
-         << " id=" << _id \
-         << ", pos=" << _pos.tostr() \
-         << ", !proxy=yes" \
-         << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str()) \
-         << "}";
-  else
+  }
+  else if (_proxy) {
+    ss << "{" << get_type_name() \
+        << " id=" << _id \
+        << ", pos=" << _pos.tostr() \
+        << ", !proxy=yes" \
+        << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str()) \
+        << "}";
+  }
+  else {
     ss << "{" << get_type_name() \
        << " id=" << _id \
        << ", pos=" << _pos.tostr() \
@@ -99,6 +100,7 @@ std::string control::tostr() const
        << ", disabled=" << YES_NO(_disabled) \
        << ", parent=" << (_parent == nullptr ? "<null>" : _parent->identifier().c_str()) \
        << "}";
+  }
   return ss.str();
 }
 

@@ -152,6 +152,7 @@ protected:
   void mark_dirty() { _dirty = true; }
   const texture & get_text_texture() const { return _text_tx; }
   const point & get_text_offset() const { return _text_offset; }
+  void paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr);
 
 private:
   void on_hovered(control * target);

@@ -84,6 +84,11 @@ public:
 
   /* load texture from resource (see GM_LoadTexture) */
   void load(const fs::path & file_path);
+
+  /* create a new copy of this texture's bytes 
+     (SDL_TEXTUREACCESS_STREAMING only)
+   */
+  texture * copy();
   
   /* load texture data from surface */
   void set_surface(SDL_Surface* src);
@@ -115,8 +120,17 @@ public:
   uint8_t get_alpha();
 
   /* access texture properties */
-  int width() const { return _width; }
-  int height() const { return _height; }
+  int width() const { return _width + _scale_w; }
+  int height() const { return _height + _scale_h; }
+  int base_width() const { return _width; }
+  int base_height() const { return _height; }
+  bool is_scaled() const { return _scale_w != 0 || _scale_h != 0; } 
+
+  /* resize texture with delta + or - 
+     texture will be replaces with a new 
+     instance with acess SDl_TEXTUREACCESS_TARGET
+   */
+  void resize(int dw, int dh);
 
   /* raw texture pointer */
   SDL_Texture* get_texture() const { return _texture; }
@@ -148,13 +162,22 @@ private:
   SDL_Texture* _texture;
   // pixel access details
   int _width;
+  int _scale_w;
   int _height;
+  int _scale_h;
   void* _pixels;
   int _pitch;
   // properties
   uint32_t _format;
   SDL_TextureAccess _access;
   SDL_BlendMode _bmode;
+
+  // raw pixels copy access
+  void set_pixels(void * ptr);
+  
+  // transfer _texture ownership and
+  // clone all properties
+  void move_texture(texture * other);
 };
 
 

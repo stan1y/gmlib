@@ -8,6 +8,8 @@ texture::texture():
   _pitch(0),
   _width(0),
   _height(0),
+  _scale_w(0),
+  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(SDL_TEXTUREACCESS_STREAMING),
   _bmode(SDL_BLENDMODE_BLEND)
@@ -20,6 +22,8 @@ texture::texture(SDL_Texture * tx, SDL_BlendMode bmode):
   _pitch(0),
   _width(0),
   _height(0),
+  _scale_w(0),
+  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(SDL_TEXTUREACCESS_STREAMING),
   _bmode(bmode)
@@ -33,6 +37,8 @@ texture::texture(const std::string & file_path):
   _pitch(0),
   _width(0),
   _height(0),
+  _scale_w(0),
+  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(SDL_BLENDMODE_BLEND)
@@ -46,6 +52,8 @@ texture::texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode
   _pitch(0),
   _width(0),
   _height(0),
+  _scale_w(0),
+  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(access),
   _bmode(bmode)
@@ -60,6 +68,8 @@ texture::texture(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, ui
   _pitch(0),
   _width(0),
   _height(0),
+  _scale_w(0),
+  _scale_h(0),
   _format(pixel_format),
   _access(access),
   _bmode(bmode)
@@ -90,10 +100,10 @@ void texture::blank(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode,
 
 void texture::release()
 {
-  if (_texture) {
+  if (_texture != nullptr) {
     SDL_DestroyTexture(_texture);
   }
-  _texture = NULL;
+  _texture = nullptr;
 }
 
 texture::~texture()
@@ -250,6 +260,41 @@ void texture::render(SDL_Renderer* r, const rect & src, const rect & dst,
   //Render to screen
   if (SDL_RenderCopyEx(r, _texture, &src, &dst, angle, center, flip ) != 0)
     throw sdl_exception();
+}
+
+texture * texture::copy()
+{
+  lock();
+  texture * cp = new texture(_width, _height, _access, _bmode, _format); 
+  cp->set_pixels(_pixels);
+  unlock();
+
+  return cp;
+}
+
+void texture::resize(int dw, int dh)
+{
+  _scale_w += dw;
+  _scale_h += dh;
+}
+
+void texture::set_pixels(void * ptr)
+{
+  lock();
+  _pixels = ptr;
+  unlock();
+}
+
+void texture::move_texture(texture * other)
+{
+  other->release();
+  other->set_texture(_texture);
+  other->_width = _width;
+  other->_height = _height;
+  other->_bmode = _bmode;
+  other->_access = _access;
+  other->_format = _format;
+  _texture = NULL;
 }
 
 void texture::set_color_mod(const color & rgb)
