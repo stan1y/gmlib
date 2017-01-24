@@ -2,20 +2,6 @@
 
 /* Texture */
 
-// the texture itself
-  SDL_Texture* _texture;
-  // pixel access details
-  int _width;
-  int _scale_w;
-  int _height;
-  int _scale_h;
-  void* _pixels;
-  int _pitch;
-  // properties
-  uint32_t _format;
-  SDL_TextureAccess _access;
-  SDL_BlendMode _bmode;
-
 texture::texture():
   _texture(nullptr),
   _width(0),
