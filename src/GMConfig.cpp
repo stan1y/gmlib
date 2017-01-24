@@ -33,7 +33,7 @@ static config_private * g_config = NULL;
 
 const config* config::current() {
   if (g_config == nullptr || g_config->_interface == nullptr) {
-    SDLEx_LogError("config::current: not initialized");
+    fprintf(stderr, "config::current: not initialized");
     return nullptr;
   }
   return g_config->_interface;
@@ -95,8 +95,8 @@ const std::string config::ui_theme() const
 //const config * config::current()
 //{
 //  if (g_config == nullptr) {
-//    SDLEx_LogError("%s - GMLib config was not loaded.");
-//    throw std::exception("GMLib config was not loaded.");
+//    fprintf(stderr, "%s - GMLib config was not loaded.");
+//    throw std::runtime_error("GMLib config was not loaded.");
 //  }
 //  return g_config->_interface;
 //}

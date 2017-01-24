@@ -55,12 +55,6 @@
 #define GM_LIB_RELESE  "a"
 #define GM_LIB_PATCH   4
 
-/** Default log category */
-#define SDLEx_LogCategory SDL_LOG_CATEGORY_APPLICATION
-
-/** Error log wrapper */
-#define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
-
 /* __METHOD_NAME__ wrapper for MSVS and GCC */
 #ifndef __METHOD_NAME__
   #ifdef __PRETTY_FUNCTION__
@@ -197,24 +191,10 @@ struct rect : SDL_Rect {
   }
 
   /** Produce a new rect as a clip of this and another rect */
-  rect rect::clip(const rect & other) const
+  rect clip(const rect & other) const
   {
-    /*rect res;
-    res.x = max(x, other.x);
-    res.w = min(x + w - other.x, other.x + other.w - x);
-    res.y = max(y, other.y);
-    res.h = min(y + h - other.y, other.y + other.h - y);
-
-    if (w <= 0 || h <= 0) {
-      res.w = 0; res.h = 0;
-    }
-    return res;*/
-
     rect out;
     if (SDL_IntersectRect(this, &other, &out) != SDL_TRUE) {
-      //SDLEx_LogError("%s - given rects do not intersect",
-      //  __METHOD_NAME__);
-      //throw std::exception("Cannot clip rectangles. No intersection.");
       return other;
     }
     return out;
@@ -225,14 +205,14 @@ struct rect : SDL_Rect {
   rect center(const uint32_t for_w, const uint32_t for_h) const;
 
   /** Check this rect collides with another rect */
-  bool rect::collide_rect(const rect & b) const
+  bool collide_rect(const rect & b) const
   {
     SDL_Rect dummy;
     return (SDL_IntersectRect(this, &b, &dummy) == SDL_TRUE);
   }
 
   /** Check this rect collides with a point */
-  bool rect::collide_point(const point & pnt) const
+  bool collide_point(const point & pnt) const
   {
     return (SDL_PointInRect(&pnt, this) == SDL_TRUE);
   }
@@ -324,10 +304,10 @@ public:
     std::exception(),
     _msg(SDL_GetError())
   {
-    SDLEx_LogError("SDL Error: %s", _msg);
+    fprintf(stderr, "SDL Error: %s", _msg);
   }
 
-  virtual const char * what() const
+  virtual const char * what() const _NOEXCEPT
   {
     return _msg;
   }
@@ -411,7 +391,7 @@ public:
   void clear() { _v.clear(); }
   std::vector<T> & get() { return _v; }
   
-  template <class T>
+  template <T>
   void copy_to(std::vector<T> & output, size_t from = 0, size_t to = -1) {
     std::copy(_v.begin() + from, _v.begin() + (to >= 0 ? to : size() - 1), output);
   }

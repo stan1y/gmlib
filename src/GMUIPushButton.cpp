@@ -7,13 +7,13 @@ push_btn::push_btn(std::string idle_icon_icon_path,
                    std::string disabled_icon_icon_path,
                    std::string pressed_icon_icon_path):
   control(rect()),
-  _is_pressed(false),
-  _sticky(false)
+  _sticky(false),
+  _is_pressed(false)
 {
   // load primary idle icon
   if (idle_icon_icon_path.length() <= 0) {
-    SDLEx_LogError("push_btn::push_btn - no idle icon specified for push button");
-    throw std::exception("No idle icon specified for push button");
+    fprintf(stderr, "push_btn::push_btn - no idle icon specified for push button");
+    throw std::runtime_error("No idle icon specified for push button");
   }
   set_idle_icon(idle_icon_icon_path);
 
@@ -36,13 +36,13 @@ push_btn::push_btn(const rect & pos,
                   std::string disabled_icon_path,
                   std::string pressed_icon_path):
   control(pos),
-  _is_pressed(false),
-  _sticky(false)
+  _sticky(false),
+  _is_pressed(false)
 {
   // load primary idle icon
   if (idle_icon_path.length() <= 0) {
-    SDLEx_LogError("push_btn::push_btn - no idle icon specified for push button");
-    throw std::exception("No idle icon specified for push button");
+    fprintf(stderr, "push_btn::push_btn - no idle icon specified for push button");
+    throw std::runtime_error("No idle icon specified for push button");
   }
   set_idle_icon(idle_icon_path);
   // try to load optional icons
@@ -102,8 +102,8 @@ void push_btn::set_pressed_icon(SDL_Texture* tex)
 void push_btn::load(const data & d)
 {
   if (!d.has_key("icon_idle")) {
-    SDLEx_LogError("push_btn::load - no idle icon specified");
-    throw std::exception("No idle icon specified for push_btn");
+    fprintf(stderr, "push_btn::load - no idle icon specified");
+    throw std::runtime_error("No idle icon specified for push_btn");
   }
   set_idle_icon(resources::find_file(d["icon_idle"].value<std::string>()));
 
@@ -118,7 +118,7 @@ void push_btn::load(const data & d)
   }
 }
 
-void push_btn::render(SDL_Renderer* r, const rect & dst)
+void push_btn::draw(SDL_Renderer* r, const rect & dst)
 {
   if (disabled()) {
     if(get_skin()->disabled && get_skin()->disabled->is_valid()) 

@@ -19,7 +19,7 @@ bool PyObject_Contains(PyObject * obj, PyObject * needle)
   }
   // compare items
   bool found = false;
-  while (item = PyIter_Next(iterator)) {
+  while ( (item = PyIter_Next(iterator)) ) {
     if (PyObject_RichCompareBool(item, needle, Py_EQ)) {
       found = true;
       break;
@@ -90,7 +90,7 @@ namespace python {
  * collects python's error details
  */
 script::script_exception::script_exception(const char * msg):
-  exception(msg)
+  runtime_error(msg)
 {
   if (!PyErr_Occurred()) {
     return;
@@ -98,6 +98,7 @@ script::script_exception::script_exception(const char * msg):
 
   // Get python error traceback
   PyErr_Print();
+  PyErr_Clear();
 }
 
 
@@ -105,7 +106,7 @@ void initialize(const config * cfg)
 {
   fs::path python_home = cfg->python_home();
   if (!fs::is_directory(python_home)) {
-    throw std::exception("Python home is not a directory");
+    throw std::runtime_error("Python home is not a directory");
   }
 
 #ifdef GM_DEBUG
@@ -152,7 +153,7 @@ script::script(const std::string file_path):
     if (PyErr_Occurred())
       PyErr_Print();
 
-    SDLEx_LogError("%s - failed to load python script from %s",
+    fprintf(stderr, "%s - failed to load python script from %s",
       __METHOD_NAME__, file_path.c_str());
     throw script_exception("Failed to load python script");
   }
@@ -207,7 +208,7 @@ static data::json * PyObject_AsJSON(PyObject * py)
     }
     // init new array
     p = data::json::array();
-    while (item = PyIter_Next(iterator)) {
+    while ( (item = PyIter_Next(iterator)) ) {
       // prepare and set item  
       data::json * jitem = PyObject_AsJSON(item);
       Py_DECREF(item);
@@ -231,12 +232,12 @@ static data::json * PyObject_AsJSON(PyObject * py)
     }
     // init new dict
     p = data::json::object();
-    while (key = PyIter_Next(iterator)) {
+    while ( (key = PyIter_Next(iterator)) ) {
       
       // key must be a unicode string for 
       // compatibility with JSON 
       if (!PyUnicode_Check(key)) {
-        SDLEx_LogError("%s - cannot convert non-string key in object",
+        fprintf(stderr, "%s - cannot convert non-string key in object",
           __METHOD_NAME__);
         return NULL;
       }
@@ -245,8 +246,8 @@ static data::json * PyObject_AsJSON(PyObject * py)
       value = PyObject_GetItem(py, key);
       if (value == NULL) {
         // proparage key error
-        SDLEx_LogError("%s - failed to find value by key \"%s\"",
-          __METHOD_NAME__, key);
+        fprintf(stderr, "%s - failed to find value by key \"%s\"",
+          __METHOD_NAME__, PyUnicode_AsUTF8(key));
         return NULL;
       }
 
@@ -326,20 +327,20 @@ void script::call_func(data & ret, const std::string & func_name) const
 PyObject * script::call_func_ex(const std::string & func_name, const script::arguments & args) const
 {
   if (_py_module == nullptr) {
-    SDLEx_LogError("%s - module %s is not initalized. cannot call \"%s\"",
+    fprintf(stderr, "%s - module %s is not initalized. cannot call \"%s\"",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script_exception("Cannot call function. Module object is not initialized.");
   }
 
   if (!args.is_object()) {
-    SDLEx_LogError("%s - python function arguments must be a dictionary. cannot call \"%s\"",
+    fprintf(stderr, "%s - python function arguments must be a dictionary. cannot call \"%s\"",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Cannot call function. Arguments object is not a dictionary.");
   }
 
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
   if (func == NULL) {
-    SDLEx_LogError("%s - failed to find module attribute %s",
+    fprintf(stderr, "%s - failed to find module attribute %s",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Failed to find python module attribute");
   }
@@ -347,7 +348,7 @@ PyObject * script::call_func_ex(const std::string & func_name, const script::arg
   if (!PyCallable_Check(func)) {
     Py_XDECREF(func);
 
-    SDLEx_LogError("%s - python module attribute %s is not a function",
+    fprintf(stderr, "%s - python module attribute %s is not a function",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Called python module attribute is not a function");
   }
@@ -362,7 +363,7 @@ PyObject * script::call_func_ex(const std::string & func_name, const script::arg
   if (ret == NULL) {
     Py_XDECREF(ret);
 
-    SDLEx_LogError("%s - python function call failed. %s:%s",
+    fprintf(stderr, "%s - python function call failed. %s:%s",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script::script_exception("Python function call failed");
   }
@@ -375,7 +376,7 @@ void script::call_func(data & ret, const std::string & func_name, const argument
   PyObject * py = call_func_ex(func_name, args);
   data::json * jdata = PyObject_AsJSON(py);
   if (jdata == NULL) {
-    SDLEx_LogError("%s - failed to convert returned value of %s:%s",
+    fprintf(stderr, "%s - failed to convert returned value of %s:%s",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script_exception("Failed to convert value returned from Python");
   }

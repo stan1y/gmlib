@@ -8,10 +8,12 @@ namespace ui {
 
 // regular control constructor. manager is a parent by default
 control::control(const rect & pos):
+  _parent(NULL), _pos(pos),
+  _scrolled_rect(0, 0, pos.w, pos.h),
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
-  _pos(pos), _parent(NULL), _id(newid()),
-  _scrolled_rect(0, 0, pos.w, pos.h)
+  _id(newid())
+  
 {
 #ifdef GM_DEBUG_UI
   SDL_Log("control::control created new %s", tostr().c_str());
@@ -21,10 +23,11 @@ control::control(const rect & pos):
 
 // regular control constructor. manager is a parent by default with custom ID
 control::control(const rect & pos, const std::string id):
+  _parent(NULL), _pos(pos),
+  _scrolled_rect(0, 0, pos.w, pos.h),
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
-  _pos(pos), _parent(NULL), _id(id),
-  _scrolled_rect(0, 0, pos.w, pos.h)
+  _id(id)
 {
 #ifdef GM_DEBUG_UI
   SDL_Log("control::control created new %s", tostr().c_str());
@@ -34,11 +37,11 @@ control::control(const rect & pos, const std::string id):
 
 // manager's constructor
 control::control():
-  _id("root"), _parent(NULL), 
+  _parent(NULL), _pos(GM_GetDisplayRect()),
+  _scrolled_rect(GM_GetDisplayRect()),
   _visible(true), _proxy(false), _locked(false), 
   _destroyed(false), _disabled(false),
-  _pos(rect(GM_GetDisplayRect())), 
-  _scrolled_rect(0, 0, _pos.w, _pos.h)
+  _id("root")
 {
 #ifdef GM_DEBUG_UI
   SDL_Log("%s - ui manager intialized with %s", 
@@ -137,7 +140,6 @@ rect control::get_absolute_pos()
 
 void control::set_parent(control* parent)
 {
-  manager * mgr = manager::instance();
   std::string s;
 #ifdef GM_DEBUG_UI
   SDL_Log("control::set_parent id: %s changed parent from %s to %s", 
@@ -151,7 +153,11 @@ void control::set_parent(control* parent)
 
 size_t control::find_child_index(const control * c)
 {
-  return find_child(c) - _children.begin();
+  control_list::const_iterator found = find_child(c);
+  if (found == _children.end())
+    throw std::runtime_error("child control not found");
+
+  return found - _children.begin();
 }
 
 size_t control::zlevel()
@@ -230,9 +236,9 @@ void control::remove_child(control* child)
 
 control * control::get_child_at_index(size_t idx)
 {
-  if (idx < 0 || idx >= _children.size()) {
-    SDLEx_LogError("control::get_child_at_index - invalid index: %d", idx);
-    throw std::exception("invalid child index to get");
+  if (idx >= _children.size()) {
+    fprintf(stderr, "control::get_child_at_index - invalid index: %zu", idx);
+    throw std::runtime_error("invalid child index to get");
   }
   return _children[idx];
 }
@@ -243,7 +249,7 @@ void control::insert_child(size_t idx, control * c)
   _children.insert(_children.begin() + idx, c);
 }
 
-void control::render(SDL_Renderer* r, const rect & dst)
+void control::draw(SDL_Renderer* r, const rect & dst)
 {
   lock_container(_children);
   control_list::iterator it = _children.begin();
@@ -252,7 +258,7 @@ void control::render(SDL_Renderer* r, const rect & dst)
     control * c = *it;
     if (c->destroyed() || !c->visible()) continue;
     rect control_dst = c->get_absolute_pos();
-    c->render(r, control_dst);
+    c->draw(r, control_dst);
   }
 }
 

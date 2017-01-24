@@ -8,21 +8,23 @@ label::label(const rect & pos,
              const v_align & va,
              const padding & pad,
              const int gap):
-  _pad(pad), _icon_pos(icon), _ha(ha), _va(va), _icon_gap(gap),
+  control(pos),
+  _pad(pad), _ha(ha), _va(va), 
+  _icon_pos(icon), _icon_gap(gap),
   _font_text(get_skin()->font_text),
   _font_style(font_style::blended),
   _color_idle(get_skin()->color_idle),
-  _color_back(get_skin()->color_back),
   _color_highlight(get_skin()->color_highlight),
-  _hovered(false),
-  _focused(false),
-  _pressed(false),
+  _color_back(get_skin()->color_back),
   _dirty(true),
-  _animating(false),
+  _hovered(false),
   _highlight_on_hover(false),
+  _focused(false),
   _highlight_on_focus(false),
+  _pressed(false),
+  _animating(false),
   _alpha(255),
-  control(pos)
+  _alpha_step(0)
 {
   hovered += boost::bind( &label::on_hovered, this, _1 );
   hover_lost += boost::bind( &label::on_hover_lost, this, _1 );
@@ -43,7 +45,7 @@ label::font_style label::font_style_from_str(const std::string & s)
   else if (s == "blended")
     return font_style::blended;
   else
-    throw std::exception("Failed to convert string to font_style");
+    throw std::runtime_error("Failed to convert string to font_style");
 }
 
 void label::set_text(const std::string& txt)
@@ -264,14 +266,16 @@ void label::toggle(int step)
   _animating = true;
 }
 
-void label::render(SDL_Renderer * r, const rect & dst)
+void label::draw(SDL_Renderer * r, const rect & dst)
 {
-  if (_dirty) paint(r);
+  if (_dirty)
+    paint(r);
+  
   _icon_tx.render(r, dst.topleft() + _icon_offset);
   _text_tx.set_alpha(int32_to_uint8(_alpha));
   _text_tx.render(r, dst.topleft() + _text_offset);
 
-  control::render(r, dst);
+  control::draw(r, dst);
 }
 
 void label::paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr)

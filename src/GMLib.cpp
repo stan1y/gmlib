@@ -12,7 +12,6 @@
 /* Global State */
 static SDL_Window* g_window = nullptr;
 static SDL_Renderer* g_renderer = nullptr;
-static SDL_GLContext g_glcontext = nullptr;
 static timer* g_frame_timer = nullptr;
 static timer* g_fps_timer = nullptr;
 static uint32_t g_counted_frames = 0;
@@ -21,7 +20,7 @@ static uint32_t g_screen_ticks_per_frame = 0;
 static float g_avg_fps = 0.0f;
 static texture g_fps;
 static color g_fps_color;
-static ttf_font const * g_fps_font;
+static ttf_font const * g_fps_font = nullptr;
 
 /* Screens */
 static sdl_mutex g_screen_lock;
@@ -30,7 +29,7 @@ static screen * g_screen_next;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
-        SDLEx_LogError("%s: not initialized", __METHOD_NAME__);
+        fprintf(stderr, "%s: not initialized", __METHOD_NAME__);
         return nullptr;
     }
     return g_window;
@@ -38,7 +37,7 @@ SDL_Window* GM_GetWindow() {
 
 SDL_Renderer* GM_GetRenderer() {
   if (g_renderer == nullptr) {
-    SDLEx_LogError("%s: not initialized", __METHOD_NAME__);
+    fprintf(stderr, "%s: not initialized", __METHOD_NAME__);
     return nullptr;
   }
   return g_renderer;
@@ -56,15 +55,15 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //init subsystems
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-        SDLEx_LogError("SDL_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
+        fprintf(stderr, "SDL_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (IMG_Init(IMG_INIT_PNG) == -1) {
-        SDLEx_LogError("IMG_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
+        fprintf(stderr, "IMG_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (TTF_Init() == -1) {
-        SDLEx_LogError("TTF_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
+        fprintf(stderr, "TTF_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
         return -1;;
     }
 
@@ -81,32 +80,32 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //check cfg path is ok
     if (cfg_path.empty()) {
-      SDLEx_LogError("%s: invalid config path", __METHOD_NAME__);
+      fprintf(stderr, "%s: invalid config path", __METHOD_NAME__);
       return -1;
     }
     boost::filesystem::path p_path(cfg_path);
     if (!boost::filesystem::exists(p_path)) {
-      SDLEx_LogError("GM_Init: config path does not exist");
+      fprintf(stderr, "GM_Init: config path does not exist");
       return -1;
     }
     boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
     config::load(abspath.string());
     const config * cfg = config::current();
     
-    //init SDL window & renderer
+    // init SDL window & renderer
     const rect srect = cfg->screen_rect();
     g_window = SDL_CreateWindow(name.c_str(), 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         srect.w, srect.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
-        SDLEx_LogError("%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
+        fprintf(stderr, "%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
         return -1;
     }
     // setup renderer
     uint32_t didx = cfg->driver_index();
     g_renderer = SDL_CreateRenderer(g_window, didx, cfg->renderer_flags());
     if ( g_renderer == nullptr ) {
-        SDLEx_LogError("%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, didx);
+        fprintf(stderr, "%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, didx);
         return -1;
     }
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
@@ -124,13 +123,13 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     // resources cache
     resources::initialize(config::current()->assets());
 
-    //setup random
+    // setup random
     srand((unsigned int)time(NULL));
 
     // init python
     python::initialize(cfg);
 
-    //setup game state
+    // fps timer
     g_frame_timer = new timer();
     if (cfg->fps_cap() > 0)
       g_screen_ticks_per_frame = 1000 / cfg->fps_cap();
@@ -139,16 +138,16 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     rect display = GM_GetDisplayRect();
     ui::manager::initialize(display);
     
-    //setup screens
-#ifdef GM_DEBUG
-      g_fps_timer = new timer();
-#endif
+    // setup screens
     g_screen_current = nullptr;
     g_screen_next = nullptr;
 
-    //fps counter
+    // fps counter
+#ifdef GM_DEBUG
+    g_fps_timer = new timer();
     g_fps_color = color( 0, 255, 0, 255 );
     g_fps_font = resources::get_font("terminus.ttf", 12);
+#endif
 
     printf("GMLib: ready\n");
     return 0;
@@ -175,17 +174,17 @@ void GM_StartFrame()
   mutex_lock guard(g_screen_lock);
 
   if (g_fps_timer) {
-    //init fps timer first on first frame
+    // init fps timer first on first frame
     if(!g_fps_timer->is_started())
       g_fps_timer->start();
-    //update avg fps
+    // update avg fps
     g_avg_fps = g_counted_frames / ( g_fps_timer->get_ticks() / 1000.f );
     if (g_avg_fps > 2000000) {
       g_avg_fps = 0;
     }  
   }
 
-  //clear screen with black
+  // clear screen with black
   SDL_SetRenderTarget(g_renderer, NULL);
   SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
   SDL_RenderClear(g_renderer);
@@ -195,7 +194,7 @@ void GM_UpdateFrame()
 {
   mutex_lock guard(g_screen_lock);
 
-  //update game state
+  // update game state
   if (g_screen_current != g_screen_next) {
     g_screen_current = g_screen_next;
     g_screen_current->activate();
@@ -217,9 +216,9 @@ void GM_RenderFrame()
 
   // update current screen
   if (g_screen_current == NULL) {
-    SDLEx_LogError("%s - failed to render: no active screen", 
+    fprintf(stderr, "%s - failed to render: no active screen", 
       __METHOD_NAME__);
-    throw std::exception("No active screen to render");
+    throw std::runtime_error("No active screen to render");
   }
   SDL_Renderer * r = GM_GetRenderer();
   
@@ -294,15 +293,15 @@ SDL_Surface* GM_LoadSurface(const std::string& file_path)
 {
   SDL_Surface *tmp = IMG_Load(file_path.c_str());
   if (!tmp) {
-    SDLEx_LogError("%s: failed to load %s",
+    fprintf(stderr, "%s: failed to load %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
   }
 
-  SDL_Surface* s = SDL_ConvertSurfaceFormat(tmp, SDL_PIXELFORMAT_RGBA8888, NULL );
+  SDL_Surface* s = SDL_ConvertSurfaceFormat(tmp, SDL_PIXELFORMAT_RGBA8888, 0);
   if (!s) {
-    SDLEx_LogError("%s: failed to convert surface.", __METHOD_NAME__);
+    fprintf(stderr, "%s: failed to convert surface.", __METHOD_NAME__);
     throw sdl_exception();
   }
   SDL_FreeSurface(tmp);
@@ -315,7 +314,7 @@ SDL_Texture* GM_LoadTexture(const std::string& file_path)
   SDL_Surface* s = GM_LoadSurface(file_path);
   SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
   if (tex == NULL) {
-    SDLEx_LogError("%s: failed to create texture from surface",
+    fprintf(stderr, "%s: failed to create texture from surface of %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
@@ -328,7 +327,7 @@ TTF_Font* GM_LoadFont(const std::string& file_path, int ptsize)
 {
   TTF_Font* f = TTF_OpenFont(file_path.c_str(), ptsize);
   if (!f) {
-    SDLEx_LogError("%s: failed to load %s",
+    fprintf(stderr, "%s: failed to load %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
@@ -533,8 +532,8 @@ color color::from_string(const std::string & sclr)
     return color::light_gray();
   }
 
-  SDLEx_LogError("color::from_string - unknown name %s", sclr.c_str());
-  throw std::exception("unknown color name");
+  fprintf(stderr, "color::from_string - unknown name %s", sclr.c_str());
+  throw std::runtime_error("unknown color name");
 }
 
 rect rect::scale(const float & fw, const float & fh) const

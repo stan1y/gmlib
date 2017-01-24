@@ -2,7 +2,7 @@
 #define _SDLEX_H_
 
 #include <math.h>
-#include "SDL.h"
+#include <SDL.h>
 
 #ifdef __cplusplus
 extern "C" {

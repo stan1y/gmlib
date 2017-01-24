@@ -63,8 +63,9 @@ void add(const resource_id & resource, const fs::path & found_at, iresource cons
 #endif
 }
 
-static char* progress_str[] = { "|", "/", "-", "\\" };
 static int max_progress = 3;
+static char progress_str[4][2] = { "|", "/", "-", "\\" };
+
 
 static void load_assets_directory(const fs::path & directory)
 {
@@ -86,12 +87,12 @@ static void load_assets_directory(const fs::path & directory)
         // cache regular files
         assets_root::iterator it = g_assets_root.find(filename);
         if (it != g_assets_root.end()) {
-          SDLEx_LogError("%s - found conflict with name \"%s\". Existing pointer is \"%s\", new is \"%s\"",
+          fprintf(stderr, "%s - found conflict with name \"%s\". Existing pointer is \"%s\", new is \"%s\"",
             __METHOD_NAME__,
             filename.string().c_str(),
             it->second.string().c_str(),
             p.string().c_str());
-          throw std::exception("Resource key confict detected.");
+          throw std::runtime_error("Resource key confict detected.");
         }
         // report progress and loop
         g_assets_root[filename] = p;
@@ -128,7 +129,7 @@ void initialize(const strings_list & given)
     }
   }
   
-  printf("Done: %d files collected\n", g_assets_root.size());
+  printf(" %zu files collected\n", g_assets_root.size());
 }
 
 bool find_file(const fs::path & filename, fs::path & output)
@@ -145,9 +146,9 @@ fs::path find_file(const fs::path & filename)
 {
   fs::path found;
   if (!find_file(filename, found)) {
-    SDLEx_LogError("%s - filename was not found in cache \"%s\"",
+    fprintf(stderr, "%s - filename was not found in cache \"%s\"",
       __METHOD_NAME__, filename.string().c_str());
-    throw std::exception("Filename was not found in cache");
+    throw std::runtime_error("Filename was not found in cache");
   }
   return found;
 }
@@ -162,10 +163,10 @@ fs::path find_resource(const resource_id & resource)
 {
   fs::path found;
   if (!find_resource(resource, found)) {
-    SDLEx_LogError("%s - %s was not found in cache",
+    fprintf(stderr, "%s - %s was not found in cache",
       __METHOD_NAME__, 
       resource.c_str());
-    throw std::exception("Resource was not found in cache");
+    throw std::runtime_error("Resource was not found in cache");
   }
   return found;
 }
@@ -175,9 +176,9 @@ fs::path find_resource(const resource_id & resource)
 size_t find_files(const strings_list & ext_list, paths_list & output)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      SDLEx_LogError("%s - no assets root initialized",
+      fprintf(stderr, "%s - no assets root initialized",
         __METHOD_NAME__);
-      throw std::exception("no assets root");
+      throw std::runtime_error("no assets root");
   }
 
   auto asset_root_it = g_assets_root.begin();
@@ -199,9 +200,9 @@ size_t find_files(const strings_list & ext_list, paths_list & output)
 iresource const * get(const std::string & resource)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      SDLEx_LogError("%s - no assets root initialized",
+      fprintf(stderr, "%s - no assets root initialized",
         __METHOD_NAME__);
-      throw std::exception("No assets root defined");
+      throw std::runtime_error("No assets root defined");
   }
 
   cache::iterator it = g_cache->find(resource);
@@ -226,9 +227,9 @@ texture const * get_texture(const std::string& filename)
 
   texture const * tx = dynamic_cast<texture const *> (res);
   if (tx == nullptr) {
-    SDLEx_LogError("%s - failed to cast iresource",
+    fprintf(stderr, "%s - failed to cast iresource",
       __METHOD_NAME__);
-    throw std::exception("Failed to cast iresource");
+    throw std::runtime_error("Failed to cast iresource");
   }
   return tx;
 }
@@ -248,9 +249,9 @@ sprites_sheet const * get_sprites_sheet(const std::string& filename,
   }
   sprites_sheet const * ss = dynamic_cast<sprites_sheet const *> (res);
   if (ss == nullptr) {
-    SDLEx_LogError("%s - failed to cast iresource",
+    fprintf(stderr, "%s - failed to cast iresource",
       __METHOD_NAME__);
-    throw std::exception("Failed to cast iresource");
+    throw std::runtime_error("Failed to cast iresource");
   }
   return ss;
 }
@@ -269,9 +270,9 @@ data const * get_data(const std::string& filename)
 
   data const * d = dynamic_cast<data const *> (res);
   if (d == nullptr) {
-    SDLEx_LogError("%s - failed to cast iresource",
+    fprintf(stderr, "%s - failed to cast iresource",
       __METHOD_NAME__);
-    throw std::exception("Failed to cast iresource");
+    throw std::runtime_error("Failed to cast iresource");
   }
   return d;
 }
@@ -294,9 +295,9 @@ ttf_font const * get_font(const std::string& filename, size_t pt_size)
 
   ttf_font const * f = dynamic_cast<ttf_font const*> (res);
   if (f == nullptr) {
-    SDLEx_LogError("%s - failed to cast iresource",
+    fprintf(stderr, "%s - failed to cast iresource",
       __METHOD_NAME__);
-    throw std::exception("Failed to cast iresource");
+    throw std::runtime_error("Failed to cast iresource");
   }
   return f;
 }
@@ -314,9 +315,9 @@ python::script const * get_script(const std::string& filename)
 
   python::script const * s = dynamic_cast<python::script const*> (res);
   if (s == nullptr) {
-    SDLEx_LogError("%s - failed to cast iresource",
+    fprintf(stderr, "%s - failed to cast iresource",
       __METHOD_NAME__);
-    throw std::exception("Failed to cast iresource");
+    throw std::runtime_error("Failed to cast iresource");
   }
   return s;
 }
@@ -341,9 +342,9 @@ bool lookup_file(const fs::path & directory,
 bool loaded(const resource_id & resource)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      SDLEx_LogError("%s - no assets root initialized",
+      fprintf(stderr, "%s - no assets root initialized",
         __METHOD_NAME__);
-      throw std::exception("no assets root");
+      throw std::runtime_error("no assets root");
   }
   return g_cache->find(resource) != g_cache->end() ? true : false;
 }

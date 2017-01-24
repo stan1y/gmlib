@@ -14,8 +14,8 @@ theme::label_skin::label_skin(theme * t, const std::string & skin_name):
   font_text(t->font_text)
 {
   if (!t->get_data().has_key(skin_name)) {
-    SDLEx_LogError("label_skin::label_skin - failed to find frame with name \"%s\"", skin_name.c_str());
-    throw std::exception("Failed to find label frame");
+    fprintf(stderr, "label_skin::label_skin - failed to find frame with name \"%s\"", skin_name.c_str());
+    throw std::runtime_error("Failed to find label frame");
   }
 
   data skin_data = t->get_data()[skin_name].value();
@@ -49,8 +49,8 @@ theme::label_skin::label_skin(theme * t, const std::string & skin_name):
 theme::container_skin::container_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
 {
   if (!t->get_data().has_key(skin_name)) {
-    SDLEx_LogError("container_skin::container_skin - failed to find frame with name \"%s\"", skin_name.c_str());
-    throw std::exception("Failed to find container frame");
+    fprintf(stderr, "container_skin::container_skin - failed to find frame with name \"%s\"", skin_name.c_str());
+    throw std::runtime_error("Failed to find container frame");
   }
 
   data skin_data = t->get_data()[skin_name].value();
@@ -78,8 +78,8 @@ theme::container_skin::container_skin(theme * t, const std::string & skin_name):
 theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
 {
   if (!t->get_data().has_key(skin_name)) {
-    SDLEx_LogError("label_skin::label_skin - failed to find frame with name \"%s\"", skin_name.c_str());
-    throw std::exception("Failed to find label frame");
+    fprintf(stderr, "label_skin::label_skin - failed to find frame with name \"%s\"", skin_name.c_str());
+    throw std::runtime_error("Failed to find label frame");
   }
 
   data skin_data = t->get_data()[skin_name].value();
@@ -160,9 +160,9 @@ theme::theme(const std::string & theme_name):
   theme_descr_name << _name << ".theme.json"; 
   fs::path theme_descriptor = resources::find_file(theme_descr_name.str());
   if (!fs::exists(theme_descriptor) || !fs::is_regular_file(theme_descriptor)) {
-    SDLEx_LogError("theme::theme - invalid theme name, descriptor is missing. '%s'",
+    fprintf(stderr, "theme::theme - invalid theme name, descriptor is missing. '%s'",
       theme_descriptor.string().c_str());
-    throw std::exception("Invalid theme name, descriptor is missing.");
+    throw std::runtime_error("Invalid theme name, descriptor is missing.");
   }
 #ifdef GM_DEBUG_UI
   SDL_Log("theme::theme - loading theme '%s'", theme_descriptor.string().c_str());
@@ -239,8 +239,8 @@ const theme::base_skin * theme::get_skin(const std::string & name) const
 {
   auto it = _skins.find(name);
   if (it == _skins.end()) {
-    SDLEx_LogError("theme::get_skin - failed to find frame with name: %s", name.c_str());
-    throw std::exception("Failed to find control frame");
+    fprintf(stderr, "theme::get_skin - failed to find frame with name: %s", name.c_str());
+    throw std::runtime_error("Failed to find control frame");
   }
   return it->second;
 }

@@ -10,15 +10,15 @@ text_input::text_input(const rect & pos,
                        const v_align & va,
                        const padding & pad):
 
-label(pos, ip, ha, va, pad),
-  _filter(filter),
-  _inp_shape(shape::rectangle),
-  _cursor(0),
-  _cursor_alpha(255),
-  _blink_phase(-1),
+  label(pos, ip, ha, va, pad),
   _readonly(false),
   _draw_frame(true),
-  _timer()
+  _inp_shape(shape::rectangle),
+  _filter(filter),
+  _cursor(0),
+  _cursor_alpha(255),
+  _timer(),
+  _blink_phase(-1)
 {
   enable_hightlight_on_focus();
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
@@ -183,8 +183,6 @@ void text_input::blink_cursor()
 
 void text_input::set_cursor(size_t c)
 {
-  if (c < 0)
-    c = 0;
   if (c > get_text().length())
     c = get_text().length();
 
@@ -221,7 +219,7 @@ void text_input::insert_at(size_t c, const std::string & val)
 }
 
 // render text & cursor
-void text_input::render(SDL_Renderer * r, const rect & dst)
+void text_input::draw(SDL_Renderer * r, const rect & dst)
 {
   if (_draw_frame) {
     // draw input frame
@@ -234,8 +232,8 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
     else {
       get_idle_color().apply(r);
     }
-    shape::render(r, dst, _inp_shape);
-    label::render(r, dst);
+    shape::draw(r, dst, _inp_shape);
+    label::draw(r, dst);
   }
 
 #ifdef GM_DEBUG_UI
@@ -249,7 +247,7 @@ void text_input::render(SDL_Renderer * r, const rect & dst)
   }
 #endif
 
-  label::render(r, dst);
+  label::draw(r, dst);
 
   // cursor
   if (!_readonly && manager::instance()->get_focused_control() == this) {

@@ -18,22 +18,22 @@
 
 /* Utility conterters */
 inline uint32_t jint_to_uint32(json_int_t i) {
-    if (i > _UI32_MAX) {
-        return _UI32_MAX;
+    if (i > UINT32_MAX) {
+        return UINT32_MAX;
     }
     return (uint32_t)i;
 }
 
 inline int32_t jint_to_sint32(json_int_t i) {
-    if (i > _I32_MAX) {
-        return _I32_MAX;
+    if (i > INT32_MAX) {
+        return INT32_MAX;
     }
     return (int32_t)i;
 }
 
 inline uint8_t jint_to_uint8(json_int_t i) {
-    if (i > _UI8_MAX) {
-        return _UI8_MAX;
+    if (i > UINT8_MAX) {
+        return UINT8_MAX;
     }
     return (uint8_t)i;
 }
@@ -49,17 +49,17 @@ public:
    * Data Exception details class with
    * optional parsing error details from jansson lib
    */
-  class json_exception: public std::exception {
+  class json_exception: public std::runtime_error {
   public:
     json_exception(const char * msg, json_error_t * err = nullptr)
-      :exception(msg)
+      :runtime_error(msg)
     {
       if (err == nullptr)
         return;
       // copy error details
       line = err->line;
       column = err->column;
-      position = position;
+      position = err->position;
       SDL_strlcpy(source, err->source, JSON_ERROR_SOURCE_LENGTH);
       SDL_strlcpy(text, err->text, JSON_ERROR_TEXT_LENGTH);
     }
@@ -98,101 +98,6 @@ public:
     /* Unpack contained JSON with provided format */
     void unpack(const char *fmt, ...) const;
 
-    /* 
-     * Get this json value as plain type value.
-     * Template methods to convert into custom type 
-     */
-    template<typename T> T as() const;
-  
-    template<> int as() const
-    {
-      if (!json_is_integer(this))
-        throw json_exception("data object is not an integer");
-
-      json_int_t i = json_integer_value(this);
-      return jint_to_sint32(i);
-    }
-
-    template<> unsigned int as() const
-    {
-      if (!json_is_integer(this))
-        throw json_exception("data object is not an integer");
-
-      json_int_t i = json_integer_value(this);
-      return jint_to_uint32(i);
-    }
-
-    template<> unsigned short as() const
-    {
-      if (!json_is_integer(this))
-        throw json_exception("object is not an integer");
-
-      json_int_t i = json_integer_value(this);
-      return jint_to_uint8(i);
-    }
-
-    template<> point as() const
-    {
-      if (!json_is_array(this) || json_array_size(this) != 2) {
-        throw json_exception("invald object or array lenght for a point array");
-      }
-      point p;
-      unpack("[ii]", &p.x, &p.y);
-      return p;  
-    }
-
-    template<> rect as() const
-    {
-      if (!json_is_array(this) || json_array_size(this) != 4) {
-        throw json_exception("invald object or array lenght for a rect array");
-      }
-      rect r;
-      unpack("[iiii]", &r.x, &r.y, &r.w, &r.h);
-      return r;
-    }
-
-    template<> color as() const
-    {
-      if (!json_is_array(this) || json_array_size(this) != 4) {
-        throw json_exception("invald object or array lenght for a color array");
-      }
-      color c;
-      json_int_t r = 0, g = 0, b = 0, a = 0;
-      unpack("[iiii]", &r, &g, &b, &a);
-      c.r = jint_to_uint8(r);
-      c.g = jint_to_uint8(g);
-      c.b = jint_to_uint8(b);
-      c.a = jint_to_uint8(a);
-      return c;
-    }
-
-    template<> const char * as() const
-    {
-      if (!json_is_string(this)) throw json_exception("object is not a string");
-      const char * s = json_string_value(this);
-      return s;
-    }
-
-    template<> std::string as() const
-    {
-      return std::string(as<const char*>());
-    }
-
-    template<> std::pair<int,int> as() const
-    {
-      if (!json_is_array(this) || json_array_size(this) != 2) {
-        throw json_exception("invald object or array lenght for a std::pair array");
-      }
-      int f = 0, s = 0;
-      unpack("[ii]", &f, &s);
-      return std::make_pair(f, s);
-    }
-
-    template<> bool as() const
-    {
-      return (json_typeof(this) == JSON_TRUE);
-    }
-
     bool is_true() const
     {
       if (!json_is_boolean(this)) {
@@ -200,6 +105,11 @@ public:
       }
       return json_is_true(this);
     }
+    /* 
+     * Get this json value as plain type value.
+     * Template methods to convert into custom type 
+     */
+    template<typename T> T as() const;
   };
 
 
@@ -274,37 +184,6 @@ public:
      */
     template<class T>
     void operator=(const T& val);
-
-    template<>
-    void operator=(const data& val) 
-    {
-      // assign a copy of val
-      json_object_iter_set_new(_p, _i, json_deep_copy(*val));
-    }
-
-    template<>
-    void operator=(const bool & bval)
-    {
-      data::json * val = json::boolean(bval);
-      set_value(val);
-      json_decref(val);
-    }
-
-    template<>
-    void operator=(const std::string & sval)
-    {
-      data::json * val = json::string(sval.c_str());
-      set_value(val);
-      json_decref(val);
-    }
-
-    template<>
-    void operator=(const int& ival)
-    {
-      data::json * val = json::integer(ival);
-      set_value(val);
-      json_decref(val);
-    }
 
     // query value type helpers
     bool is_value_number() { return json_is_number(value()); }
@@ -392,37 +271,6 @@ public:
      */
     template<class T>
     void operator=(const T& val);
-
-    template<>
-    void operator=(const data& val) 
-    {
-      // assign a copy of val
-      json_array_set_new(_p, _i, json_deep_copy( *val ));
-    }
-
-    template<>
-    void operator=(const bool & bval)
-    {
-      data::json * val = json::boolean(bval);
-      set(val);
-      json_decref(val);
-    }
-
-    template<>
-    void operator=(const std::string & sval)
-    {
-      data::json * val = json::string(sval.c_str());
-      set(val);
-      json_decref(val);
-    }
-
-    template<>
-    void operator=(const int& ival)
-    {
-      data::json * val = json::integer(ival);
-      set(val);
-      json_decref(val);
-    }
 
     // query value type helpers
     bool is_value_number() { return json_is_number(item()); }
@@ -583,7 +431,7 @@ public:
   void set(const char* key, json_t * val)
   {
     if (!_json || !json_is_object(_json)) {
-      SDLEx_LogError("data::set - instance is not an object");
+      fprintf(stderr, "data::set - instance is not an object");
       throw json_exception("instance is not an object");
     }
     json_object_set(_json, key, val);
@@ -592,23 +440,11 @@ public:
   template<typename T>
   void set(const char* key, const T & val);
 
-  template<>
-  void set(const char* key, const std::string & val)
-  {
-    set(key, json_string(val.c_str()));
-  }
-
-  template<>
-  void set(const char* key, const int & val)
-  {
-    set(key, json_integer(val));
-  }
-
   /* Get dictionary item by string key */
   data::json * get(const char* key) const
   {
     if (!_json || !json_is_object(_json)) {
-      SDLEx_LogError("data::get - instance is not an object");
+      fprintf(stderr, "data::get - instance is not an object");
       throw json_exception("instance is not a object");
     }
     return (data::json *) json_object_get(_json, key);
@@ -630,7 +466,7 @@ public:
   object_iterator operator[](const std::string& key) const
   {
     if (!_json || !json_is_object(_json)) {
-      SDLEx_LogError("data::operator[std::string] - instance is not an object");
+      fprintf(stderr, "data::operator[std::string] - instance is not an object");
       throw json_exception("instance is not a object");
     }
 
@@ -646,7 +482,7 @@ public:
     }
 
     if (it == NULL) {
-      SDLEx_LogError("%s - key \"%s\" does not exist",
+      fprintf(stderr, "%s - key \"%s\" does not exist",
         __METHOD_NAME__, key.c_str());
       throw json_exception("Key does not exist");
     }
@@ -660,7 +496,7 @@ public:
   void push_back(json_t * val)
   {
     if (!_json || !json_is_array(_json)) {
-      SDLEx_LogError("%s - instance is not an array",
+      fprintf(stderr, "%s - instance is not an array",
         __METHOD_NAME__);
       throw json_exception("instance is not an array");
     }
@@ -674,7 +510,7 @@ public:
   void insert(size_t idx, json_t * val)
   {
     if (!_json || !json_is_array(_json)) {
-      SDLEx_LogError("%s - instance is not an array",
+      fprintf(stderr, "%s - instance is not an array",
         __METHOD_NAME__);
       throw json_exception("instance is not an array");
     }
@@ -694,12 +530,12 @@ public:
   template<typename T>
   T at(size_t idx, T def_value = T()) const
   {
-    if (!_json || !_json->is_array()) {
-      SDLEx_LogError("%s - instance is not an array",
+    if (!_json || !json_is_array(_json)) {
+      fprintf(stderr, "%s - instance is not an array",
         __METHOD_NAME__);
       throw json_exception("instance is not an array");
     }
-    data item(json_array_get(_p, idx));
+    data item(json_array_get(_json, idx));
     if (item.is_null()) 
       return def_value;
     return item.as<T>();
@@ -711,11 +547,11 @@ public:
   data operator[](size_t idx) const
   {
     if (!is_array()) {
-      SDLEx_LogError("data::operator[size_t] - instance is not an array");
+      fprintf(stderr, "data::operator[size_t] - instance is not an array");
       throw json_exception("data is not an array");
     }
     if (idx >= json_array_size(_json)) {
-      SDLEx_LogError("data::operator[size_t] - index is out of range");
+      fprintf(stderr, "data::operator[size_t] - index is out of range");
       throw json_exception("index out of data array range");
     }
     return data( (data::json *) json_array_get(_json, idx));
@@ -814,6 +650,174 @@ protected:
   data::json * _json;
   uint32_t _f;
 };
+
+/* data::array_iterator template specialization */
+template<>
+void data::array_iterator::operator=(const data& val) 
+{
+  // assign a copy of val
+  json_array_set_new(_p, _i, json_deep_copy( *val ));
+}
+
+template<>
+void data::array_iterator::operator=(const bool & bval)
+{
+  data::json * val = data::json::boolean(bval);
+  set(val);
+  json_decref(val);
+}
+
+template<>
+void data::array_iterator::operator=(const std::string & sval)
+{
+  data::json * val = data::json::string(sval.c_str());
+  set(val);
+  json_decref(val);
+}
+
+template<>
+void data::array_iterator::operator=(const int& ival)
+{
+  data::json * val = data::json::integer(ival);
+  set(val);
+  json_decref(val);
+}
+
+/* data::object_iterator template specialization */
+
+template<>
+void data::object_iterator::operator=(const data& val) 
+{
+  // assign a copy of val
+  json_object_iter_set_new(_p, _i, json_deep_copy(*val));
+}
+
+template<>
+void data::object_iterator::operator=(const bool & bval)
+{
+  data::json * val = data::json::boolean(bval);
+  set_value(val);
+  json_decref(val);
+}
+
+template<>
+void data::object_iterator::operator=(const std::string & sval)
+{
+  data::json * val = data::json::string(sval.c_str());
+  set_value(val);
+  json_decref(val);
+}
+
+template<>
+void data::object_iterator::operator=(const int& ival)
+{
+  data::json * val = data::json::integer(ival);
+  set_value(val);
+  json_decref(val);
+}
+
+/* data::json template specializations */
+
+template<>
+void data::set(const char* key, const std::string & val)
+{
+  set(key, json_string(val.c_str()));
+}
+
+template<>
+void data::set(const char* key, const int & val)
+{
+  set(key, json_integer(val));
+}
+
+template<> int data::json::as() const
+{
+  if (!json_is_integer(this))
+    throw json_exception("data object is not an integer");
+
+  json_int_t i = json_integer_value(this);
+  return jint_to_sint32(i);
+}
+
+template<> unsigned int data::json::as() const
+{
+  if (!json_is_integer(this))
+    throw json_exception("data object is not an integer");
+
+  json_int_t i = json_integer_value(this);
+  return jint_to_uint32(i);
+}
+
+template<> unsigned short data::json::as() const
+{
+  if (!json_is_integer(this))
+    throw json_exception("object is not an integer");
+
+  json_int_t i = json_integer_value(this);
+  return jint_to_uint8(i);
+}
+
+template<> point data::json::as() const
+{
+  if (!json_is_array(this) || json_array_size(this) != 2) {
+    throw json_exception("invald object or array lenght for a point array");
+  }
+  point p;
+  unpack("[ii]", &p.x, &p.y);
+  return p;  
+}
+
+template<> rect data::json::as() const
+{
+  if (!json_is_array(this) || json_array_size(this) != 4) {
+    throw json_exception("invald object or array lenght for a rect array");
+  }
+  rect r;
+  unpack("[iiii]", &r.x, &r.y, &r.w, &r.h);
+  return r;
+}
+
+template<> color data::json::as() const
+{
+  if (!json_is_array(this) || json_array_size(this) != 4) {
+    throw json_exception("invald object or array lenght for a color array");
+  }
+  color c;
+  json_int_t r = 0, g = 0, b = 0, a = 0;
+  unpack("[iiii]", &r, &g, &b, &a);
+  c.r = jint_to_uint8(r);
+  c.g = jint_to_uint8(g);
+  c.b = jint_to_uint8(b);
+  c.a = jint_to_uint8(a);
+  return c;
+}
+
+template<> const char * data::json::as() const
+{
+  if (!json_is_string(this)) throw json_exception("object is not a string");
+  const char * s = json_string_value(this);
+  return s;
+}
+
+template<> std::string data::json::as() const
+{
+  return std::string(as<const char*>());
+}
+
+template<> std::pair<int,int> data::json::as() const
+{
+  if (!json_is_array(this) || json_array_size(this) != 2) {
+    throw json_exception("invald object or array lenght for a std::pair array");
+  }
+  int f = 0, s = 0;
+  unpack("[ii]", &f, &s);
+  return std::make_pair(f, s);
+}
+
+template<> bool data::json::as() const
+{
+  return (json_typeof(this) == JSON_TRUE);
+}
 
 /* Load json object from resources */
 data::json *      GM_LoadJSON(const std::string& file);

@@ -58,7 +58,7 @@ public:
   void set_identifier(const std::string & id) { _id = id; }
 
   /* render control at absolute rect */
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
   /* per-frame update control state */
   virtual void update();
   /* load properties from data */
@@ -117,7 +117,7 @@ public:
   
   /* Get/Set control relative position on parent */
   const rect& pos() const { return _pos; }
-  void set_pos(rect& r) { _pos = r; }
+  void set_pos(const rect& r) { _pos = r; }
 
   /* Get/set visibility of the control */
   bool visible() const { return _visible; }
@@ -175,14 +175,6 @@ protected:
 private:
   /* control unique id */
   std::string _id; 
-};
-
-class ui_2d_screen: public screen {
-public:
-  virtual void activate()
-  {
-  }
-
 };
 
 /*
@@ -256,7 +248,7 @@ public:
   /** UI Theme reference */
   const theme & get_theme() { return _theme; }
 
-  /* Control overrides */
+  /* screen::component protocol overrides */
   virtual void update();
   virtual void on_event(SDL_Event* ev);
   virtual void render(SDL_Renderer* r);
@@ -270,7 +262,7 @@ private:
   void set_focused_control(control * target);
 
   // forbid manager::load calls
-  virtual void load(data&) {};
+  //virtual void load(data&) {};
 
   // global pointer position
   point _pointer;
@@ -407,7 +399,7 @@ inline std::string halign_to_str(const h_align & ha)
   case h_align::expand:
     return "expand";
   default:
-    throw std::exception("Can not convert unknown h_align value");
+    throw std::runtime_error("Can not convert unknown h_align value");
   };
 }
 
@@ -422,7 +414,7 @@ inline h_align halign_from_str(const std::string & s)
   else if (s == "expand")
     return h_align::expand;
   else
-    throw std::exception("Can not convert string to h_align");
+    throw std::runtime_error("Can not convert string to h_align");
 }
 
 inline std::string valign_to_str(const v_align & va)
@@ -437,7 +429,7 @@ inline std::string valign_to_str(const v_align & va)
   case v_align::fill:
     return "fill";
   default:
-    throw std::exception("Can not convert unknown v_align value");
+    throw std::runtime_error("Can not convert unknown v_align value");
   };
 }
 
@@ -452,7 +444,7 @@ inline v_align valign_from_str(const std::string & s)
   else if (s == "fill")
     return v_align::fill;
   else
-    throw std::exception("Can not convert string to v_align");
+    throw std::runtime_error("Can not convert string to v_align");
 }
 
 /*
@@ -495,4 +487,4 @@ private:
 /* Get miliseconds since last user input (kbd, mouse, touch) */
 uint32_t UI_GetUserIdle();
 
-#endif _GMUI_H_
+#endif //_GMUI_H_

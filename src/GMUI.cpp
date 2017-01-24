@@ -40,8 +40,8 @@ void manager::initialize(rect & available_rect, const std::string & theme_name)
 manager * manager::instance()
 {
   if (g_manager == NULL) {
-    SDLEx_LogError("manager::instance() - not initialized");
-    throw std::exception("manager is not initialized");
+    fprintf(stderr, "manager::instance() - not initialized");
+    throw std::runtime_error("manager is not initialized");
   }
   return g_manager;
 }
@@ -55,10 +55,10 @@ const SDL_Event* manager::current_event()
 manager::manager(rect & available_rect, const std::string & theme_name):
   control(),
   screen::component(NULL),
-  _cur_event(NULL),
-  _theme(theme_name),
+  _hovered_cnt(NULL),
   _focused_cnt(NULL),
-  _hovered_cnt(NULL)
+  _cur_event(NULL),
+  _theme(theme_name)
 {
   set_pos(available_rect);
 }
@@ -138,7 +138,8 @@ void manager::set_hovered_control(control * target)
 void manager::render(SDL_Renderer* r)
 {
   // call UI protocol's render
-  control::render(r, get_absolute_pos());
+  control::draw(r, get_absolute_pos());
+
   // render pointer of theme supports
   if (_theme.ptr.tx_normal.is_valid()) {
     point pnt;
@@ -161,8 +162,8 @@ void manager::update()
     for(; it != g_graveyard.end(); ++it) {
       control* child = *it;
       if (child->parent() == nullptr) {
-        SDLEx_LogError("manager::update - g_graveyard has zombie %s", child->tostr().c_str());
-        throw std::exception("zombie control found in graveyard");
+        fprintf(stderr, "manager::update - g_graveyard has zombie %s", child->tostr().c_str());
+        throw std::runtime_error("zombie control found in graveyard");
       }
       else {
         // unlink child from parent's tree
@@ -305,9 +306,6 @@ void manager::pop_front(control * c)
 {
   lock_container(_children);
   size_t idx = find_child_index(c);
-  if (idx == MAXSIZE_T) {
-    return;
-  }
   size_t last = _children.size() - 1;
   control * tmp = _children[last];
   _children[last] = c;
@@ -318,9 +316,6 @@ void manager::push_back(control * c)
 {
   lock_container(_children);
   size_t idx = find_child_index(c);
-  if (idx == MAXSIZE_T) {
-    return;
-  }
   control * tmp = _children[0];
   _children[0] = c;
   _children[idx] = tmp;
@@ -329,8 +324,8 @@ void manager::push_back(control * c)
 control* manager::build(data const * d)
 {
   if (!d->is_object() || !d->has_key("class")) {
-    SDLEx_LogError("manager::build - given data is not a json object");
-    throw std::exception("given data is not a json object");
+    fprintf(stderr, "manager::build - given data is not a json object");
+    throw std::runtime_error("given data is not a json object");
   }
 
   std::string class_id = d->get<std::string>("class");
@@ -370,8 +365,8 @@ control* manager::build(data const * d)
   // create instance of the class
   control * inst = create_control(class_id, pos);
   if (inst == NULL) {
-    SDLEx_LogError("manager::build() - failed to create an instance of [%s]", class_id.c_str());
-    throw std::exception("failed to create an instance of the class");
+    fprintf(stderr, "manager::build() - failed to create an instance of [%s]", class_id.c_str());
+    throw std::runtime_error("failed to create an instance of the class");
   }
 
   // let instance load it's props from data
@@ -405,8 +400,8 @@ theme::pointer::pointer_type manager::get_pointer_type()
   UI Message implementation
   */
 message::message(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms):
-  _timeout_ms(timeout_ms),
-  control(texture::get_string_rect(text, f->fnt()))
+  control(texture::get_string_rect(text, f->fnt())),
+  _timeout_ms(timeout_ms)
 {
   reset(text, f, c, timeout_ms);
 }
@@ -434,8 +429,9 @@ void message::update()
 
   g_message_mx.lock();
   uint32_t ticked = _timer.get_ticks();
-  //deplete 1 alpha every 10 ms
-  uint32_t depleted = ticked / 10;
+  uint32_t step = 255 / _timeout_ms;
+  //deplete 1 alpha each step
+  uint32_t depleted = ticked / step;
   if (depleted >= 255) {
     _timer.stop();
 #ifdef GM_DEBUG_UI

@@ -31,12 +31,13 @@ public:
       */
   class render_context {
   public:
-    render_context(texture * t, SDL_Renderer * r):_t(t), _r(r) 
+    render_context(texture * t, SDL_Renderer * r):
+      _r(r), _t(t), _prev(NULL) 
     {
       if (t->access() != SDL_TEXTUREACCESS_TARGET) {
-        SDLEx_LogError("%s - unsupported target texture type. it must be SDL_TEXTUREACCESS_TARGET",
+        fprintf(stderr, "%s - unsupported target texture type. it must be SDL_TEXTUREACCESS_TARGET",
           __METHOD_NAME__);
-        throw std::exception("Unsupported target texture type for render_context");
+        throw std::runtime_error("Unsupported target texture type for render_context");
       }
       _prev = SDL_GetRenderTarget(_r);
       int ret = SDL_SetRenderTarget(_r, _t->get_texture());

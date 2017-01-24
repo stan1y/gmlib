@@ -11,9 +11,9 @@ combo::combo(const rect & pos,
              const v_align & va,
              const padding & pad):
   text_input(pos, filter, ip, ha, va, pad),
+  _expand_on_hover(false),
   _max_box_height(max_box_height),
   _item_height(item_height),
-  _expand_on_hover(false),
   _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_skin()->color_back))
 { 
   _area->set_identifier( identifier() + std::string("_area") );
@@ -33,8 +33,8 @@ combo::~combo()
 label * combo::get_item(size_t item)
 {
   if (item >= _area->children().size()) {
-    SDLEx_LogError("combo::get_item - invalid item index %d", item);
-    throw std::exception("invalid combo item index");
+    fprintf(stderr, "combo::get_item - invalid item index %zu", item);
+    throw std::runtime_error("invalid combo item index");
   }
 
   return dynamic_cast<label*>(_area->get_child_at_index(item));
@@ -78,8 +78,8 @@ size_t combo::add_item(const std::string & text, const padding & pad, const h_al
 void combo::delete_item(size_t item)
 {
   if (item >= _area->children().size()) {
-    SDLEx_LogError("combo::delete_item - invalid item index %d", item);
-    throw std::exception("invalid combo item index");
+    fprintf(stderr, "combo::delete_item - invalid item index %zu", item);
+    throw std::runtime_error("invalid combo item index");
   }
 
   control * child = _area->get_child_at_index(item);
@@ -170,17 +170,17 @@ void combo::update()
   text_input::update();
 }
 
-void combo::render(SDL_Renderer* r, const rect & dst)
+void combo::draw(SDL_Renderer* r, const rect & dst)
 {
-  text_input::render(r, dst);
+  text_input::draw(r, dst);
 }
 
-void combo::area::render(SDL_Renderer* r, const rect & dst)
+void combo::area::draw(SDL_Renderer* r, const rect & dst)
 {
   _back.apply(r);
   SDL_RenderFillRect(r, &dst);
   
-  box::render(r, dst);
+  box::draw(r, dst);
 }
 
 }; //namespace ui

@@ -7,10 +7,10 @@
 /******************************************************************
 * Event Handler
 */
-template<typename ClassT>
+template<typename Event>
 class event_handler {
 public:
-  typedef boost::function<void (ClassT)> event_callback;
+  typedef boost::function<void (Event)> event_callback;
   typedef std::list<event_callback> callbacks_list;
 
   event_handler() {}
@@ -20,12 +20,12 @@ public:
     _callbacks.push_back(clb);
   }
 
-  void operator()(ClassT target_instance)
+  void operator()(Event arg)
   {
-    callbacks_list::iterator it = _callbacks.begin();
+    typename callbacks_list::iterator it = _callbacks.begin();
     for(; it != _callbacks.end(); ++it) {
       event_callback & clb = *it;
-      clb(target_instance);
+      clb(arg);
     }
   }
 

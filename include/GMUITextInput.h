@@ -31,7 +31,7 @@ public:
   const size_t cursor() const { return _cursor; }
   void set_cursor(size_t c);
 
-  virtual void render(SDL_Renderer * r, const rect & dst);
+  virtual void draw(SDL_Renderer * r, const rect & dst);
   virtual void load(const data &);
   virtual void update();
 
@@ -58,8 +58,8 @@ protected:
   bool _draw_frame;
 
   shape::shape_type _inp_shape;
-  size_t _cursor;
   input_validation _filter;
+  size_t _cursor;
   uint8_t _cursor_alpha;
   timer _timer;
   int _blink_phase; // +1 or -1

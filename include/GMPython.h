@@ -14,7 +14,7 @@ void shutdown();
 class script: public iresource {
 public:
 
-  class script_exception: public std::exception {
+  class script_exception: public std::runtime_error {
   public:
     script_exception(const char * msg);
 

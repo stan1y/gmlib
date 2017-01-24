@@ -16,7 +16,7 @@ public:
       _back(clr)
     {}
 
-    virtual void render(SDL_Renderer* r, const rect & dst);
+    virtual void draw(SDL_Renderer* r, const rect & dst);
 
     void set_back_color(const color & clr) { _back = clr; }
     const color & get_back_color() { return _back; }
@@ -49,7 +49,7 @@ public:
 
   virtual void load(const data &);
   virtual void update();
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
 
   void expand() { _area->set_visible(true); }
   void colapse() { _area->set_visible(false); }

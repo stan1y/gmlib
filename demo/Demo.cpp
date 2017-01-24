@@ -121,13 +121,13 @@ public:
 int main(int argc, char* argv[]) 
 {
   if (argc != 2) {
-    SDLEx_LogError("main: no config specified. Usage: \"%s  Pebble/config.json\"", argv[0]);
+    fprintf(stderr, "main: no config specified. Usage: \"%s  Pebble/config.json\"", argv[0]);
     return 1;
   }
 
   int rc = GM_Init(argv[1], "UI Demo");
   if (rc != 0) {
-    SDLEx_LogError("main: failed to initialize GMLib. Exiting with code %d...", rc);
+    fprintf(stderr, "main: failed to initialize GMLib. Exiting with code %d...", rc);
     return rc;
   }
 

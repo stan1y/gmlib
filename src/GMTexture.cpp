@@ -2,14 +2,28 @@
 
 /* Texture */
 
+// the texture itself
+  SDL_Texture* _texture;
+  // pixel access details
+  int _width;
+  int _scale_w;
+  int _height;
+  int _scale_h;
+  void* _pixels;
+  int _pitch;
+  // properties
+  uint32_t _format;
+  SDL_TextureAccess _access;
+  SDL_BlendMode _bmode;
+
 texture::texture():
   _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _width(0),
-  _height(0),
-  _scale_w(0),
-  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(SDL_TEXTUREACCESS_STREAMING),
   _bmode(SDL_BLENDMODE_BLEND)
@@ -18,12 +32,12 @@ texture::texture():
 
 texture::texture(SDL_Texture * tx, SDL_BlendMode bmode):
   _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _width(0),
-  _height(0),
-  _scale_w(0),
-  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(SDL_TEXTUREACCESS_STREAMING),
   _bmode(bmode)
@@ -33,14 +47,14 @@ texture::texture(SDL_Texture * tx, SDL_BlendMode bmode):
 
 texture::texture(const std::string & file_path):
   _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _width(0),
-  _height(0),
-  _scale_w(0),
-  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
-  _access(SDL_TEXTUREACCESS_STATIC),
+  _access(SDL_TEXTUREACCESS_STREAMING),
   _bmode(SDL_BLENDMODE_BLEND)
 {
   load(file_path);
@@ -48,12 +62,12 @@ texture::texture(const std::string & file_path):
 
 texture::texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode):
   _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _width(0),
-  _height(0),
-  _scale_w(0),
-  _scale_h(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
   _access(access),
   _bmode(bmode)
@@ -64,12 +78,12 @@ texture::texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode
 
 texture::texture(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, uint32_t pixel_format):
   _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _width(0),
-  _height(0),
-  _scale_w(0),
-  _scale_h(0),
   _format(pixel_format),
   _access(access),
   _bmode(bmode)
@@ -136,8 +150,8 @@ rect texture::get_string_rect(const std::string& text, TTF_Font* font)
 void texture::convert_surface(SDL_Surface * s)
 {
   if (s == NULL) {
-    SDLEx_LogError("%s - NULL surface to convert", __METHOD_NAME__);
-    throw std::exception("NULL surface to convert");
+    fprintf(stderr, "%s - NULL surface to convert", __METHOD_NAME__);
+    throw std::runtime_error("NULL surface to convert");
   }
   SDL_Surface* converted = SDL_ConvertSurfaceFormat(s, _format, 0);
   set_surface(converted);
@@ -173,9 +187,9 @@ void texture::set_surface(SDL_Surface* src)
     set_texture(SDL_CreateTextureFromSurface(GM_GetRenderer(), src));
   }
   else if (_access == SDL_TEXTUREACCESS_TARGET) {
-    SDLEx_LogError("%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
+    fprintf(stderr, "%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
       __METHOD_NAME__);
-    throw std::exception("Cannot load SDL_TEXTUREACCESS_TARGET texture from surface");
+    throw std::runtime_error("Cannot load SDL_TEXTUREACCESS_TARGET texture from surface");
   }
 }
 
@@ -205,9 +219,9 @@ void texture::unlock()
 void texture::replace_color(const color & from, const color & to)
 {
   if (_format != SDL_PIXELFORMAT_ABGR8888) {
-    SDLEx_LogError("%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
+    fprintf(stderr, "%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
       __METHOD_NAME__, _format);
-    throw std::exception("Unsupported pixel format for method");
+    throw std::runtime_error("Unsupported pixel format for method");
   }
   // SDL_PIXELFORMAT_ABGR8888 is 8 bits long each
   static const size_t pixel_size = 8;
@@ -394,11 +408,11 @@ void multi_texture::init(int fw, int fh)
   }
 
   if (fragments_w % 2 != 0 || fragments_h % 2 != 0) {
-    SDLEx_LogError("%s - fragment size [%d, %d] is not a power of 2",
+    fprintf(stderr, "%s - fragment size [%d, %d] is not a power of 2",
       __METHOD_NAME__,
       fragments_w,
       fragments_h);
-    throw std::exception("Invalid multi_texture:fragment size - not a power of 2");
+    throw std::runtime_error("Invalid multi_texture:fragment size - not a power of 2");
   }
 
   for(int ix = 0; ix < fw; ++ix) {

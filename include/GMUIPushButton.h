@@ -36,7 +36,7 @@ public:
   void set_pressed_icon(SDL_Texture* tex);
 
   virtual void load(const data &);
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
 
 private:
 

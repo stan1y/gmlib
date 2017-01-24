@@ -5,12 +5,14 @@ namespace ui {
 /** UI BOX Container Implementation **/
 
 box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & gap):
-    control(pos), _pad(pad), _gap(gap), _type(t), _ha(ha), _va(va),
-    _scroll(NULL)
+    control(pos), _type(t), _ha(ha), _va(va),
+    _dirty(false),
+    _pad(pad), 
+    _children_rect(0, 0, _pad.top, _pad.left),
+    _gap(gap),
+    _scroll(NULL),
+    _selected_ctl(NULL)
 {
-  _children_rect = rect(0, 0, _pad.top, _pad.left);
-  _selected_ctl = NULL;
-  _dirty = false;
   mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
 }
 
@@ -31,11 +33,19 @@ void box::set_sbar(scrollbar_type t, uint32_t ssize)
   }
 
   switch (t) {
-  case scrollbar_right:
-    _scroll = new scrollbar(this, rect(_pos.w - ssize, 0, ssize, _pos.h), t);
-    _scroll->set_locked(true);
-    break;
-  // FIXME: Add support for scrollbar_bottom type too
+    case scrollbar_right:
+      _scroll = new scrollbar(this, rect(_pos.w - ssize, 0, ssize, _pos.h), t);
+      _scroll->set_locked(true);
+      break;
+
+    case scrollbar_bottom:
+      // FIXME: implement bottom scrollbar
+      break;
+
+    default:
+    case scrollbar_hidden:
+      // do nothing
+      break;
   };
   
   // display new type of scrollbar if configured now
@@ -44,7 +54,7 @@ void box::set_sbar(scrollbar_type t, uint32_t ssize)
   }
 }
 
-void box::render_debug_frame(SDL_Renderer * r, const rect & dst)
+void box::draw_debug_frame(SDL_Renderer * r, const rect & dst)
 {
   const control * hovered = ui::get_hovered_control();
   control_list::const_iterator child = find_child(hovered);
@@ -89,7 +99,7 @@ void box::render_debug_frame(SDL_Renderer * r, const rect & dst)
   }
 }
 
-void box::render(SDL_Renderer * r, const rect & dst)
+void box::draw(SDL_Renderer * r, const rect & dst)
 {
   if (is_scrollbar_visible()) {
     
@@ -106,7 +116,7 @@ void box::render(SDL_Renderer * r, const rect & dst)
           // to the target of the render_context 
           // skip scrollbar since, it rendered separetly on top
           if (c == _scroll) continue;
-          c->render(r, c->pos());
+          c->draw(r, c->pos());
         }
       }
       _dirty = false;
@@ -115,16 +125,16 @@ void box::render(SDL_Renderer * r, const rect & dst)
     _body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
     // render scrollbar
     rect scrollbar_rect = _scroll->pos() + dst.topleft();
-    _scroll->render(r, scrollbar_rect);
+    _scroll->draw(r, scrollbar_rect);
   }
   else {
     // direct children rendering
-    control::render(r, dst);
+    control::draw(r, dst);
   }
 
   // debug rendering on top of offset texture
 #if GM_DEBUG_UI
-  render_debug_frame(r, dst);
+  draw_debug_frame(r, dst);
 #endif
 }
 
@@ -170,14 +180,14 @@ void box::add_child(control* c)
 
 void box::on_box_wheel(control * target)
 {
-  SDL_Log("box::on_box_wheel");
-  const SDL_Event* sdl_ev = manager::instance()->current_event();
+  //SDL_Log("box::on_box_wheel");
+  //const SDL_Event* sdl_ev = manager::instance()->current_event();
 }
 
 void box::on_child_wheel(control * target)
 {
-  SDL_Log("box::on_child_wheel");
-  const SDL_Event* sdl_ev = manager::instance()->current_event();
+  //SDL_Log("box::on_child_wheel");
+  //const SDL_Event* sdl_ev = manager::instance()->current_event();
 }
 
 void box::on_child_hover_changed(control * target)
@@ -299,7 +309,7 @@ void box::do_scroll(int dx, int dy)
       _scrolled_rect.y = _children_rect.h - _scrolled_rect.h;
   }
   if (_scroll->type() == scrollbar_type::scrollbar_bottom) {
-    throw std::exception("not implemented");
+    throw std::runtime_error("not implemented");
   }
 #ifdef GM_DEBUG_UI
   SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
@@ -317,7 +327,7 @@ std::string box::get_box_type_name() const
   case box_type::hbox:
     return "hbox";
   default:
-    throw std::exception("Unkown box type");
+    throw std::runtime_error("Unkown box type");
   };
 }
 
@@ -374,9 +384,9 @@ void box::update_children()
       {
         switch(_ha) {
         default:
-          SDLEx_LogError("%s - unsupported h_align value \"%d\" for vbox",
+          fprintf(stderr, "%s - unsupported h_align value \"%d\" for vbox",
             __METHOD_NAME__, _ha);
-          throw std::exception("Unsupported h_align value for vbox");
+          throw std::runtime_error("Unsupported h_align value for vbox");
 
         case h_align::left:
           // position child on the left side of the vbox
@@ -394,15 +404,15 @@ void box::update_children()
           break;
 
         case h_align::expand:
-          SDLEx_LogError("FIXME");
+          fprintf(stderr, "FIXME");
           break;
         };
 
         switch(_va) {
         default:
-          SDLEx_LogError("%s - unsupported v_align value \"%d\" for vbox",
+          fprintf(stderr, "%s - unsupported v_align value \"%d\" for vbox",
             __METHOD_NAME__, _ha);
-          throw std::exception("Unsupported v_align value for vbox");
+          throw std::runtime_error("Unsupported v_align value for vbox");
 
         // ignore middle and fill in v_align for vbox
         // default to the top
@@ -429,9 +439,9 @@ void box::update_children()
       {
         switch(_va) {
         default:
-          SDLEx_LogError("%s - unsupported v_align value \"%d\" for hbox",
+          fprintf(stderr, "%s - unsupported v_align value \"%d\" for hbox",
             __METHOD_NAME__, _ha);
-          throw std::exception("Unsupported v_align value for hbox");
+          throw std::runtime_error("Unsupported v_align value for hbox");
 
         case v_align::top:
           // position child at the top of the hbox
@@ -449,15 +459,15 @@ void box::update_children()
           break;
 
         case v_align::fill:
-          SDLEx_LogError("FIXME");
+          fprintf(stderr, "FIXME");
           break;
         };
         
         switch(_ha) {
         default:
-          SDLEx_LogError("%s - unsupported h_align value \"%d\" for hbox",
+          fprintf(stderr, "%s - unsupported h_align value \"%d\" for hbox",
             __METHOD_NAME__, _ha);
-          throw std::exception("Unsupported h_align value for hbox");
+          throw std::runtime_error("Unsupported h_align value for hbox");
 
         // ignore center and expand in h_align for hbox
         // 
@@ -478,8 +488,8 @@ void box::update_children()
       }
       break;
     default:
-      SDLEx_LogError("%s - unknown box type value \"%d\"", __METHOD_NAME__, _type);
-      throw std::exception("Unknown box type value");
+      fprintf(stderr, "%s - unknown box type value \"%d\"", __METHOD_NAME__, _type);
+      throw std::runtime_error("Unknown box type value");
       break;
     };
 
@@ -503,7 +513,7 @@ void box::update_children()
   
 
   if (_scroll) {
-    control_list::iterator it = find_child(_scroll);
+    it = find_child(_scroll);
     if (it != _children.end())
       _children.erase(it);
     _children.push_back(_scroll);
@@ -567,7 +577,7 @@ void panel::load(const data & d)
   box::load(d);
 }
 
-void panel::render(SDL_Renderer * r, const rect & dst)
+void panel::draw(SDL_Renderer * r, const rect & dst)
 {
   // render background
   const theme::container_skin * s = get_skin();
@@ -576,7 +586,7 @@ void panel::render(SDL_Renderer * r, const rect & dst)
   SDL_RenderFillRect(r, &user_area);
 
   // render box content
-  box::render(r, dst);
+  box::draw(r, dst);
 
   // render box frame
   current_theme().draw_container_skin(s, r, dst);

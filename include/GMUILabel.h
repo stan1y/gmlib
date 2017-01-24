@@ -124,7 +124,7 @@ public:
   }
 
   /* Label rendering */
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
 
   /* Show-Hide animation */
   virtual void update();

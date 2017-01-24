@@ -42,7 +42,7 @@ private:
 class sprite {
 public:
   /* Sprite constants */
-  static const size_t invalid = _UI32_MAX; // invalid sprite index 
+  static const size_t invalid = UINT32_MAX; // invalid sprite index 
   static const uint8_t alpha_full = 255;   // alpha modifiers
   static const uint8_t alpha_half = 127;
   static const uint8_t alpha_none = 0;

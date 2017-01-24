@@ -62,9 +62,14 @@ public:
     }
 
   private:
+    scrollbar_type _type;
+    cursor_drag_state _drag;
+    box * _container; /* a parent of box class */
+
+    // colors 
     color _color_idle;
-    color _color_back;
     color _color_highlight;
+    color _color_back;
 
     // scrollbar event handlers
     void on_mouse_up(control * target);
@@ -72,9 +77,7 @@ public:
     void on_mouse_move(control * target);
     void on_mouse_wheel(control * target);
 
-    scrollbar_type _type;
-    cursor_drag_state _drag;
-    box * _container; /* a parent of box class */
+    
   };
 
   /* Public constructor of a new box container of given type */
@@ -116,10 +119,10 @@ public:
   void set_valign(const v_align & va) { _va = va; }
 
   // render this box contents
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
 
   // render debug frame
-  void render_debug_frame(SDL_Renderer * r, const rect & dst);
+  void draw_debug_frame(SDL_Renderer * r, const rect & dst);
 
   // add and auto-postion child on this box
   virtual void add_child(control* child);
@@ -213,7 +216,7 @@ public:
   color get_background_color() { return _color_back; }
   void set_background_color(const color & c) { _color_back = c; }
 
-  virtual void render(SDL_Renderer* r, const rect & dst);
+  virtual void draw(SDL_Renderer* r, const rect & dst);
   virtual void load(const data &);
 
   const theme::container_skin * get_skin() {
@@ -227,15 +230,16 @@ public:
       case panel_style::window:
         return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("window"));
       default:
-        SDLEx_LogError("panel::get_skin - unknown panel style %d", _ps);
-        throw std::exception("Uknown panel style");
+        fprintf(stderr, "panel::get_skin - unknown panel style %d", _ps);
+        throw std::runtime_error("Uknown panel style");
         break;
     };
     
   }
 
-  const panel::panel_style panel::get_panel_style() const { return _ps; }
-  void panel::set_panel_style(const panel_style & ps)
+  /* get and set panel style */
+  const panel_style get_panel_style() const { return _ps; }
+  void set_panel_style(const panel_style & ps)
   { 
     _ps = ps; 
     set_background_color(get_skin()->color_back);

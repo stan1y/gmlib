@@ -16,12 +16,13 @@ box::scrollbar::scrollbar(box * container,
                           scrollbar_type type):
   control(relpos),
   _type(type),
+  _drag(cursor_drag_state::stop),
   _container(container),
   _color_idle(get_skin()->color_idle),
   _color_highlight(get_skin()->color_highlight),
   _color_back(get_skin()->color_back)
 {
-  if (_container == NULL) throw std::exception("NULL container specified for scrollbar");
+  if (_container == NULL) throw std::runtime_error("NULL container specified for scrollbar");
   _drag = cursor_drag_state::stop;
   set_type(type);
 
@@ -47,7 +48,7 @@ rect box::scrollbar::get_cursor_rect(const rect & children_rect) const
   }
   if (_type == scrollbar_type::scrollbar_bottom) {
   }
-  throw std::exception("not implemented");
+  throw std::runtime_error("not implemented");
 }
 
 void box::scrollbar::render(SDL_Renderer * r, const rect & dst)
@@ -65,7 +66,6 @@ void box::scrollbar::render(SDL_Renderer * r, const rect & dst)
   SDL_RenderFillRect(r, &cursor_rect);
 
   const point & pointer = manager::instance()->get_pointer();
-  rect scrollbar_rect = _pos + _container->get_absolute_pos().topleft();
   if (get_absolute_pos().collide_point(pointer)) {
     // hovered scrollbar rect -> hightlight
     _color_highlight.apply(r);

@@ -34,14 +34,14 @@ protected:
     return cf;
   }
 
-  virtual void render(SDL_Renderer * r, const rect & dst)
+  virtual void draw(SDL_Renderer * r, const rect & dst)
   {
-    // render button frame & back
+    // draw button frame & back
     current_theme().draw_button_skin(get_btn_skin(), r, dst, 
       is_hovered(), is_pressed());
   
-    // render label contents on top
-    label::render(r, dst);
+    // draw label contents on top
+    label::draw(r, dst);
   }
 };
 
@@ -107,7 +107,7 @@ public:
     prism     = 3
   } shape_type;
 
-  static void render(SDL_Renderer * r, const rect & dst, shape_type stype) {
+  static void draw(SDL_Renderer * r, const rect & dst, shape_type stype) {
     switch(stype) {
       case shape::rectangle:
         SDL_RenderDrawRect(r, &dst);
@@ -159,7 +159,7 @@ public:
   void set_btn_shape(shape::shape_type s) { _btn_shape = s; }
   shape::shape_type get_btn_shape() { return _btn_shape; }
 
-  virtual void render(SDL_Renderer * r, const rect & dst)
+  virtual void draw(SDL_Renderer * r, const rect & dst)
   {
     if (is_hovered()) {
       get_hightlight_color().apply(r);
@@ -167,8 +167,8 @@ public:
     else {
       get_idle_color().apply(r);
     }
-    shape::render(r, dst, _btn_shape);
-    label::render(r, dst);
+    shape::draw(r, dst, _btn_shape);
+    label::draw(r, dst);
   }
 
   virtual void load(const data &);

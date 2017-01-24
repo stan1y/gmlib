@@ -28,51 +28,51 @@ typedef std::vector<fs::path> paths_list;
 /** Utility convertors */
 
 inline uint8_t uint32_to_uint8(uint32_t i) {
-    if (i > _UI8_MAX) {
-        return _UI8_MAX;
+    if (i > (uint32_t)UINT8_MAX) {
+        return UINT8_MAX;
     }
     return (uint8_t)i;
 }
 
 inline int32_t uint32_to_int32(uint32_t i) {
-    if (i > _I32_MAX) {
-        return _I32_MAX;
+    if (i > (uint32_t)INT32_MAX) {
+        return INT32_MAX;
     }
     return (int32_t)i;
 }
 
 inline uint8_t int32_to_uint8(int32_t i) {
-    if (i > _UI8_MAX) {
-        return _UI8_MAX;
+    if (i > (int32_t)UINT8_MAX) {
+        return UINT8_MAX;
     }
     return (uint8_t)i;
 }
 
 inline int32_t int32_to_uint32(int32_t i) {
-    if (i > _UI32_MAX) {
-        return _UI32_MAX;
+    if (i > (int32_t)UINT32_MAX) {
+        return UINT32_MAX;
     }
     return (int32_t)i;
 }
 
 inline int8_t int32_to_int8(int32_t i) {
-    if (i > _I8_MAX) {
-        return _I8_MAX;
+    if (i > (int32_t)INT8_MAX) {
+        return INT8_MAX;
     }
     return (int8_t)i;
 }
 
 inline uint8_t int32_to_uint8(uint32_t i) {
-  if (i > _I8_MAX) {
-        return _I8_MAX;
+  if (i > (uint32_t)INT8_MAX) {
+        return INT8_MAX;
     }
     return (int8_t)i;
 }
 
 inline int32_t str_to_sint32(const char* str) {
     long l = std::strtol(str, nullptr, 10);
-    if (l > _I32_MAX) {
-        return _I32_MAX;
+    if (l > INT32_MAX) {
+        return INT32_MAX;
     }
     return (int32_t)l;
 }
@@ -84,12 +84,6 @@ inline int32_t double_to_sint32(double d) {
 inline int32_t float_to_sint32(float f) {
   return f >= 0.0 ? (int32_t)(f+0.5) : (int32_t)(f-0.5);
 }
-
-/** Default log category */
-#define SDLEx_LogCategory SDL_LOG_CATEGORY_APPLICATION
-
-/** Error log wrapper */
-#define SDLEx_LogError(fmt, ...) SDL_LogError(SDLEx_LogCategory, fmt, __VA_ARGS__ );
 
 inline strings_list & split_string(const std::string &s, const char delim, strings_list &elems) 
 {
