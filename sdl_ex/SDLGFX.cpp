@@ -32,7 +32,7 @@ Andreas Schiffler -- aschiffler at ferzkopp dot net
 #include <math.h>
 #include <string.h>
 
-#include "SDLEx.h"
+#include <SDLEx.h>
 
 /* ---- Structures */
 
@@ -235,7 +235,7 @@ int SDLEx_RenderDrawRoundedRect(SDL_Renderer * renderer, int x1, int y1, int x2,
 */
 int SDLEx_RenderFillRoundedRect(SDL_Renderer * renderer, int x1, int y1, int x2, int y2, int rad)
 {
-	int result;
+	int result = 0;
 	int w, h, r2, tmp;
 	int cx = 0;
 	int cy = rad;
@@ -737,7 +737,7 @@ int SDLEx_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int rad)
 /* TODO: rewrite algorithm; arc endpoints are not always drawn */
 int SDLEx_RenderDrawArc(SDL_Renderer * renderer, int x, int y, int rad, int start, int end)
 {
-	int result;
+	int result = 0;
 	int cx = 0;
 	int cy = rad;
 	int df = 1 - rad;
@@ -982,7 +982,7 @@ int SDLEx_RenderDrawAACircle(SDL_Renderer * renderer, int x, int y, int rad)
 */
 int SDLEx_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int rad)
 {
-	int result;
+	int result = 0;
 	int cx = 0;
 	int cy = rad;
 	int ocx = (int) 0xffff;
@@ -1074,7 +1074,7 @@ int SDLEx_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int rad)
 */
 int SDLEx_RenderDrawEllipse(SDL_Renderer * renderer, int x, int y, int rx, int ry)
 {
-	int result;
+	int result = 0;
 	int ix, iy;
 	int h, i, j, k;
 	int oh, oi, oj, ok;
@@ -1452,7 +1452,7 @@ int SDLEx_RenderDrawAAEllipse(SDL_Renderer * renderer, int x, int y, int rx, int
 */
 int SDLEx_RenderFillEllipse(SDL_Renderer * renderer, int x, int y, int rx, int ry)
 {
-	int result;
+	int result = 0;
 	int ix, iy;
 	int h, i, j, k;
 	int oh, oi, oj, ok;
@@ -1847,7 +1847,7 @@ int RenderDrawPolygon(SDL_Renderer * renderer, const int * vx, const int * vy, i
 	/*
 	* Draw 
 	*/
-	int result;
+	int result = 0;
 	int i, nn;
 	SDL_Point* points;
 
@@ -2581,7 +2581,7 @@ double EvaluateBezier (double *data, int ndata, double t)
 */
 int SDLEx_RenderDrawBezierCurve(SDL_Renderer * renderer, const int * vx, const int * vy, int n, int s)
 {
-	int result;
+	int result = 0;
 	int i;
 	double *x, *y, t, stepsize;
 	int x1, y1, x2, y2;
