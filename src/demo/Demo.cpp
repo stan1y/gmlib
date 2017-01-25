@@ -22,7 +22,7 @@ public:
     add_component(ui::manager::instance());
 
     // build background
-    texture const * start = resources::get_texture("test.png");
+    texture const * start = resources::get_texture("background.png");
     _back.render_texture(GM_GetRenderer(), *start, point(rand_int(10, 500), rand_int(10, 350)));
     //_back.render_texture(GM_GetRenderer(), *start, point(32, 32));
     
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     GM_EndFrame();
   }
 
-  printf("demo: quiting...");
+  printf("demo: quiting...\n");
   GM_Quit();
 
   return rc;

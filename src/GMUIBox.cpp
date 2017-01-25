@@ -495,11 +495,6 @@ void box::update_children()
 
     // update child position (rect) & remember it
     child->set_pos(pos);
-    SDL_Log("%s - place %s %s at %s, last = %s",
-      __METHOD_NAME__,
-      child->get_type_name().c_str(),
-      child->identifier().c_str(),
-      pos.tostr().c_str(), last_pos.tostr().c_str());
     last_pos = pos;
 
     // update total width & height

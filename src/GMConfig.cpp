@@ -108,7 +108,8 @@ config_private::config_private()
     // Default SDL flags
     display_width = 1024;
     display_height = 768;
-    driver_name = "";
+    driver_name = "opengl";
+    ui_theme = "default";
     fullscreen = false;
     fps_cap = 60;
 
@@ -132,23 +133,24 @@ int config::load(const std::string& cfg_file)
     g_config = new config_private();
     g_config->load(cfg_file);
     
-    data::json* a = NULL;
-    char* driver = NULL;
-    char* python_home = NULL;
-    char* ui_theme = NULL;
-    g_config->unpack("{s:i s:i s:b s:s s:s s:o s:s}",
+    data::json *a = NULL;
+    char *driver = NULL, *python_home = NULL, *ui_theme = NULL;
+    g_config->unpack("{s:i s:i s:s s?:b s?:s s?:o s?:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
-        "fullscreen",       &g_config->fullscreen,
         "driver",           &driver,
+        "fullscreen",       &g_config->fullscreen,
         "python_home",      &python_home,
         "assets",           &a,
         "ui_theme",         &ui_theme);
     
     //copy strings
-    g_config->driver_name = std::string(driver);
-    g_config->python_home = std::string(python_home);
-    g_config->ui_theme = std::string(ui_theme);
+    if (driver)
+      g_config->driver_name = std::string(driver);
+    if (python_home)
+      g_config->python_home = std::string(python_home);
+    if (ui_theme)
+      g_config->ui_theme = std::string(ui_theme);
 
     // read assets list
     data assets(a);
