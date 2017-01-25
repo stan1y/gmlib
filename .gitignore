@@ -5,3 +5,9 @@ UI_Demo/Debug
 libgm.dylib
 libgm.a
 buildenv
+lib
+src/demo/demo
+src/demo/demo.exe
+src/demo/*.dylib
+src/demo/*.so
+src/demo/*.dll
