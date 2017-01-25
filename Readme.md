@@ -35,7 +35,7 @@ There is a brief [documentation of GMLib architecture and classes](https://githu
 
 ## Building
 
-GMLib support build on Windows, Linux and Mac OS X. There are several environmental variables used by GMLib to determine paths to dependencies, refer to `Makefile' for details.
+GMLib support build on Windows, Linux and Mac OS X. There are several environmental variables used by GMLib to determine paths to dependencies, refer to `Makefile` for details.
 
 ### Prerequisites
 
@@ -49,12 +49,15 @@ GMLib builds on Windows, Linux and Mac OS X.
 
 #### Windows
 
-To build on Windows use GMLib.vcproj file. Make sure you modify it accoring to your environment.
+To build on Windows use `GMLib.vcproj` file. Make sure you modify it accoring to your environment.
 
 #### Linux & Mac OS X
 
-Refer to `flags.make' for configurable build settings recognized by GMLib makefiles.
+Refer to `flags.make` for configurable build settings recognized by GMLib makefiles. There is a example build environment file `buildenv.example' which should be modified to suit your environment.
 
+	$ cp buildenv.example buildenv
+	$ vi buildenv
+	$ source buildenv
     $ make static
     $ make shared
 
@@ -62,14 +65,15 @@ To build demo application use:
 
 	$ make demo
 
-##### Application packages on Mac OS X
+To install GMLib into `PREFIX` use:
+
+    $ sudo make install
+
+##### Mac OS X App bundles
 
 To include GMLib and dependencies into your app package on Mac, you should build Python, SDL, SDL_ttf and SDL_image as static libraries. Optionally you can use static boost libraries too.
 
-In order to include shared libraries, such as freetype or boost, make sure you build them with `-install_name' relative to the executable or package.
+In order to include shared libraries, such as freetype or boost, make sure you tune them with `-install_name` relative to the executable or package, sush as:
 
 	$ install_name_tool -id @rpath/libfreetype.dylib libfreetype.dylib
 
-To install GMLib into `PREFIX' use:
-
-    $ sudo make install
