@@ -1,0 +1,20 @@
+export SDL2_INCLUDE="$HOME/src/sdl/include"
+export SDL2_LIB="$HOME/src/sdl/build"
+
+export SDL2_IMAGE_INCLUDE="$HOME/src/pebble/libs/sdl_image"
+export SDL2_IMAGE_LIB="$HOME/src/pebble/libs/sdl_image/.libs"
+
+export FREETYPE_INCLUDE="$HOME/src/pebble/libs/sdl_ttf/external/freetype-2.4.12/include"
+export FREETYPE_LIB="$HOME/src/pebble/libs/sdl_ttf/external/freetype-2.4.12/objs/.libs"
+
+export SDL2_TTF_INCLUDE="$HOME/src/pebble/libs/sdl_ttf"
+export SDL2_TTF_LIB="$HOME/src/pebble/libs/sdl_ttf/"
+
+export BOOST_INCLUDE="$HOME/src/boost"
+export BOOST_LIB="$HOME/src/boost/stage/lib"
+
+export JANSSON_INCLUDE="$HOME/src/jansson/build/include"
+export JANSSON_LIB="$HOME/src/jansson/build/lib"
+
+export PYTHON_INCLUDE="$HOME/src/cpython/Include"
+export PYTHON_LIB="$HOME/src/cpython/"
