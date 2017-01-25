@@ -31,7 +31,7 @@ The overview list of GMLib features:
 * Native JSON as internal and external structured data format
 * Embedded python (Python 3) runtime and data marshaling support
 
-There is a brief [documentation of GMLib architecture and classes](https://github.com/stan1y/gmlib/blob/master/Documentation.md) and a separate [UI controls reference](https://github.com/stan1y/gmlib/blob/master/GMUI_Reference.md). Also there are a [getting started guide](/) and a few [examples](/).
+There is a brief [documentation of GMLib architecture and classes](https://github.com/stan1y/gmlib/blob/master/Documentation.md) and a separate [UI controls reference](https://github.com/stan1y/gmlib/blob/master/GMUI_Reference.md). Also there are a [getting started guide](/) and a [demo application](https://github.com/stan1y/gmlib/tree/master/src/demo).
 
 ## Building
 
