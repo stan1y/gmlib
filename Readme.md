@@ -29,27 +29,47 @@ The overview list of GMLib features:
 * Textures, drawing and pixel access.
 * Comprehensive GUI manager and controls library
 * Native JSON as internal and external structured data format
-* Embedded python runtime and data marshaling support
+* Embedded python (Python 3) runtime and data marshaling support
 
 There is a brief [documentation of GMLib architecture and classes](https://github.com/stan1y/gmlib/blob/master/Documentation.md) and a separate [UI controls reference](https://github.com/stan1y/gmlib/blob/master/GMUI_Reference.md). Also there are a [getting started guide](/) and a few [examples](/).
 
 ## Building
 
-GMLib support build on Windows, Linux and Mac OS X.
+GMLib support build on Windows, Linux and Mac OS X. There are several environmental variables used by GMLib to determine paths to dependencies, refer to `Makefile' for details.
 
-##### Prerequisites
+### Prerequisites
 
 You need to build Boost or get a precompiled version for your target platform before building anything else. Refer to Boost documentation on how to build a shared libraries version for your platform.
 
 Also you need to build or get SDL, SDL_ttf, SDL_image libraries. Refer to SDL documentation on how to build it for your platform, however it is usually just a CMake.
 
-### Building on Windows
+### Building GMLib
+
+GMLib builds on Windows, Linux and Mac OS X.
+
+#### Windows
 
 To build on Windows use GMLib.vcproj file. Make sure you modify it accoring to your environment.
 
-### Building on Linux & Mac OS X
+#### Linux & Mac OS X
 
-Refer to Makefile for configurable build settings and defines recognized by GMLib.
+Refer to `flags.make' for configurable build settings recognized by GMLib makefiles.
 
-    $ make 
+    $ make static
+    $ make shared
+
+To build demo application use:
+
+	$ make demo
+
+##### Application packages on Mac OS X
+
+To include GMLib and dependencies into your app package on Mac, you should build Python, SDL, SDL_ttf and SDL_image as static libraries. Optionally you can use static boost libraries too.
+
+In order to include shared libraries, such as freetype or boost, make sure you build them with `-install_name' relative to the executable or package.
+
+	$ install_name_tool -id @rpath/libfreetype.dylib libfreetype.dylib
+
+To install GMLib into `PREFIX' use:
+
     $ sudo make install
