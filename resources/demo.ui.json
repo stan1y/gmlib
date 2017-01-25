@@ -1,0 +1,56 @@
+{
+	"id": "pnl_demo",
+	"class": "panel",
+	"panel_style": "toolbox",
+
+	"type": "vbox", 
+	"style": "center",
+	"margin": 2,
+	"size": [300, 200],
+
+	"position": "center",
+
+	"children": [{
+		"id": "box_vbox",
+		"class": "box",
+
+		"type": "vbox",
+		"style": "center"
+	}, {
+		"id": "vbox_list",
+		"class": "box",
+		"type": "vbox",
+		"style": "fill",
+
+		"scroll": "right",
+		"scrollbar_size": 10,
+		"margin": 2,
+
+		"size": [288, 140]
+	}, {
+		"id": "hbox_buttons",
+		"class": "box",
+		"type": "hbox",
+		"style": "center",
+		"margin": 5,
+
+		"size": [288, 50],
+		
+		"children": [{
+			"id": "btn_one",
+			"class": "btn",
+			"size": [100, 40],
+			"text": "The First"
+		}, {
+			"id": "btn_two",
+			"class": "sbtn",
+			"size": [80, 28],
+			"text": "Second"
+		}, {
+			"id": "btn_three",
+			"class": "lbtn",
+			"size": [60, 20],
+			"text": "Third"
+		}]
+	}]
+}

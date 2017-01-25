@@ -1,0 +1,58 @@
+{
+  "color_idle": [ 127, 127, 127, 255 ],
+  "color_highlight": [200, 200, 255, 255],
+  "color_back": [ 0, 0, 0, 0 ],
+
+  "font_text": {
+      "face": "terminus.ttf", 
+      "size": 12,
+      "style": "solid"
+  },
+
+  "window": {
+    "color_back": [ 52, 52, 52, 255 ]
+  },
+
+  "dialog": {
+    "color_back": [ 52, 52, 52, 255 ]
+  },
+
+  "toolbox": {
+    "color_back": [24, 112, 254, 128]
+  },
+
+  "scrollbar": {
+    "color_idle": [68, 137, 224, 255]
+  },
+
+  "group": {
+  },
+
+  "label": {
+  },
+
+
+  "text_input": {
+  },
+
+  "combo_box" : {
+  },
+
+  "list_box": {
+  },
+
+    
+  "btn": {
+  },
+
+  "sbtn": {
+  },
+
+  "lbtn": {
+    "color_back": [24, 112, 254, 128],
+    "color_idle": [68, 137, 224, 255]
+  },
+
+  "pushbtn": {
+  }
+}
