@@ -51,7 +51,7 @@ public:
 
   ui::panel * build_panel()
   {
-    const ui::theme & t = ui::current_theme();
+    //const ui::theme & t = ui::current_theme();
     auto pnl = new ui::panel(rect(50, 100, 200, 150));
     pnl->set_halign(ui::h_align::center);
     pnl->set_valign(ui::v_align::middle);
@@ -121,13 +121,14 @@ public:
 int main(int argc, char* argv[]) 
 {
   if (argc != 2) {
-    fprintf(stderr, "main: no config specified. Usage: \"%s  Pebble/config.json\"", argv[0]);
+    fprintf(stderr, "demo: no config specified.\nUsage: \"%s path/to/config.json\"\n",
+      argv[0]);
     return 1;
   }
 
   int rc = GM_Init(argv[1], "UI Demo");
   if (rc != 0) {
-    fprintf(stderr, "main: failed to initialize GMLib. Exiting with code %d...", rc);
+    fprintf(stderr, "demo: failed to initialize GMLib.\nExiting with code %d...\n", rc);
     return rc;
   }
 
@@ -143,7 +144,7 @@ int main(int argc, char* argv[])
     GM_EndFrame();
   }
 
-  SDL_Log("main: quiting...");
+  printf("demo: quiting...");
   GM_Quit();
 
   return rc;

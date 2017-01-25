@@ -40,7 +40,7 @@ void manager::initialize(rect & available_rect, const std::string & theme_name)
 manager * manager::instance()
 {
   if (g_manager == NULL) {
-    fprintf(stderr, "manager::instance() - not initialized");
+    SDL_Log("manager::instance() - not initialized");
     throw std::runtime_error("manager is not initialized");
   }
   return g_manager;
@@ -162,7 +162,7 @@ void manager::update()
     for(; it != g_graveyard.end(); ++it) {
       control* child = *it;
       if (child->parent() == nullptr) {
-        fprintf(stderr, "manager::update - g_graveyard has zombie %s", child->tostr().c_str());
+        SDL_Log("manager::update - g_graveyard has zombie %s", child->tostr().c_str());
         throw std::runtime_error("zombie control found in graveyard");
       }
       else {
@@ -324,7 +324,7 @@ void manager::push_back(control * c)
 control* manager::build(data const * d)
 {
   if (!d->is_object() || !d->has_key("class")) {
-    fprintf(stderr, "manager::build - given data is not a json object");
+    SDL_Log("manager::build - given data is not a json object");
     throw std::runtime_error("given data is not a json object");
   }
 
@@ -365,7 +365,7 @@ control* manager::build(data const * d)
   // create instance of the class
   control * inst = create_control(class_id, pos);
   if (inst == NULL) {
-    fprintf(stderr, "manager::build() - failed to create an instance of [%s]", class_id.c_str());
+    SDL_Log("manager::build() - failed to create an instance of [%s]", class_id.c_str());
     throw std::runtime_error("failed to create an instance of the class");
   }
 

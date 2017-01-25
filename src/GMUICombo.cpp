@@ -33,7 +33,7 @@ combo::~combo()
 label * combo::get_item(size_t item)
 {
   if (item >= _area->children().size()) {
-    fprintf(stderr, "combo::get_item - invalid item index %zu", item);
+    SDL_Log("combo::get_item - invalid item index %zu", item);
     throw std::runtime_error("invalid combo item index");
   }
 
@@ -78,7 +78,7 @@ size_t combo::add_item(const std::string & text, const padding & pad, const h_al
 void combo::delete_item(size_t item)
 {
   if (item >= _area->children().size()) {
-    fprintf(stderr, "combo::delete_item - invalid item index %zu", item);
+    SDL_Log("combo::delete_item - invalid item index %zu", item);
     throw std::runtime_error("invalid combo item index");
   }
 

@@ -153,7 +153,7 @@ script::script(const std::string file_path):
     if (PyErr_Occurred())
       PyErr_Print();
 
-    fprintf(stderr, "%s - failed to load python script from %s",
+    SDL_Log("%s - failed to load python script from %s",
       __METHOD_NAME__, file_path.c_str());
     throw script_exception("Failed to load python script");
   }
@@ -237,7 +237,7 @@ static data::json * PyObject_AsJSON(PyObject * py)
       // key must be a unicode string for 
       // compatibility with JSON 
       if (!PyUnicode_Check(key)) {
-        fprintf(stderr, "%s - cannot convert non-string key in object",
+        SDL_Log("%s - cannot convert non-string key in object",
           __METHOD_NAME__);
         return NULL;
       }
@@ -246,7 +246,7 @@ static data::json * PyObject_AsJSON(PyObject * py)
       value = PyObject_GetItem(py, key);
       if (value == NULL) {
         // proparage key error
-        fprintf(stderr, "%s - failed to find value by key \"%s\"",
+        SDL_Log("%s - failed to find value by key \"%s\"",
           __METHOD_NAME__, PyUnicode_AsUTF8(key));
         return NULL;
       }
@@ -327,20 +327,20 @@ void script::call_func(data & ret, const std::string & func_name) const
 PyObject * script::call_func_ex(const std::string & func_name, const script::arguments & args) const
 {
   if (_py_module == nullptr) {
-    fprintf(stderr, "%s - module %s is not initalized. cannot call \"%s\"",
+    SDL_Log("%s - module %s is not initalized. cannot call \"%s\"",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script_exception("Cannot call function. Module object is not initialized.");
   }
 
   if (!args.is_object()) {
-    fprintf(stderr, "%s - python function arguments must be a dictionary. cannot call \"%s\"",
+    SDL_Log("%s - python function arguments must be a dictionary. cannot call \"%s\"",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Cannot call function. Arguments object is not a dictionary.");
   }
 
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
   if (func == NULL) {
-    fprintf(stderr, "%s - failed to find module attribute %s",
+    SDL_Log("%s - failed to find module attribute %s",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Failed to find python module attribute");
   }
@@ -348,7 +348,7 @@ PyObject * script::call_func_ex(const std::string & func_name, const script::arg
   if (!PyCallable_Check(func)) {
     Py_XDECREF(func);
 
-    fprintf(stderr, "%s - python module attribute %s is not a function",
+    SDL_Log("%s - python module attribute %s is not a function",
       __METHOD_NAME__, func_name.c_str());
     throw script_exception("Called python module attribute is not a function");
   }
@@ -363,7 +363,7 @@ PyObject * script::call_func_ex(const std::string & func_name, const script::arg
   if (ret == NULL) {
     Py_XDECREF(ret);
 
-    fprintf(stderr, "%s - python function call failed. %s:%s",
+    SDL_Log("%s - python function call failed. %s:%s",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script::script_exception("Python function call failed");
   }
@@ -376,7 +376,7 @@ void script::call_func(data & ret, const std::string & func_name, const argument
   PyObject * py = call_func_ex(func_name, args);
   data::json * jdata = PyObject_AsJSON(py);
   if (jdata == NULL) {
-    fprintf(stderr, "%s - failed to convert returned value of %s:%s",
+    SDL_Log("%s - failed to convert returned value of %s:%s",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script_exception("Failed to convert value returned from Python");
   }

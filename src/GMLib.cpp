@@ -29,7 +29,7 @@ static screen * g_screen_next;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
-        fprintf(stderr, "%s: not initialized", __METHOD_NAME__);
+        SDL_Log("%s: not initialized", __METHOD_NAME__);
         return nullptr;
     }
     return g_window;
@@ -37,7 +37,7 @@ SDL_Window* GM_GetWindow() {
 
 SDL_Renderer* GM_GetRenderer() {
   if (g_renderer == nullptr) {
-    fprintf(stderr, "%s: not initialized", __METHOD_NAME__);
+    SDL_Log("%s: not initialized", __METHOD_NAME__);
     return nullptr;
   }
   return g_renderer;
@@ -55,15 +55,15 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //init subsystems
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-        fprintf(stderr, "SDL_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
+        SDL_Log("SDL_Init: Failed to initialize SDL. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (IMG_Init(IMG_INIT_PNG) == -1) {
-        fprintf(stderr, "IMG_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
+        SDL_Log("IMG_Init: Failed to initialize SDL_img. SDL Error: %s", SDL_GetError());
         return -1;
     }
     if (TTF_Init() == -1) {
-        fprintf(stderr, "TTF_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
+        SDL_Log("TTF_Init: Failed to initialize SDL_ttf. SDL Error: %s", SDL_GetError());
         return -1;;
     }
 
@@ -80,12 +80,12 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     //check cfg path is ok
     if (cfg_path.empty()) {
-      fprintf(stderr, "%s: invalid config path", __METHOD_NAME__);
+      SDL_Log("%s: invalid config path", __METHOD_NAME__);
       return -1;
     }
     boost::filesystem::path p_path(cfg_path);
     if (!boost::filesystem::exists(p_path)) {
-      fprintf(stderr, "GM_Init: config path does not exist");
+      SDL_Log("GM_Init: config path does not exist");
       return -1;
     }
     boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
@@ -98,14 +98,14 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         srect.w, srect.h, cfg->window_flags() | SDL_WINDOW_OPENGL);
     if ( g_window == nullptr ) {
-        fprintf(stderr, "%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
+        SDL_Log("%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
         return -1;
     }
     // setup renderer
     uint32_t didx = cfg->driver_index();
     g_renderer = SDL_CreateRenderer(g_window, didx, cfg->renderer_flags());
     if ( g_renderer == nullptr ) {
-        fprintf(stderr, "%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, didx);
+        SDL_Log("%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, didx);
         return -1;
     }
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
@@ -216,7 +216,7 @@ void GM_RenderFrame()
 
   // update current screen
   if (g_screen_current == NULL) {
-    fprintf(stderr, "%s - failed to render: no active screen", 
+    SDL_Log("%s - failed to render: no active screen", 
       __METHOD_NAME__);
     throw std::runtime_error("No active screen to render");
   }
@@ -293,7 +293,7 @@ SDL_Surface* GM_LoadSurface(const std::string& file_path)
 {
   SDL_Surface *tmp = IMG_Load(file_path.c_str());
   if (!tmp) {
-    fprintf(stderr, "%s: failed to load %s",
+    SDL_Log("%s: failed to load %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
@@ -301,7 +301,7 @@ SDL_Surface* GM_LoadSurface(const std::string& file_path)
 
   SDL_Surface* s = SDL_ConvertSurfaceFormat(tmp, SDL_PIXELFORMAT_RGBA8888, 0);
   if (!s) {
-    fprintf(stderr, "%s: failed to convert surface.", __METHOD_NAME__);
+    SDL_Log("%s: failed to convert surface.", __METHOD_NAME__);
     throw sdl_exception();
   }
   SDL_FreeSurface(tmp);
@@ -314,7 +314,7 @@ SDL_Texture* GM_LoadTexture(const std::string& file_path)
   SDL_Surface* s = GM_LoadSurface(file_path);
   SDL_Texture *tex = SDL_CreateTextureFromSurface(GM_GetRenderer(), s);
   if (tex == NULL) {
-    fprintf(stderr, "%s: failed to create texture from surface of %s",
+    SDL_Log("%s: failed to create texture from surface of %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
@@ -327,7 +327,7 @@ TTF_Font* GM_LoadFont(const std::string& file_path, int ptsize)
 {
   TTF_Font* f = TTF_OpenFont(file_path.c_str(), ptsize);
   if (!f) {
-    fprintf(stderr, "%s: failed to load %s",
+    SDL_Log("%s: failed to load %s",
       __METHOD_NAME__,
       file_path.c_str());
     throw sdl_exception();
@@ -532,7 +532,7 @@ color color::from_string(const std::string & sclr)
     return color::light_gray();
   }
 
-  fprintf(stderr, "color::from_string - unknown name %s", sclr.c_str());
+  SDL_Log("color::from_string - unknown name %s", sclr.c_str());
   throw std::runtime_error("unknown color name");
 }
 

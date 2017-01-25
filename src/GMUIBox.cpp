@@ -384,7 +384,7 @@ void box::update_children()
       {
         switch(_ha) {
         default:
-          fprintf(stderr, "%s - unsupported h_align value \"%d\" for vbox",
+          SDL_Log("%s - unsupported h_align value \"%d\" for vbox",
             __METHOD_NAME__, _ha);
           throw std::runtime_error("Unsupported h_align value for vbox");
 
@@ -404,13 +404,13 @@ void box::update_children()
           break;
 
         case h_align::expand:
-          fprintf(stderr, "FIXME");
+          SDL_Log("FIXME");
           break;
         };
 
         switch(_va) {
         default:
-          fprintf(stderr, "%s - unsupported v_align value \"%d\" for vbox",
+          SDL_Log("%s - unsupported v_align value \"%d\" for vbox",
             __METHOD_NAME__, _ha);
           throw std::runtime_error("Unsupported v_align value for vbox");
 
@@ -439,7 +439,7 @@ void box::update_children()
       {
         switch(_va) {
         default:
-          fprintf(stderr, "%s - unsupported v_align value \"%d\" for hbox",
+          SDL_Log("%s - unsupported v_align value \"%d\" for hbox",
             __METHOD_NAME__, _ha);
           throw std::runtime_error("Unsupported v_align value for hbox");
 
@@ -459,13 +459,13 @@ void box::update_children()
           break;
 
         case v_align::fill:
-          fprintf(stderr, "FIXME");
+          SDL_Log("FIXME");
           break;
         };
         
         switch(_ha) {
         default:
-          fprintf(stderr, "%s - unsupported h_align value \"%d\" for hbox",
+          SDL_Log("%s - unsupported h_align value \"%d\" for hbox",
             __METHOD_NAME__, _ha);
           throw std::runtime_error("Unsupported h_align value for hbox");
 
@@ -488,7 +488,7 @@ void box::update_children()
       }
       break;
     default:
-      fprintf(stderr, "%s - unknown box type value \"%d\"", __METHOD_NAME__, _type);
+      SDL_Log("%s - unknown box type value \"%d\"", __METHOD_NAME__, _type);
       throw std::runtime_error("Unknown box type value");
       break;
     };

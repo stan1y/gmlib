@@ -237,7 +237,7 @@ void control::remove_child(control* child)
 control * control::get_child_at_index(size_t idx)
 {
   if (idx >= _children.size()) {
-    fprintf(stderr, "control::get_child_at_index - invalid index: %zu", idx);
+    SDL_Log("control::get_child_at_index - invalid index: %zu", idx);
     throw std::runtime_error("invalid child index to get");
   }
   return _children[idx];

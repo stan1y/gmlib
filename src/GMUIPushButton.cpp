@@ -12,7 +12,7 @@ push_btn::push_btn(std::string idle_icon_icon_path,
 {
   // load primary idle icon
   if (idle_icon_icon_path.length() <= 0) {
-    fprintf(stderr, "push_btn::push_btn - no idle icon specified for push button");
+    SDL_Log("push_btn::push_btn - no idle icon specified for push button");
     throw std::runtime_error("No idle icon specified for push button");
   }
   set_idle_icon(idle_icon_icon_path);
@@ -41,7 +41,7 @@ push_btn::push_btn(const rect & pos,
 {
   // load primary idle icon
   if (idle_icon_path.length() <= 0) {
-    fprintf(stderr, "push_btn::push_btn - no idle icon specified for push button");
+    SDL_Log("push_btn::push_btn - no idle icon specified for push button");
     throw std::runtime_error("No idle icon specified for push button");
   }
   set_idle_icon(idle_icon_path);
@@ -102,7 +102,7 @@ void push_btn::set_pressed_icon(SDL_Texture* tex)
 void push_btn::load(const data & d)
 {
   if (!d.has_key("icon_idle")) {
-    fprintf(stderr, "push_btn::load - no idle icon specified");
+    SDL_Log("push_btn::load - no idle icon specified");
     throw std::runtime_error("No idle icon specified for push_btn");
   }
   set_idle_icon(resources::find_file(d["icon_idle"].value<std::string>()));

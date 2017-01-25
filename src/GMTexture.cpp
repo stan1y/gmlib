@@ -136,7 +136,7 @@ rect texture::get_string_rect(const std::string& text, TTF_Font* font)
 void texture::convert_surface(SDL_Surface * s)
 {
   if (s == NULL) {
-    fprintf(stderr, "%s - NULL surface to convert", __METHOD_NAME__);
+    SDL_Log("%s - NULL surface to convert", __METHOD_NAME__);
     throw std::runtime_error("NULL surface to convert");
   }
   SDL_Surface* converted = SDL_ConvertSurfaceFormat(s, _format, 0);
@@ -173,7 +173,7 @@ void texture::set_surface(SDL_Surface* src)
     set_texture(SDL_CreateTextureFromSurface(GM_GetRenderer(), src));
   }
   else if (_access == SDL_TEXTUREACCESS_TARGET) {
-    fprintf(stderr, "%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
+    SDL_Log("%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
       __METHOD_NAME__);
     throw std::runtime_error("Cannot load SDL_TEXTUREACCESS_TARGET texture from surface");
   }
@@ -205,7 +205,7 @@ void texture::unlock()
 void texture::replace_color(const color & from, const color & to)
 {
   if (_format != SDL_PIXELFORMAT_ABGR8888) {
-    fprintf(stderr, "%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
+    SDL_Log("%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
       __METHOD_NAME__, _format);
     throw std::runtime_error("Unsupported pixel format for method");
   }
@@ -394,7 +394,7 @@ void multi_texture::init(int fw, int fh)
   }
 
   if (fragments_w % 2 != 0 || fragments_h % 2 != 0) {
-    fprintf(stderr, "%s - fragment size [%d, %d] is not a power of 2",
+    SDL_Log("%s - fragment size [%d, %d] is not a power of 2",
       __METHOD_NAME__,
       fragments_w,
       fragments_h);

@@ -8,7 +8,7 @@ data::json * GM_LoadJSON(const std::string& file_path)
     json_error_t jerr;
     json_data = (data::json *) json_load_file(file_path.c_str(), 0, &jerr);
     if (json_data == nullptr) {
-        fprintf(stderr, "GM_LoadJSON: failed to load %s. %s. line: %d, column: %d, position: %d",
+        SDL_Log("GM_LoadJSON: failed to load %s. %s. line: %d, column: %d, position: %d",
           file_path.c_str(), jerr.text,
           jerr.line, jerr.column, jerr.position);
         throw data::json_exception("Failed to load json from file", &jerr);
@@ -27,7 +27,7 @@ data::data(const std::string & json_string, uint32_t parser_flags):
                              parser_flags,
                              &jerr);
   if (_json == NULL) {
-    fprintf(stderr, "data: failed to parse. %s", jerr.text);
+    SDL_Log("data: failed to parse. %s", jerr.text);
     throw json_exception("failed to parse data");
   }
 }
@@ -75,7 +75,7 @@ void data::unpack(const char *fmt, ...) const
   va_end(ap);
   if (ret != 0)
   {
-      fprintf(stderr, "%s - failed to unpack data, error at line: %d, column: %d, position: %d. %s",
+      SDL_Log("%s - failed to unpack data, error at line: %d, column: %d, position: %d. %s",
         __METHOD_NAME__,
         jerr.line, jerr.column, jerr.position, jerr.text);
       throw json_exception("Failed to unpack data", &jerr);
@@ -93,7 +93,7 @@ void data::json::unpack(const char *fmt, ...) const
   va_end(ap);
   if (ret != 0)
   {
-      fprintf(stderr, "%s - failed to unpack data, error at line: %d, column: %d, position: %d. %s",
+      SDL_Log("%s - failed to unpack data, error at line: %d, column: %d, position: %d. %s",
         __METHOD_NAME__,
         jerr.line, jerr.column, jerr.position, jerr.text);
       throw json_exception("Failed to unpack data", &jerr);

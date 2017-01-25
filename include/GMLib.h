@@ -304,7 +304,7 @@ public:
     std::exception(),
     _msg(SDL_GetError())
   {
-    fprintf(stderr, "SDL Error: %s", _msg);
+    SDL_Log("SDL Error: %s", _msg);
   }
 
   virtual const char * what() const _NOEXCEPT

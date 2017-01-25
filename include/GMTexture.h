@@ -35,7 +35,7 @@ public:
       _r(r), _t(t), _prev(NULL) 
     {
       if (t->access() != SDL_TEXTUREACCESS_TARGET) {
-        fprintf(stderr, "%s - unsupported target texture type. it must be SDL_TEXTUREACCESS_TARGET",
+        SDL_Log("%s - unsupported target texture type. it must be SDL_TEXTUREACCESS_TARGET",
           __METHOD_NAME__);
         throw std::runtime_error("Unsupported target texture type for render_context");
       }

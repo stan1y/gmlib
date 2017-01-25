@@ -230,7 +230,7 @@ public:
       case panel_style::window:
         return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("window"));
       default:
-        fprintf(stderr, "panel::get_skin - unknown panel style %d", _ps);
+        SDL_Log("panel::get_skin - unknown panel style %d", _ps);
         throw std::runtime_error("Uknown panel style");
         break;
     };

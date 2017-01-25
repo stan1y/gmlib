@@ -87,7 +87,7 @@ static void load_assets_directory(const fs::path & directory)
         // cache regular files
         assets_root::iterator it = g_assets_root.find(filename);
         if (it != g_assets_root.end()) {
-          fprintf(stderr, "%s - found conflict with name \"%s\". Existing pointer is \"%s\", new is \"%s\"",
+          SDL_Log("%s - found conflict with name \"%s\". Existing pointer is \"%s\", new is \"%s\"",
             __METHOD_NAME__,
             filename.string().c_str(),
             it->second.string().c_str(),
@@ -146,7 +146,7 @@ fs::path find_file(const fs::path & filename)
 {
   fs::path found;
   if (!find_file(filename, found)) {
-    fprintf(stderr, "%s - filename was not found in cache \"%s\"",
+    SDL_Log("%s - filename was not found in cache \"%s\"",
       __METHOD_NAME__, filename.string().c_str());
     throw std::runtime_error("Filename was not found in cache");
   }
@@ -163,7 +163,7 @@ fs::path find_resource(const resource_id & resource)
 {
   fs::path found;
   if (!find_resource(resource, found)) {
-    fprintf(stderr, "%s - %s was not found in cache",
+    SDL_Log("%s - %s was not found in cache",
       __METHOD_NAME__, 
       resource.c_str());
     throw std::runtime_error("Resource was not found in cache");
@@ -176,7 +176,7 @@ fs::path find_resource(const resource_id & resource)
 size_t find_files(const strings_list & ext_list, paths_list & output)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      fprintf(stderr, "%s - no assets root initialized",
+      SDL_Log("%s - no assets root initialized",
         __METHOD_NAME__);
       throw std::runtime_error("no assets root");
   }
@@ -200,7 +200,7 @@ size_t find_files(const strings_list & ext_list, paths_list & output)
 iresource const * get(const std::string & resource)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      fprintf(stderr, "%s - no assets root initialized",
+      SDL_Log("%s - no assets root initialized",
         __METHOD_NAME__);
       throw std::runtime_error("No assets root defined");
   }
@@ -227,7 +227,7 @@ texture const * get_texture(const std::string& filename)
 
   texture const * tx = dynamic_cast<texture const *> (res);
   if (tx == nullptr) {
-    fprintf(stderr, "%s - failed to cast iresource",
+    SDL_Log("%s - failed to cast iresource",
       __METHOD_NAME__);
     throw std::runtime_error("Failed to cast iresource");
   }
@@ -249,7 +249,7 @@ sprites_sheet const * get_sprites_sheet(const std::string& filename,
   }
   sprites_sheet const * ss = dynamic_cast<sprites_sheet const *> (res);
   if (ss == nullptr) {
-    fprintf(stderr, "%s - failed to cast iresource",
+    SDL_Log("%s - failed to cast iresource",
       __METHOD_NAME__);
     throw std::runtime_error("Failed to cast iresource");
   }
@@ -270,7 +270,7 @@ data const * get_data(const std::string& filename)
 
   data const * d = dynamic_cast<data const *> (res);
   if (d == nullptr) {
-    fprintf(stderr, "%s - failed to cast iresource",
+    SDL_Log("%s - failed to cast iresource",
       __METHOD_NAME__);
     throw std::runtime_error("Failed to cast iresource");
   }
@@ -295,7 +295,7 @@ ttf_font const * get_font(const std::string& filename, size_t pt_size)
 
   ttf_font const * f = dynamic_cast<ttf_font const*> (res);
   if (f == nullptr) {
-    fprintf(stderr, "%s - failed to cast iresource",
+    SDL_Log("%s - failed to cast iresource",
       __METHOD_NAME__);
     throw std::runtime_error("Failed to cast iresource");
   }
@@ -315,7 +315,7 @@ python::script const * get_script(const std::string& filename)
 
   python::script const * s = dynamic_cast<python::script const*> (res);
   if (s == nullptr) {
-    fprintf(stderr, "%s - failed to cast iresource",
+    SDL_Log("%s - failed to cast iresource",
       __METHOD_NAME__);
     throw std::runtime_error("Failed to cast iresource");
   }
@@ -342,7 +342,7 @@ bool lookup_file(const fs::path & directory,
 bool loaded(const resource_id & resource)
 {
   if (!g_cache || g_assets_root.size() == 0) {
-      fprintf(stderr, "%s - no assets root initialized",
+      SDL_Log("%s - no assets root initialized",
         __METHOD_NAME__);
       throw std::runtime_error("no assets root");
   }

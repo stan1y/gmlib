@@ -11,7 +11,7 @@ SDL_Surface* GM_CreateSurface(int width, int height)
   SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA8888, &bpp, &rmask, &gmask, &bmask, &amask);
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp, rmask, gmask, bmask, amask);
   if(surface == NULL) {
-    fprintf(stderr, "GM_CreateSurface - failed to create surface %dx%d", width, height);
+    SDL_Log("GM_CreateSurface - failed to create surface %dx%d", width, height);
     throw sdl_exception();
   }
   return surface;
@@ -21,7 +21,7 @@ SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access, u
 {
   SDL_Texture * tx = SDL_CreateTexture(GM_GetRenderer(), pixel_format, access, width, height);
   if (tx == NULL) {
-    fprintf(stderr, "GM_CreateTexture - failed to create blank texture %dx%d.", width, height);
+    SDL_Log("GM_CreateTexture - failed to create blank texture %dx%d.", width, height);
     throw sdl_exception();
   }
   return tx;
@@ -83,12 +83,12 @@ sprite::sprite(size_t tex_idx, int px_w, int px_h, sprites_sheet const* sheet)
 
     //check sprites sheet
     if ( _sheet->width() % px_w != 0 || _sheet->height() % px_h != 0 ) {
-      fprintf(stderr, "Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet->width(), _sheet->height());
+      SDL_Log("Invalid sprite size=%dx%d for sheet size=%dx%d", px_w, px_h, _sheet->width(), _sheet->height());
       throw std::runtime_error("Invalid sprite size");
     }
     size_t total_sprites = (_sheet->width() / px_w) * (_sheet->height() / px_h);
     if (tex_idx >= total_sprites) {
-      fprintf(stderr, "Invalid sprite idx=%zu. total sheet length=%zu", tex_idx, total_sprites);
+      SDL_Log("Invalid sprite idx=%zu. total sheet length=%zu", tex_idx, total_sprites);
       throw std::runtime_error("Invalid sprite idx");
     }
   }
