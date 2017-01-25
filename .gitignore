@@ -1,3 +1,4 @@
+*.DS_Store*
 .obj
 Debug
 UI_Demo/Debug
