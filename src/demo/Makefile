@@ -18,7 +18,7 @@ LDFLAGS+=-liconv -L../.. -lgm
 
 ifeq ("$(OSNAME)", "darwin")
 	LDFLAGS+=-framework Foundation\
-             -framework CoreFoundation \
+			 -framework CoreFoundation \
 			 -framework CoreAudio \
 			 -framework AudioUnit \
 			 -framework AppKit \
@@ -37,9 +37,12 @@ demo: $(OBJDIR) $(S_OBJS)
 	$(CXX) $(LDFLAGS) $(S_OBJS) -o demo
 
 linklibs:
-	ln -s $(FREETYPE_LIB)/libfreetype.dylib libfreetype.dylib
-	ln -s $(BOOST_LIB)/libboost_filesystem.dylib libboost_filesystem.dylib
-	ln -s $(BOOST_LIB)/libboost_system.dylib libboost_system.dylib
+	@rm -f libfreetype.$(SHARED_SUFFIX)
+	@rm -f libboost_filesystem.$(SHARED_SUFFIX)
+	@rm -f libboost_system.$(SHARED_SUFFIX)
+	@ln -s $(FREETYPE_LIB)/libfreetype.$(SHARED_SUFFIX) libfreetype.$(SHARED_SUFFIX)
+	@ln -s $(BOOST_LIB)/libboost_filesystem.$(SHARED_SUFFIX) libboost_filesystem.$(SHARED_SUFFIX)
+	@ln -s $(BOOST_LIB)/libboost_system.$(SHARED_SUFFIX) libboost_system.$(SHARED_SUFFIX)
 
 objects: $(OBJDIR) $(S_OBJS)
 
@@ -54,6 +57,6 @@ $(OBJDIR)/%.o: %.cpp
 
 clean:
 	find . -type f -name \*.o -exec rm {} \;
-	rm -rf demo 
+	rm -rf demo
 
 .PHONY: all clean

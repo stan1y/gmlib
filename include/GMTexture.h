@@ -59,23 +59,47 @@ public:
     SDL_Texture * _prev;
   };
 
-  /* Create & Initialize the texture object */
+  /* Create an empty texture */
   texture();
-  texture(const std::string & file_path);
-  texture(SDL_Texture * tx, SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
-  texture(int w, int h, 
-    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
-    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
-    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
-  texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode);
 
-  /* Re-initialize as a new clear texture of specified type, access, pixel format*/
-  void blank(int w, int h, 
-    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
-    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
-    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+  /* Create a new texture of given properties
+  */ 
+  texture(int w, int h, 
+          SDL_TextureAccess access,
+          SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+          uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+
+  /* Create new texture from a file */
+  texture(const std::string & file_path);
+
+  /* Create a new texture from external instance of SDL_Texutre.
+     Gives owership of a *tx to a new texture instance.
+  */
+  texture(SDL_Texture * tx,
+          SDL_BlendMode bmode = SDL_BLENDMODE_BLEND);
+  
+  /* Create a new texture from a surface with format conversion */ 
+  texture(SDL_Renderer *r,
+          SDL_Surface *src,
+          SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+          uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+
+  /* create new SDL_TEXTURE_STREAMING texture with
+     pixels loaded from given SDL_Surface
+  */
+  texture(SDL_Surface *src,
+          SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+          bool convert_transparency = true);
 
   ~texture();
+
+  /* reset this texture to own a new SDL_Texture created with
+     specified parameters
+  */
+  void blank(int w, int h,
+    SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
+    SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
+    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
 
   /* check if texture was initialized property */
   bool is_valid() const { return (_texture != NULL); }
@@ -83,29 +107,21 @@ public:
   /* clean up underlying SDL_Texture */
   void release();
 
-  /* load texture from resource (see GM_LoadTexture) */
+  /* load texture from file (see GM_LoadTexture) */
   void load(const fs::path & file_path);
 
-  /* create a new copy of this texture's bytes 
-     (SDL_TEXTUREACCESS_STREAMING only)
+  /* set extra width and height modifier for
+     this texture. They are added to rendering and
+     all size calculations so the texture is scalled 
    */
-  texture * copy();
-  
-  /* load texture data from surface */
-  void set_surface(SDL_Surface* src);
-  
-  /* load from an external surface */
-  void convert_surface(SDL_Surface * s);
+  void set_scale(int dw, int dh) { _scale_w = dw; _scale_h = dh; }
+  int get_wscale() { return _scale_w; }
+  int get_hscale() { return _scale_h; }
 
-  /* set raw texture */
-  void set_texture(SDL_Texture*);
-
-  /* load texture data by rendering text with font */
-  void load_text_solid(const std::string& text, ttf_font const * font, const color & clr);
-  void load_text_blended(const std::string& text, ttf_font const * font, const color & clr);
-  
-  /* calculate rect needed to hold text rendered with font & color */
-  static rect get_string_rect(const std::string& text, TTF_Font* font);
+  /* create a new copy of this texture's pixels 
+     as a new SDL_TEXTUREACCESS_STREAMING texture
+   */
+  texture * copy_pixels();
   
   /* get/set color modulation */
   void set_color_mod(uint8_t red, uint8_t green, uint8_t blue);
@@ -127,14 +143,18 @@ public:
   int base_height() const { return _height; }
   bool is_scaled() const { return _scale_w != 0 || _scale_h != 0; } 
 
-  /* resize texture with delta + or - 
-     texture will be replaces with a new 
-     instance with acess SDl_TEXTUREACCESS_TARGET
-   */
-  void resize(int dw, int dh);
-
-  /* raw texture pointer */
+  /* get SDL_Texture owned by this texture */
   SDL_Texture* get_texture() const { return _texture; }
+  
+  /* set this texture owner of a SDL_Texture. The
+     SDL_Texture will have blend mode of this texture
+  */
+  void set_texture(SDL_Texture *tx);
+
+  /* set this texture owner of the new SDL_Texture
+     created from a given SDL_Surface with SDL_CreateTextureFromSurface
+  */
+  void set_surface(SDL_Surface *src, SDL_Renderer * r = NULL);
 
   /* render it */
   void render(SDL_Renderer* r, const rect & src, const rect & dst, 
@@ -174,11 +194,11 @@ private:
   SDL_BlendMode _bmode;
 
   // raw pixels copy access
-  void set_pixels(void * ptr);
+  void set_pixels(void *pixels, size_t len);
   
   // transfer _texture ownership and
   // clone all properties
-  void move_texture(texture * other);
+  void clone(texture * other);
 };
 
 

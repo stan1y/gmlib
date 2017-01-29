@@ -198,10 +198,6 @@ void GM_UpdateFrame()
   if (g_screen_current != g_screen_next) {
     g_screen_current = g_screen_next;
     g_screen_current->activate();
-#ifdef GM_DEBUG
-    SDL_Log("%s - screen %p is now active", 
-      __METHOD_NAME__, g_screen_current);
-#endif
   }
     
   // update global & current screens
@@ -226,7 +222,12 @@ void GM_RenderFrame()
   
   // render avg fps
   if (g_fps_timer) {
-    g_fps.load_text_solid( std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())), g_fps_font, g_fps_color);
+    g_fps.set_surface(
+      g_fps_font->print_solid(
+        std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())),
+        g_fps_color
+      )
+    );
     g_fps.render(GM_GetRenderer(), point(5, 5));
   }
 
@@ -552,3 +553,23 @@ rect rect::center(const uint32_t for_w, const uint32_t for_h) const
 {
   return rect(x + (w - for_w) / 2, y + (h - for_h) / 2, for_w, for_h);
 }
+
+SDL_Surface * ttf_font::print_solid(const std::string & text,
+                          const color & clr) const
+{
+  return TTF_RenderText_Solid(_f, text.c_str(), clr);
+}
+
+SDL_Surface * ttf_font::print_blended(const std::string & text,
+                            const color & clr) const
+{
+  return TTF_RenderText_Blended(_f, text.c_str(), clr);
+}
+
+rect ttf_font::get_text_rect(const std::string& text) const
+{
+  rect r(0, 0, 0, 0);
+  TTF_SizeText(_f, text.c_str(), &r.w, &r.h);
+  return r;
+}
+

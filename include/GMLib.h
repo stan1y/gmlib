@@ -276,7 +276,7 @@ public:
   }
 
   size_t pts() const { return _pts; }
-  TTF_Font * fnt() const { return _f; }
+  TTF_Font * get_font() const { return _f; }
   bool is_loaded() const { return (_f != nullptr); }
   const std::string & filename() const { return _fname; }
   virtual ~ttf_font()
@@ -292,6 +292,14 @@ public:
        << ", pts=" << _pts << ">";
     return ss.str();
   }
+
+  /* text printing */
+  SDL_Surface * print_solid(const std::string & text,
+                            const color & clr) const;
+  SDL_Surface * print_blended(const std::string & text,
+                            const color & clr) const;
+  rect get_text_rect(const std::string& text) const;
+  
 };
 
 /* SDL_Error exception wrapper */

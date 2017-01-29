@@ -75,7 +75,7 @@ void label::set_icon(SDL_Surface* icon)
     return;
   }
   _icon_file.clear();
-  _icon_tx.convert_surface(icon);
+  _icon_tx = texture(NULL, icon);
 }
 
 void label::set_icon(SDL_Texture* icon)
@@ -281,9 +281,9 @@ void label::draw(SDL_Renderer * r, const rect & dst)
 void label::paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr)
 {
   if (_font_style == font_style::blended)
-    tx.load_text_blended(text.length() > 0 ? text : " ", fnt, clr);
+    tx.set_surface(fnt->print_blended(text.length() > 0 ? text : " ", clr));
   else
-    tx.load_text_solid(text.length() > 0 ? text : " ", fnt, clr);
+    tx.set_surface(fnt->print_solid(text.length() > 0 ? text : " ", clr));
 }
 
 void label::paint(SDL_Renderer * r)
@@ -298,9 +298,6 @@ void label::paint(SDL_Renderer * r)
   else if (is_hovered() && _highlight_on_hover) {
     clr = _color_highlight;
   }
-
-  rect sz = texture::get_string_rect(_text, _font_text->fnt());
-  _text_tx.blank(sz.w > 0 ? sz.w : 5, sz.h > 0 ? sz.h : 5);
   paint_text(_text_tx, _text, _font_text, clr);
 
   // load icon as resource only if given

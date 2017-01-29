@@ -23,7 +23,7 @@ LDFLAGS+="-liconv"
 ifeq ("$(OSNAME)", "darwin")
 	SHARED_SUFFIX=dylib
 	LDFLAGS+=-framework Foundation\
-             -framework CoreFoundation \
+			 -framework CoreFoundation \
 			 -framework CoreAudio \
 			 -framework AudioUnit \
 			 -framework AppKit \

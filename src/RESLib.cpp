@@ -63,14 +63,9 @@ void add(const resource_id & resource, const fs::path & found_at, iresource cons
 #endif
 }
 
-static int max_progress = 3;
-static char progress_str[4][2] = { "|", "/", "-", "\\" };
-
-
 static void load_assets_directory(const fs::path & directory)
 {
   // cache files in this assets path
-  int progress = 0;
   for(auto entry = fs::directory_iterator(directory);
     entry != fs::directory_iterator();
     ++entry) {
@@ -92,14 +87,10 @@ static void load_assets_directory(const fs::path & directory)
             filename.string().c_str(),
             it->second.string().c_str(),
             p.string().c_str());
-          throw std::runtime_error("Resource key confict detected.");
+          throw std::runtime_error("Resource key conflict detected.");
         }
         // report progress and loop
         g_assets_root[filename] = p;
-        printf("\r%s", progress_str[progress]);
-        progress++;
-        if (progress > max_progress)
-          progress = 0;
       }
   }
 }

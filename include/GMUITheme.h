@@ -29,36 +29,6 @@ public:
     texture tx_select;
   };
 
-  /* UI Theme's font cache 
-  class font : public ttf_font {
-  public:
-    typedef enum {
-      solid = 0,
-      blended = 1
-    } font_style;
-    
-    // load from file, managed mode
-    font(const std::string & file_path, size_t pts, font_style st);
-    font(const std::string & file_path, size_t pts, const std::string & style = "blended");
-    
-    void print(texture & target, const std::string & text, const color & c) const;
-    
-    font_style style() const { return _fs; }
-    void set_style(font_style & s) { _fs = s; }
-    void set_style(const std::string & fs)
-    {
-      if (fs == "solid") {
-        _fs = font::solid;
-      }
-      if (fs == "blended") {
-        _fs = font::blended;
-      }
-    }
-
-  private:
-    font_style _fs;
-  };
-  */
   struct base_skin {
     /* frame's name, the control's type */
     std::string name;

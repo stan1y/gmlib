@@ -477,6 +477,15 @@ private:
   texture _tx;
 };
 
+namespace text {
+  /* load texture data by rendering text with font */
+  static texture * print_solid(const std::string& text, ttf_font const * font, const color & clr);
+  static texture * print_blended(const std::string& text, ttf_font const * font, const color & clr);
+  
+  /* calculate rect needed to hold text rendered with font & color */
+  static rect get_rect(const std::string& text, ttf_font const * font);
+}
+
 } //namespace ui
 
 

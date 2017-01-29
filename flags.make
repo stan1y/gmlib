@@ -30,7 +30,7 @@ endif
 
 # Debug build
 ifneq ("$(DEBUG)", "")
-    CFLAGS+=-g -DGM_UIDEBUG -DGM_DEBUG_MULTITEXTURE
+    CFLAGS+=-g -DGM_DEBUG -DGM_UIDEBUG -DGM_DEBUG_MULTITEXTURE
     NOOPT=1
 endif
 

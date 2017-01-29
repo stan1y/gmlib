@@ -262,7 +262,7 @@ void text_input::draw(SDL_Renderer * r, const rect & dst)
 point text_input::get_cursor_pos(const rect & dst)
 {
   std::string sub = get_text().substr(0, _cursor);
-  rect txt_rect = texture::get_string_rect(sub, get_font()->fnt());
+  rect txt_rect = get_font()->get_text_rect(sub);
   return point (get_text_offset().x + txt_rect.w, get_text_offset().y);
 }
 

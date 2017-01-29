@@ -11,7 +11,7 @@ texture::texture():
   _pixels(nullptr),
   _pitch(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
-  _access(SDL_TEXTUREACCESS_STREAMING),
+  _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(SDL_BLENDMODE_BLEND)
 {
 }
@@ -25,11 +25,31 @@ texture::texture(SDL_Texture * tx, SDL_BlendMode bmode):
   _pixels(nullptr),
   _pitch(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
-  _access(SDL_TEXTUREACCESS_STREAMING),
+  _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(bmode)
 {
   set_texture(tx);
 }
+
+texture::texture(SDL_Renderer *r,
+                 SDL_Surface* src,
+                 SDL_BlendMode bmode,
+                 uint32_t pixel_format):
+  _texture(nullptr),
+  _width(0),
+  _scale_w(0),
+  _height(0),
+  _scale_h(0),
+  _pixels(nullptr),
+  _pitch(0),
+  _format(pixel_format),
+  _access(SDL_TEXTUREACCESS_STATIC),
+  _bmode(bmode)
+
+{
+  set_surface(src, r); 
+}
+
 
 texture::texture(const std::string & file_path):
   _texture(nullptr),
@@ -40,29 +60,16 @@ texture::texture(const std::string & file_path):
   _pixels(nullptr),
   _pitch(0),
   _format(SDL_PIXELFORMAT_ABGR8888),
-  _access(SDL_TEXTUREACCESS_STREAMING),
+  _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(SDL_BLENDMODE_BLEND)
 {
   load(file_path);
 }
 
-texture::texture(SDL_Surface* src, SDL_TextureAccess access, SDL_BlendMode bmode):
-  _texture(nullptr),
-  _width(0),
-  _scale_w(0),
-  _height(0),
-  _scale_h(0),
-  _pixels(nullptr),
-  _pitch(0),
-  _format(SDL_PIXELFORMAT_ABGR8888),
-  _access(access),
-  _bmode(bmode)
-
-{
-  convert_surface(src);
-}
-
-texture::texture(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, uint32_t pixel_format):
+texture::texture(int w, int h,
+                 SDL_TextureAccess access,
+                 SDL_BlendMode bmode,
+                 uint32_t pixel_format):
   _texture(nullptr),
   _width(0),
   _scale_w(0),
@@ -74,28 +81,68 @@ texture::texture(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, ui
   _access(access),
   _bmode(bmode)
 {
-  blank(w, h, access, bmode);
+  blank(w, h, access, bmode, pixel_format);
 }
 
-void texture::set_texture(SDL_Texture * tx)
-{
-  release();
-  
-  _texture = tx;
-  SDL_SetTextureBlendMode(_texture, _bmode);
 
-  uint32_t fmt = 0;
-  int access = 0;
-  SDL_QueryTexture(tx, &fmt, &access, &_width, &_height);
+texture::texture(SDL_Surface* src,
+                 SDL_BlendMode bmode,
+                 bool convert_transparency)
+{
+  blank(src->w, src->h, SDL_TEXTUREACCESS_STREAMING, bmode);
+  set_pixels(src->pixels, src->pitch * src->h);
+  if (convert_transparency) {
+    uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
+    uint8_t r = 0, g = 0, b = 0;
+    SDL_GetRGB(pixel, src->format, &r, &g, &b);
+    replace_color(color(r, g, b, 255), color(0, 0, 0, 0));
+  }
+}
+
+void texture::set_texture(SDL_Texture *tx)
+{
+  if (tx == nullptr) {
+    SDL_Log("%s: null texture given", __METHOD_NAME__);
+    throw std::runtime_error("texture::set_texture - null texture given");
+  }
+
+  release();
+  _texture = tx;
+
+  SDL_QueryTexture(_texture, &_format, (int*)&_access, &_width, &_height);
+  SDL_SetTextureBlendMode(_texture, _bmode);
+}
+
+void texture::set_surface(SDL_Surface *src, SDL_Renderer *r)
+{
+  if (src == NULL) {
+    SDL_Log("%s: null surface given", __METHOD_NAME__);
+    throw std::runtime_error("texture::texture - null surface given");
+  }
+  if (r == NULL)
+    r = GM_GetRenderer();
+
+  SDL_Surface *converted = SDL_ConvertSurfaceFormat(src, _format, 0);
+  SDL_Texture *tx = SDL_CreateTextureFromSurface(r, converted);
+  if (tx == NULL) {
+    SDL_FreeSurface(converted);
+    throw sdl_exception();
+  }
+  SDL_FreeSurface(converted);
+  set_texture(tx);
 }
 
 void texture::blank(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode, uint32_t pixel_format)
 {
-  SDL_Texture * tx = GM_CreateTexture(w, h, access, pixel_format);
-  set_texture(tx);
+  release();
   _access = access;
-  _bmode = bmode;
   _format = pixel_format;
+  _bmode = bmode;
+  _texture = GM_CreateTexture(w, h, access, pixel_format);
+  if (_texture == NULL) {
+    throw sdl_exception();
+  }
+  SDL_SetTextureBlendMode(_texture, _bmode);
 }
 
 void texture::release()
@@ -113,70 +160,43 @@ texture::~texture()
 
 void texture::load(const fs::path & file_path)
 {
-  SDL_Surface* src = GM_LoadSurface(file_path.string());
-  convert_surface(src);
-
-  if (file_path.extension() != ".png") {
-    // convert pixels to transparent for non-PNG files
-    uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
-    uint8_t r = 0, g = 0, b = 0;
-    SDL_GetRGB(pixel, src->format, &r, &g, &b);
-    replace_color(color(r, g, b, 255), color(0, 0, 0, 0));
-  }
-  SDL_FreeSurface(src);
+  SDL_Surface *loaded = GM_LoadSurface(file_path.string());
+  set_surface(loaded);
+  SDL_FreeSurface(loaded);
 }
 
-rect texture::get_string_rect(const std::string& text, TTF_Font* font)
+texture * texture::copy_pixels()
 {
-  rect r(0, 0, 0, 0);
-  TTF_SizeText(font, text.c_str(), &r.w, &r.h);
-  return r;
+  if (_access != SDL_TEXTUREACCESS_STREAMING)
+    throw std::runtime_error("texture::copy_pixels - this texture is not SDL_TEXTUREACCESS_STREAMING");
+
+  lock();
+  texture * cp = new texture(_width, _height,
+    SDL_TEXTUREACCESS_STREAMING,
+    _bmode,
+    _format);
+  cp->set_pixels(_pixels, sizeof(_pixels));
+  unlock();
+
+  return cp;
 }
 
-void texture::convert_surface(SDL_Surface * s)
+void texture::set_pixels(void *pixels, size_t len)
 {
-  if (s == NULL) {
-    SDL_Log("%s - NULL surface to convert", __METHOD_NAME__);
-    throw std::runtime_error("NULL surface to convert");
+  if (_access != SDL_TEXTUREACCESS_STREAMING) {
+    throw std::runtime_error("texture::set_pixels - this texture is not SDL_TEXTUREACCESS_STREAMING");
   }
-  SDL_Surface* converted = SDL_ConvertSurfaceFormat(s, _format, 0);
-  set_surface(converted);
-  SDL_FreeSurface(converted);
+  lock();
+  memcpy(_pixels, pixels, len);
+  unlock();
 }
 
-void texture::load_text_solid(const std::string& text, ttf_font const * font, const color & c)
+void texture::clone(texture * other)
 {
-  convert_surface(TTF_RenderText_Solid(font->fnt(), text.c_str(), c));
-}
-
-void texture::load_text_blended(const std::string& text, ttf_font const * font, const color & c)
-{
-  convert_surface(TTF_RenderText_Blended(font->fnt(), text.c_str(), c));
-}
-
-void texture::set_surface(SDL_Surface* src)
-{
-  // we expect this surface to to be converted into our
-  // desired pixel format for current renderer
-
-  if (_access == SDL_TEXTUREACCESS_STREAMING) {
-    // init empty new texture canvas
-    blank(src->w, src->h, _access, _bmode);
-    // streaming texture has user-memory pixels
-    // copy them into the "_pixels" array
-    lock();
-    memcpy(_pixels, src->pixels, src->pitch * src->h);
-    //apply _pixles to the texture
-    unlock();
-  }
-  else if (_access == SDL_TEXTUREACCESS_STATIC) {
-    set_texture(SDL_CreateTextureFromSurface(GM_GetRenderer(), src));
-  }
-  else if (_access == SDL_TEXTUREACCESS_TARGET) {
-    SDL_Log("%s - texture with access type SDL_TEXTUREACCESS_TARGET cannot be loaded from surface",
-      __METHOD_NAME__);
-    throw std::runtime_error("Cannot load SDL_TEXTUREACCESS_TARGET texture from surface");
-  }
+  other->release();
+  other->_bmode = _bmode;
+  other->set_texture(_texture);
+  _texture = NULL;
 }
 
 void texture::lock()
@@ -260,41 +280,6 @@ void texture::render(SDL_Renderer* r, const rect & src, const rect & dst,
   //Render to screen
   if (SDL_RenderCopyEx(r, _texture, &src, &dst, angle, center, flip ) != 0)
     throw sdl_exception();
-}
-
-texture * texture::copy()
-{
-  lock();
-  texture * cp = new texture(_width, _height, _access, _bmode, _format); 
-  cp->set_pixels(_pixels);
-  unlock();
-
-  return cp;
-}
-
-void texture::resize(int dw, int dh)
-{
-  _scale_w += dw;
-  _scale_h += dh;
-}
-
-void texture::set_pixels(void * ptr)
-{
-  lock();
-  _pixels = ptr;
-  unlock();
-}
-
-void texture::move_texture(texture * other)
-{
-  other->release();
-  other->set_texture(_texture);
-  other->_width = _width;
-  other->_height = _height;
-  other->_bmode = _bmode;
-  other->_access = _access;
-  other->_format = _format;
-  _texture = NULL;
 }
 
 void texture::set_color_mod(const color & rgb)

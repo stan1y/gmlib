@@ -400,7 +400,7 @@ theme::pointer::pointer_type manager::get_pointer_type()
   UI Message implementation
   */
 message::message(const std::string & text, ttf_font const * f, const color & c, uint32_t timeout_ms):
-  control(texture::get_string_rect(text, f->fnt())),
+  control(f->get_text_rect(text)),
   _timeout_ms(timeout_ms)
 {
   reset(text, f, c, timeout_ms);
@@ -411,7 +411,7 @@ void message::reset(const std::string & text,  ttf_font const * f, const color &
   _timer.stop();
   set_visible(false);
   _text = text;
-  _tx.load_text_solid(_text, f, c);
+  _tx.set_surface(f->print_solid(_text, c));
   rect display = GM_GetDisplayRect();
 
   _pos.w = _tx.width();

@@ -3,11 +3,10 @@
 #include "GMData.h"
 
 #include <boost/filesystem.hpp>
+
 namespace fs = boost::filesystem;
 
 namespace ui {
-
-/** Frames Implementation **/
 
 theme::label_skin::label_skin(theme * t, const std::string & skin_name):
   base_skin(skin_name),
@@ -46,7 +45,16 @@ theme::label_skin::label_skin(theme * t, const std::string & skin_name):
   }
 }
 
-theme::container_skin::container_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
+theme::container_skin::container_skin(theme * t, const std::string & skin_name)
+  :base_skin(skin_name),
+  corner_top_left(nullptr),
+  corner_top_right(nullptr),
+  corner_bottom_left(nullptr),
+  corner_bottom_right(nullptr),
+  border_top(nullptr),
+  border_bottom(nullptr),
+  border_left(nullptr),
+  border_right(nullptr)
 {
   if (!t->get_data().has_key(skin_name)) {
     SDL_Log("container_skin::container_skin - failed to find frame with name \"%s\"", skin_name.c_str());
@@ -75,7 +83,17 @@ theme::container_skin::container_skin(theme * t, const std::string & skin_name):
   border_right = resources::get_texture(t->get_skin_resource(skin_name, "border-right.png"));
 }
 
-theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
+theme::button_skin::button_skin(theme * t, const std::string & skin_name)
+  :base_skin(skin_name),
+  left(nullptr),
+  right(nullptr),
+  center(nullptr),
+  left_hovered(nullptr),
+  right_hovered(nullptr),
+  center_hovered(nullptr),
+  left_pressed(nullptr),
+  right_pressed(nullptr),
+  center_pressed(nullptr)
 {
   if (!t->get_data().has_key(skin_name)) {
     SDL_Log("label_skin::label_skin - failed to find frame with name \"%s\"", skin_name.c_str());
@@ -135,7 +153,11 @@ theme::button_skin::button_skin(theme * t, const std::string & skin_name):base_s
   }
 }
 
-theme::push_button_skin::push_button_skin(theme * t, const std::string & skin_name):base_skin(skin_name)
+theme::push_button_skin::push_button_skin(theme * t, const std::string & skin_name)
+  :base_skin(skin_name),
+  idle(nullptr),
+  disabled(nullptr),
+  pressed(nullptr)
 {
   idle = resources::get_texture(t->get_skin_resource(skin_name, "idle.png"));
   if (t->skin_resource_exists(skin_name, "pressed.png")) {
