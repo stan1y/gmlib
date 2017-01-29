@@ -118,6 +118,17 @@ public:
   void set_halign(const h_align & ha) { _ha = ha; }
   void set_valign(const v_align & va) { _va = va; }
 
+  /* box contents padding */
+  void set_padding(uint32_t pad) 
+  { 
+    _pad.top = pad; 
+    _pad.left = pad;
+    _pad.bottom = pad;
+    _pad.right = pad;
+  }
+  void set_padding(padding & pad) { _pad = pad; }
+  const padding & get_padding() { return _pad; }
+
   // render this box contents
   virtual void draw(SDL_Renderer* r, const rect & dst);
 
