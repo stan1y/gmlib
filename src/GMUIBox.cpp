@@ -476,13 +476,14 @@ void box::update_children()
         case h_align::left:
           if (last_pos.x == 0)
             last_pos.x = area.x + _pad.left;
-          pos.x = last_pos.x + _gap;
+          pos.x = last_pos.x + last_pos.w + _gap;
           break;
 
         case h_align::right:
           if (last_pos.x == 0)
             last_pos.x = area.x + area.w - _pad.right;
           pos.x = last_pos.x - _gap - pos.w;
+
           break;
         };
       }
