@@ -39,7 +39,7 @@ public:
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     
     // populate list panel with some items
-    ui::box * list = _panel_from_json->find_child<ui::box>("vbox_list");
+    ui::box * list = _panel_from_json->find_child<ui::box>("list");
     for(int i = 0; i < 25; ++i) {
       ui::label * lbl = new ui::label(rect(0, 0, list->pos().w, 15));
       std::stringstream ss;
@@ -55,6 +55,7 @@ public:
     auto pnl = new ui::panel(rect(50, 100, 200, 150));
     pnl->set_halign(ui::h_align::center);
     pnl->set_valign(ui::v_align::middle);
+    pnl->set_padding(2);
     
     auto lbl = new ui::label(rect(200, 0, 80, 20));
     lbl->set_halign(ui::h_align::center);
@@ -64,7 +65,7 @@ public:
     lbl->set_text("The Label with text in VBox");
     pnl->add_child(lbl);
 
-    auto btn = new ui::btn(rect(0, 0, 0, 40));
+    auto btn = new ui::btn(rect(0, 0, 100, 40));
     btn->set_idle_color(color::red());
     btn->set_highlight_color(color::magenta());
     btn->set_halign(ui::h_align::center);
@@ -74,8 +75,8 @@ public:
     
     btn->mouse_up += boost::bind(&demo_screen::on_btn_clickme_clicked, this, _1);
     
-    auto input = new ui::text_input(rect(0, 0, 200, 40));
-    input->set_padding(4);
+    auto input = new ui::text_input(rect(0, 0, 150, 20));
+    input->set_padding(2);
     input->set_text("alphanum text input");
     pnl->add_child(input);
     

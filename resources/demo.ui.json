@@ -4,43 +4,35 @@
 	"panel_style": "toolbox",
 
 	"type": "vbox", 
-	"style": "center",
-	"margin": 2,
-	"size": [300, 200],
+	"v_align": "top",
 
+	"size": [300, 200],
 	"position": "center",
 
 	"children": [{
-		"id": "box_vbox",
-		"class": "box",
-
-		"type": "vbox",
-		"style": "center"
-	}, {
-		"id": "vbox_list",
+		"id": "list",
 		"class": "box",
 		"type": "vbox",
-		"style": "fill",
+		"v_align": "top",
 
 		"scroll": "right",
 		"scrollbar_size": 10,
-		"margin": 2,
 
-		"size": [288, 140]
+		"size": [280, 130]
 	}, {
-		"id": "hbox_buttons",
+		"id": "buttons",
 		"class": "box",
 		"type": "hbox",
-		"style": "center",
-		"margin": 5,
+		"h_align": "left",
+		"padding": [10, 5, 10, 5],
 
-		"size": [288, 50],
+		"size": [280, 60],
 		
 		"children": [{
 			"id": "btn_one",
 			"class": "btn",
 			"size": [100, 40],
-			"text": "The First"
+			"text": "First"
 		}, {
 			"id": "btn_two",
 			"class": "sbtn",
