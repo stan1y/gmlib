@@ -148,7 +148,7 @@ void manager::render(SDL_Renderer* r)
   }
 }
 
-void manager::update()
+void manager::on_update(screen *)
 {
   // count idle miliseconds
   g_usr_idle_cnt += GM_GetFrameTicks();

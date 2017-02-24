@@ -35,10 +35,15 @@ ifneq ("$(DEBUG)", "")
 endif
 
 # User defined paths to includes
-ifneq ("$(PYTHON_INCLUDE)", "")
-    CFLAGS +=-I$(PYTHON_INCLUDE)
+ifneq ("$(PYTHON_SRC)", "")
+    CFLAGS += -I$(PYTHON_SRC)/Include
 else
-    $(error PYTHON_INCLUDE is not set)
+    $(error PYTHON_SRC is not set)
+endif
+ifneq ("$(ZLIB_SRC)", "")
+    CFLAGS += -I$(ZLIB_SRC)
+else
+    $(error ZLIB_SRC is not set)
 endif
 ifneq ("$(BOOST_INCLUDE)", "")
     CFLAGS +=-I$(BOOST_INCLUDE)
@@ -72,11 +77,17 @@ else
 endif
 
 # User defined paths to libraries
-ifneq ("$(PYTHON_LIB)", "")
-    LDFLAGS +=-L$(PYTHON_LIB) \
+ifneq ("$(PYTHON_SRC)", "")
+    LDFLAGS +=-L$(PYTHON_SRC) \
               -lpython3.6m
 else
-    $(error  PYTHON_LIB is not set)
+    $(error  PYTHON_SRC is not set)
+endif
+ifneq ("$(ZLIB_SRC)", "")
+    LDFLAGS +=-L$(ZLIB_SRC) \
+              -lz
+else
+    $(error  PYTHON_SRC is not set)
 endif
 ifneq ("$(BOOST_LIB)", "")
     LDFLAGS +=-L$(BOOST_LIB) \

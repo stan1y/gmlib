@@ -432,7 +432,7 @@ public:
   const int           fps_cap() const;
   const uint32_t      window_flags() const;
   const uint32_t      renderer_flags() const;
-  const std::string   python_home() const;
+  const std::string   python_path() const;
   const std::string   ui_theme() const;
 
   // list of assets roots used
@@ -503,7 +503,7 @@ public:
     component(screen * s):_parent_screen(s) {}
     virtual ~component() {};
     virtual void render(SDL_Renderer* r) = 0;
-    virtual void update() = 0;
+    virtual void on_update(screen *) = 0;
     virtual void on_event(SDL_Event* ev) = 0;
     screen * get_screen() { return _parent_screen; }
 
@@ -532,7 +532,7 @@ public:
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
-      (*it)->update();
+      (*it)->on_update(this);
     }
   };
   

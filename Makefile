@@ -1,6 +1,7 @@
 # GMLib Makefile
 
 include flags.make
+include python.make
 
 GMLIB=libgm
 VERSION=1.0
@@ -46,7 +47,7 @@ shared: $(OBJDIR) $(S_OBJS)
 
 objects: $(OBJDIR) $(S_OBJS)
 
-all: static
+all: python static 
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)/src
@@ -58,13 +59,18 @@ install:
 	install -m 555 $(GMLIB).$(STATIC_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX).$(VERSION)
 	install -m 555 $(GMLIB).$(SHARED_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(SHARED_SUFFIX).$(VERSION)
 	install -m 644 *.h $(INCLUDE_DIR)
-	ln -s $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX).$(VERSION) $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX)
-	ln -s $(INSTALL_DIR)/$(GMLIB).so.$(VERSION) $(INSTALL_DIR)/$(GMLIB).so
+	@ln -s $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX).$(VERSION) $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX)
+	@ln -s $(INSTALL_DIR)/$(GMLIB).so.$(VERSION) $(INSTALL_DIR)/$(GMLIB).so
 
 uninstall:
-	rm -f $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX.$(VERSION)
-	rm -f $(INSTALL_DIR)/$(GMLIB).$(SHARED_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(SHARED_SUFFIX.$(VERSION)
-	rm -rf $(INCLUDE_DIR)
+	@rm -f $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(STATIC_SUFFIX.$(VERSION)
+	@rm -f $(INSTALL_DIR)/$(GMLIB).$(SHARED_SUFFIX) $(INSTALL_DIR)/$(GMLIB).$(SHARED_SUFFIX.$(VERSION)
+	@rm -rf $(INCLUDE_DIR)
+
+python:
+	@rm -f python3.6m.zip
+	@cd $(PYTHON_LIB)/Lib; zip -r python3.6m.zip $(GM_EMBEDDED_MODULES)
+	@mv $(PYTHON_LIB)/Lib/python3.6m.zip python3.6m.zip
 
 $(OBJDIR)/%.o: %.cpp
 	$(CXX) $(CFLAGS) -c $< -o $@

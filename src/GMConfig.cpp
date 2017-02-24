@@ -10,7 +10,7 @@ struct config_private : public data {
   uint32_t fps_cap;
   std::string driver_name;
   strings_list assets;
-  std::string python_home;
+  std::string python_path;
   std::string ui_theme;
   bool fullscreen;
 
@@ -82,9 +82,9 @@ const uint32_t config::renderer_flags() const
   return g_config->renderer_flags;
 }
 
-const std::string config::python_home() const
+const std::string config::python_path() const
 {
-  return g_config->python_home;
+  return g_config->python_path;
 }
 
 const std::string config::ui_theme() const
@@ -134,21 +134,21 @@ int config::load(const std::string& cfg_file)
     g_config->load(cfg_file);
     
     data::json *a = NULL;
-    char *driver = NULL, *python_home = NULL, *ui_theme = NULL;
+    char *driver = NULL, *python_path = NULL, *ui_theme = NULL;
     g_config->unpack("{s:i s:i s:s s?:b s?:s s?:o s?:s}",
         "display_width",    &g_config->display_width,
         "display_height",   &g_config->display_height,
         "driver",           &driver,
         "fullscreen",       &g_config->fullscreen,
-        "python_home",      &python_home,
+        "python_path",      &python_path,
         "assets",           &a,
         "ui_theme",         &ui_theme);
     
     //copy strings
     if (driver)
       g_config->driver_name = std::string(driver);
-    if (python_home)
-      g_config->python_home = std::string(python_home);
+    if (python_path)
+      g_config->python_path = std::string(python_path);
     if (ui_theme)
       g_config->ui_theme = std::string(ui_theme);
 

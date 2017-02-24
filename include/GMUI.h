@@ -249,7 +249,7 @@ public:
   const theme & get_theme() { return _theme; }
 
   /* screen::component protocol overrides */
-  virtual void update();
+  virtual void on_update(screen *);
   virtual void on_event(SDL_Event* ev);
   virtual void render(SDL_Renderer* r);
 

@@ -104,32 +104,16 @@ script::script_exception::script_exception(const char * msg):
 
 void initialize(const config * cfg) 
 {
+  Py_NoSiteFlag = 1;
 
-  if (cfg->python_home().size() > 0) {
-    fs::path python_home = cfg->python_home();
-    if (!fs::is_directory(python_home)) {
-      throw std::runtime_error("Python home is not a directory");
-    }
-
-#ifdef GM_DEBUG
-    SDL_Log("%s - python home is \"%s\"",
-      __METHOD_NAME__,
-      fs::absolute(python_home).string().c_str() );
-#endif
-
-    wchar_t * wpython_home = Py_DecodeLocale(python_home.string().c_str(), NULL);
-    Py_SetPythonHome(wpython_home);
+  if (cfg->python_path().size() > 0) {
+    fs::path python_path = cfg->python_path();
+    wchar_t * wpython_path = Py_DecodeLocale(python_path.string().c_str(), NULL);
+    Py_SetPath(wpython_path);
   }
-
-  //auto python_lib = python_home / "lib";
-  //wchar_t * wpython_lib = Py_DecodeLocale(python_lib.string().c_str(), NULL);
-  //Py_SetPath(wpython_lib);
-
-  Py_SetStandardStreamEncoding("utf-8", "utf-8");
+  
   Py_Initialize();
-#ifdef GM_DEBUG
   SDL_Log("%s - ready %s", __METHOD_NAME__, Py_GetVersion());
-#endif
 }
 
 void shutdown()
