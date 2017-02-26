@@ -1,5 +1,5 @@
 # GMLib Makefile
-
+include buildenv
 include flags.make
 include python.make
 
@@ -40,10 +40,12 @@ endif
 S_OBJS=	$(S_SRC:%.cpp=$(OBJDIR)/%.o)
 
 static: $(OBJDIR) $(S_OBJS)
-	ar rcs $(GMLIB).a $(S_OBJS)
+	@ar rcs $(GMLIB).a $(S_OBJS)
+	@echo "AR $(GMLIB).a"
 
 shared: $(OBJDIR) $(S_OBJS)
-	$(CXX) -shared $(LDFLAGS) $(S_OBJS) -o $(GMLIB).$(SHARED_SUFFIX)
+	@$(CXX) -shared $(LDFLAGS) $(S_OBJS) -o $(GMLIB).$(SHARED_SUFFIX)
+	@echo "CC -shared $(GMLIB).$(SHARED_SUFFIX)"
 
 objects: $(OBJDIR) $(S_OBJS)
 
@@ -73,7 +75,8 @@ python:
 	@mv $(PYTHON_LIB)/Lib/python3.6m.zip python3.6m.zip
 
 $(OBJDIR)/%.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+	@$(CXX) $(CFLAGS) -c $< -o $@
+	@echo "CC $<"
 
 clean:
 	find . -type f -name \*.o -exec rm {} \;
