@@ -6,7 +6,6 @@
 #include "GMUIButton.h"
 #include "GMUITextInput.h"
 #include "GMUICombo.h"
-#include "GMUIPushButton.h"
 
 /** User Idle Counter **/
 
@@ -27,10 +26,31 @@ static std::mutex g_message_mx;
 
 /** Manager **/
 
-void manager::initialize(rect & available_rect, const std::string & theme_name)
+void manager::initialize(rect & available_rect, const resources::resource_id & theme_descr_res)
+{
+	const data * descr = resources::get_data(theme_descr_res);
+	
+	return manager::init(available_rect,
+		  descr->get<resources::resource_id>("tileset"),
+			descr->get<resources::resource_id>("font"),
+			descr->get<int>("font_size"),
+			descr->get<color>("color_idle"),
+			descr->get<color>("color_highlight"),
+		  descr->get<color>("color_back"));
+}
+
+void manager::init(rect & available_rect, 
+ 									 const resources::resource_id & theme_tileset,
+ 									 const std::string & theme_font,
+	                 const int theme_font_size,
+ 									 const color color_idle,
+ 									 const color color_highlight,
+ 									 const color color_back)
 {
   if (g_manager == NULL) {
-    g_manager = new manager(available_rect, theme_name);
+    g_manager = new manager(available_rect,
+			theme_tileset, theme_font, theme_font_size, 
+			color_idle, color_highlight, color_back);
   }
   else {
     g_manager->set_pos(available_rect);
@@ -52,13 +72,24 @@ const SDL_Event* manager::current_event()
   return NULL;
 }
 
-manager::manager(rect & available_rect, const std::string & theme_name):
+manager::manager(rect & available_rect, 
+								 const resources::resource_id & tileset,
+								 const std::string & font_file,
+								 const int font_size,
+	               const color & color_idle, 
+	               const color & color_highlight,
+								 const color & color_back):
   control(),
   screen::component(NULL),
   _hovered_cnt(NULL),
   _focused_cnt(NULL),
   _cur_event(NULL),
-  _theme(theme_name)
+  _theme_tileset(tileset),
+	_theme_font(font_file),
+	_theme_font_size(font_size),
+	_theme_color_idle(color_idle),
+	_theme_color_highlight(color_highlight),
+	_theme_color_back(color_back)
 {
   set_pos(available_rect);
 }
@@ -91,14 +122,14 @@ void manager::set_focused_control(control * target)
   if (target == NULL)
     target = this;
   if (_focused_cnt != NULL) {
-#ifdef UI_DEBUG_HOVER
+#ifdef GM_DEBUG
     SDL_Log("manager::set_focused_control - focus lost id: %s", _focused_cnt->identifier().c_str());
 #endif
     _focused_cnt->focus_lost(_focused_cnt);
   }
   _focused_cnt = target;
   if (_focused_cnt != NULL) {
-#ifdef UI_DEBUG_HOVER
+#ifdef GM_DEBUG
     SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
 #endif
     _focused_cnt->focused(_focused_cnt);
@@ -113,7 +144,7 @@ void manager::set_hovered_control(control * target)
   control * prev = _hovered_cnt;
   _hovered_cnt = target;
   if (prev != NULL) {
-#ifdef UI_DEBUG_HOVER
+#ifdef GM_DEBUG
       SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s", 
       prev->identifier().c_str(),
       _pointer.tostr().c_str(),
@@ -123,7 +154,7 @@ void manager::set_hovered_control(control * target)
   }
   // setup new
   if (_hovered_cnt != NULL) {
-#ifdef UI_DEBUG_HOVER
+#ifdef GM_DEBUG
     SDL_Log("manager::set_hovered_control - hover gain id: %s at %s", 
       _hovered_cnt->identifier().c_str(),
       _hovered_cnt->get_absolute_pos().tostr().c_str()
@@ -139,13 +170,6 @@ void manager::render(SDL_Renderer* r)
 {
   // call UI protocol's render
   control::draw(r, get_absolute_pos());
-
-  // render pointer of theme supports
-  if (_theme.ptr.tx_normal.is_valid()) {
-    point pnt;
-    SDL_GetMouseState(&pnt.x, &pnt.y);
-    _theme.draw_pointer(r, rect(0, 0, 16, 16) + pnt);
-  }
 }
 
 void manager::on_update(screen *)
@@ -264,18 +288,9 @@ control* create_control(const std::string type_id, rect & pos)
   if (type_id == "label") {
     return new label(pos);
   }
-  if (type_id == "btn") {
-    return new btn(pos);
+  if (type_id == "button") {
+    return new button(pos);
   }
-  if (type_id == "sbtn") {
-    return new sbtn(pos);
-  }
-  if (type_id == "lbtn") {
-    return new lbtn(pos);
-  }
-  /*if (type_id == "push_btn") {
-    return new push_btn(pos, );
-  }*/
   if (type_id == "input") {
     return new text_input(pos);
   }
@@ -299,6 +314,7 @@ control * control::find_child(const std::string & id)
     if (child)
       return child;
   }
+  
   return NULL;
 }
 
@@ -386,16 +402,6 @@ control* manager::build(data const * d)
   return inst;
 }
 
-void manager::set_pointer(theme::pointer::pointer_type t)
-{
-  _theme.ptr_type = t;
-}
-
-theme::pointer::pointer_type manager::get_pointer_type()
-{
-  return _theme.ptr_type;
-}
-
 /**
   UI Message implementation
   */
@@ -434,7 +440,7 @@ void message::update()
   uint32_t depleted = ticked / step;
   if (depleted >= 255) {
     _timer.stop();
-#ifdef GM_DEBUG_UI
+#ifdef GM_DEBUG
     SDL_Log("message::update() - self-destruct msg \"%s\"", _text.c_str());
 #endif
     //self-destruct when alpha depleted
@@ -451,7 +457,7 @@ void message::show()
 {
   set_visible(true);
   _timer.start();
-#ifdef GM_DEBUG_UI
+#ifdef GM_DEBUG
   SDL_Log("message::show() - show message with text \"%s\" at %s", _text.c_str(), _pos.tostr().c_str());
 #endif
 }
@@ -459,8 +465,8 @@ void message::show()
 void message::alert(const std::string & text, uint32_t timeout_ms)
 {
   alert_ex(text, 
-    current_theme().font_text, 
-    current_theme().color_highlight,
+    ui::manager::instance()->get_font(), 
+    ui::manager::instance()->get_color_highlight(),
     timeout_ms);
 }
 

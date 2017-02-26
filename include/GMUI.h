@@ -5,7 +5,7 @@
 #include "GMEventHandler.h"
 #include "GMTexture.h"
 #include "GMData.h"
-#include "GMUITheme.h"
+#include "RESLib.h"
 
 namespace ui {
 
@@ -45,6 +45,7 @@ public:
   /* Create new control */
   control(const rect & pos);
   control(const rect & pos, const std::string id);
+  control(const rect & pos, const std::string id, resources::resource_id & theme_id);
   virtual ~control();
   
   /* Returns string name of this control type */
@@ -93,7 +94,7 @@ public:
 
   /* Get/Set parent control */
   virtual void set_parent(control* parent);
-  virtual control* parent() { return _parent; }
+  virtual control* parent() const { return _parent; }
 
   /* Get the absolute position of a visibile part (for rendering & collisions) of the control. 
      
@@ -104,7 +105,7 @@ public:
      would be relative position on the offscreen texture.
      Visible part of this offset texture is returned by the get_scrolled_rect() method
   */
-  virtual rect get_absolute_pos();
+  virtual rect get_absolute_pos() const;
 
   /* UI Control offscreen rendering support for
      children controls. If this control is a host 
@@ -113,7 +114,7 @@ public:
      offset texture. Children with enabled scroll lock
      are not affected by the 
   */
-  virtual rect get_scrolled_rect() { return _scrolled_rect; }
+  virtual rect get_scrolled_rect() const { return _scrolled_rect; }
   
   /* Get/Set control relative position on parent */
   const rect& pos() const { return _pos; }
@@ -190,9 +191,7 @@ private:
   * void ui::pop_front(control *)
   * void ui::push_back(control *
   * T get_hovered_control<?>()
-  * set_pointer(theme::pointer::pointer_type)
-  * theme::pointer::pointer_type get_pointer_type()
-
+  
   Example:
     ui::manager::initialze(rect(0, 0, 640, 480));
     data d("ui/example.ui.json");
@@ -208,8 +207,15 @@ public:
   static const int ui_debug = 1;
 
   /* Initialize UI subsystem*/
-  static void initialize(rect & available_rect, 
-    const std::string & theme_name = config::current()->ui_theme());
+  static void initialize(rect & available_rect, const resources::resource_id & theme_descr_res);
+  static void init(rect & available_rect,
+                   const resources::resource_id & tileset,
+                   const std::string & font = "default.ttf",
+                   const int font_size = 12,
+                   color color_idle = color::black(),
+                   color color_highlight = color::black(),
+                   color color_back = color::white());
+                         
 
   /* Pointer to a currently processed event (during event handlers execution) */
   static const SDL_Event* current_event();
@@ -222,12 +228,6 @@ public:
   
   /* Desktop absolute position of the mouse pointer */
   const point& get_pointer() const { return _pointer; }
-
-  /* Set pointer type */
-  void set_pointer(theme::pointer::pointer_type t);
-
-  /* Get current pointer type */
-  theme::pointer::pointer_type get_pointer_type();
 
   /* Pointer to top-level hovered control */
   control* get_hovered_control() { return _hovered_cnt; }
@@ -245,8 +245,16 @@ public:
   /** Puts direct child at the begining of the rendering order */
   void push_back(control * c);
 
-  /** UI Theme reference */
-  const theme & get_theme() { return _theme; }
+  /** UI Theme API */
+  const texture * get_theme() { return resources::get_texture(_theme_tileset); }
+  const std::string & get_theme_resource() { return _theme_tileset; }
+  const ttf_font * get_font() { return resources::get_font(_theme_font, _theme_font_size); }
+  const color get_color_idle() { return _theme_color_idle; }
+  void set_color_idle(color idle) { _theme_color_idle = idle; }
+  const color get_color_highlight() { return _theme_color_highlight; }
+  void set_color_highlight(color highlight) { _theme_color_highlight = highlight; }
+  const color get_color_back() { return _theme_color_back; }
+  void set_color_back(color back) { _theme_color_back = back; }
 
   /* screen::component protocol overrides */
   virtual void on_update(screen *);
@@ -257,7 +265,13 @@ public:
   virtual std::string tostr() const;
 
 private:
-  manager(rect &  available_rect, const std::string & theme_name);
+  manager(rect &  available_rect,
+    const resources::resource_id & theme_tileset,
+    const std::string & theme_font, const int theme_font_size,
+    const color & color_idle,
+    const color & color_highlight,
+    const color & color_back);
+  
   void set_hovered_control(control * target);
   void set_focused_control(control * target);
 
@@ -278,8 +292,14 @@ private:
   SDL_Event* _cur_event;
   sdl_mutex _cur_event_mx;
 
-  // theme setup
-  theme _theme;
+  // Theme settings
+  resources::resource_id _theme_tileset;
+  std::string _theme_font;
+  int _theme_font_size;
+  color _theme_color_idle;
+  color _theme_color_highlight;
+  color _theme_color_back;
+  
 };
 
 
@@ -332,19 +352,7 @@ T * get_hovered_control()
   return dynamic_cast<T*> (c);
 }
 
-/* Set pointer type */
-static void set_pointer(theme::pointer::pointer_type t)
-{
-  return manager::instance()->set_pointer(t);
-}
-
-/* Get current pointer type */
-static theme::pointer::pointer_type get_pointer_type()
-{
-  return manager::instance()->get_pointer_type();
-}
-
-static const theme & current_theme()
+static const texture * current_theme()
 {
   return ui::manager::instance()->get_theme();
 }
