@@ -110,7 +110,6 @@ void initialize(const strings_list & given)
     }
 
     if (fs::is_directory(assets_path)) {
-      printf ("Loading resources @ %s\n", assets_path.string().c_str());
       load_assets_directory(assets_path);
       printf("\n");
     }
@@ -120,7 +119,7 @@ void initialize(const strings_list & given)
     }
   }
   
-  printf(" %zu files collected\n", g_assets_root.size());
+  SDL_Log("%s: loaded %zu resources", __METHOD_NAME__, g_assets_root.size());
 }
 
 bool find_file(const fs::path & filename, fs::path & output)

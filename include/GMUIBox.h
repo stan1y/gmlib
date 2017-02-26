@@ -2,6 +2,8 @@
 #define _GMUI_BOX_H_
 
 #include "GMUI.h"
+#include "GMUIFrame.h"
+#include "GMUIButton.h"
 
 namespace ui {
 
@@ -22,64 +24,22 @@ public:
     Box scrollbar
   */
   typedef enum {
-    scrollbar_hidden = 0,
-    scrollbar_right  = 1,
-    scrollbar_bottom = 2,
-  } scrollbar_type;
-
-  class scrollbar : public control {
-  public:
-    static const int scroll_speed = 20;
-    typedef enum {
-      stop = 0,
-      start = 1,
-      moving = 2
-    } cursor_drag_state;
-
-    scrollbar(box * container, rect pos,
-      /* horizontal or vertical */
-      scrollbar_type type);
-
-    virtual std::string get_type_name() const { return "scrollbar"; }
-
-    void set_type(scrollbar_type t) { _type = t; }
-    scrollbar_type type() const { return _type; }
-    
-    // get/set state of the scrollbar cursor
-    const cursor_drag_state get_state() { return _drag; }
-    void set_state(cursor_drag_state s);
-
-    // returns position of the scrollbar cursor rect on the box
-    // with relation to the scrolled area and total size of children_rect
-    rect get_cursor_rect(const rect & children_rect) const;
-
-    virtual void render(SDL_Renderer * r, const rect & dst);
-    virtual void update();
-
-    const theme::label_skin * get_skin()
-    {
-      return dynamic_cast<const theme::label_skin*> (current_theme().get_skin("scrollbar"));
-    }
-
-  private:
-    scrollbar_type _type;
-    cursor_drag_state _drag;
-    box * _container; /* a parent of box class */
-
-    // colors 
-    color _color_idle;
-    color _color_highlight;
-    color _color_back;
-
-    // scrollbar event handlers
-    void on_mouse_up(control * target);
-    void on_mouse_down(control * target);
-    void on_mouse_move(control * target);
-    void on_mouse_wheel(control * target);
-
-    
-  };
-
+    scrollbar_hidden     = 0x000,
+    scrollbar_vertical   = 0x001,
+    scrollbar_horizontal = 0x010,
+    scrollbar_both       = scrollbar_vertical | scrollbar_horizontal,
+      
+  } scroll_type;
+  
+  static const int scroll_speed = 20;
+  
+  typedef enum {
+    stop   = 0,
+    start  = 1,
+    vdrag  = 2,
+    hdrag  = 3,
+  } scroll_drag_state;
+  
   /* Public constructor of a new box container of given type */
   box(const rect & pos,
     const box_type & t = box::vbox,
@@ -93,23 +53,40 @@ public:
 
   virtual ~box() 
   {
-    if (_scroll != NULL) {
-      delete _scroll;
+    if (_vscroll != nullptr) {
+      remove_child(_vscroll);
+      ui::destroy(_vscroll);
+    }
+    if (_hscroll != nullptr) {
+      remove_child(_hscroll);
+      ui::destroy(_hscroll);
     }
   }
 
-  /* skin of this box */
-  virtual const theme::container_skin * get_skin() { return theme::container_skin::dummy(); }
-
   /* if this box displays scroll bar */
-  bool is_scrollbar_visible() 
+  bool is_scrollbar_hidden() 
   { 
-    return (sbar() != scrollbar_type::scrollbar_hidden);
+    return (_scroll_type & scroll_type::scrollbar_hidden ? true : false);
   }
+  
+  // scrollbar event handlers
+  void on_scroll_mouse_up(control * target);
+  void on_scroll_mouse_down(control * target);
+  void on_scroll_mouse_move(control * target);
+  void on_scroll_mouse_wheel(control * target);
+  
+  void set_scroll_type(scroll_type t, int size);
+  scroll_type get_scroll_type() const { return _scroll_type; }
+  int get_scroll_size() const { return _scroll_size; }
+  
+  // get/set state of the scrollbar cursor
+  const scroll_drag_state get_scroll_state() { return _scroll_state; }
+  void set_scroll_state(scroll_drag_state s);
 
-  /* get and set scrollbar state for this box */
-  scrollbar_type sbar() { return (_scroll == NULL ? scrollbar_type::scrollbar_hidden : _scroll->type()); }
-  void set_sbar(scrollbar_type t, uint32_t ssize);
+  // returns position of the scrollbar cursor rect on the box
+  // with relation to the scrolled area and total size of children_rect
+  rect get_vscroll_rect() const;
+  rect get_hscroll_rect() const;
 
   /* get and set box alignment setup */
   const h_align & get_halign() const { return _ha; }
@@ -129,6 +106,8 @@ public:
   void set_padding(padding & pad) { _pad = pad; }
   const padding & get_padding() { return _pad; }
 
+  virtual void update();
+  
   // render this box contents
   virtual void draw(SDL_Renderer* r, const rect & dst);
 
@@ -148,7 +127,7 @@ public:
   virtual void load(const data &);
 
   /* returns scrolled position for children of this control to draw */
-  virtual rect get_scrolled_rect() { return _scrolled_rect; }
+  virtual rect get_scrolled_rect() const { return _scrolled_rect; }
   
   // scroll box width given delta pixels
   void do_scroll(int dx, int dy);
@@ -174,15 +153,15 @@ protected:
   void on_child_wheel(control * target);
   void on_box_wheel(control * target);
 
-  // box settings
+  /* Box settings */
   box_type _type;
-  // child allignment in a box
+  
   // h_align effective for vbox
   h_align _ha;
   // v_align effective for hbox
   v_align _va;
 
-  // body texture (children's render target)
+  // offscreen render target texture for children
   texture _body;
   bool _dirty;
 
@@ -194,8 +173,12 @@ protected:
   // both for vertical and horizontal layout
   int _gap;
   
-  // scroll control
-  scrollbar * _scroll;
+  // scroll controls
+  button * _vscroll;
+  button * _hscroll;
+  scroll_type _scroll_type;
+  int _scroll_size;
+  scroll_drag_state _scroll_state;
 
   // box selection
   control * _selected_ctl;
@@ -204,17 +187,9 @@ protected:
 /**
   UI Panel: Themed box
 */
-class panel: public box {
+class panel: public box, public tileframe {
 public:
-  typedef enum {
-    dialog   = 1,
-    toolbox = 2,
-    group   = 3,
-    window  = 4
-  } panel_style;
-
   panel(const rect & pos, 
-        const panel_style & ps = panel_style::dialog, 
         const box_type & t = box::vbox,
         const h_align & ha = h_align::center, 
         const v_align & ba = v_align::top, 
@@ -224,40 +199,10 @@ public:
 
   virtual std::string get_type_name() const { return "panel"; }
 
-  color get_background_color() { return _color_back; }
-  void set_background_color(const color & c) { _color_back = c; }
-
   virtual void draw(SDL_Renderer* r, const rect & dst);
   virtual void load(const data &);
 
-  const theme::container_skin * get_skin() {
-    switch (_ps) {
-      case panel_style::dialog:
-        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("dialog")); 
-      case panel_style::group:
-        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("group")); 
-      case panel_style::toolbox:
-        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("toolbox")); 
-      case panel_style::window:
-        return dynamic_cast<const theme::container_skin*>(current_theme().get_skin("window"));
-      default:
-        SDL_Log("panel::get_skin - unknown panel style %d", _ps);
-        throw std::runtime_error("Uknown panel style");
-        break;
-    };
-    
-  }
-
-  /* get and set panel style */
-  const panel_style get_panel_style() const { return _ps; }
-  void set_panel_style(const panel_style & ps)
-  { 
-    _ps = ps; 
-    set_background_color(get_skin()->color_back);
-  }
-
 private:
-  panel_style _ps;
   color _color_back;
 };
 

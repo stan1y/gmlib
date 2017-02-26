@@ -14,7 +14,7 @@ combo::combo(const rect & pos,
   _expand_on_hover(false),
   _max_box_height(max_box_height),
   _item_height(item_height),
-  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1), get_skin()->color_back))
+  _area(new combo::area(rect(pos.x, pos.y + pos.h, pos.w, 1)))
 { 
   _area->set_identifier( identifier() + std::string("_area") );
   _area->set_visible(false);
@@ -56,8 +56,8 @@ void combo::resize_area()
     SDL_Log("area size %d, %d", _area->pos().w, _area->pos().h);
   }
   else {
-    // enable scrolls
-    _area->set_sbar(box::scrollbar_right, 10);
+    // enable vscroll for combo items area
+    _area->set_scroll_type(box::scroll_type::scrollbar_vertical, 10);
   }
 }
   
@@ -98,15 +98,6 @@ void combo::load(const data & d)
 
   if (d.has_key("max_box_height")) {
     _max_box_height = d["max_box_height"].value<int>();
-  }
-  if (d.has_key("area_color")) {
-    if (d["area_color"].is_value_string()) {
-      std::string sclr = d["area_color"].value<std::string>();
-      _area->set_back_color(color::from_string(sclr));
-    }
-    if (d["area_color"].is_value_array()) {
-      _area->set_back_color(d["area_color"].value<color>());
-    }
   }
 
   if (d.has_key("items")) {
@@ -177,9 +168,7 @@ void combo::draw(SDL_Renderer* r, const rect & dst)
 
 void combo::area::draw(SDL_Renderer* r, const rect & dst)
 {
-  _back.apply(r);
-  SDL_RenderFillRect(r, &dst);
-  
+	draw_frame(r, 0, 0, dst, true, true);
   box::draw(r, dst);
 }
 

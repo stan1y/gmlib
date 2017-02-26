@@ -113,7 +113,7 @@ void initialize(const config * cfg)
   }
   
   Py_Initialize();
-  SDL_Log("%s - ready %s", __METHOD_NAME__, Py_GetVersion());
+  SDL_Log("%s: initialized python runtime %s", __METHOD_NAME__, Py_GetVersion());
 }
 
 void shutdown()

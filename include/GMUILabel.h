@@ -140,10 +140,6 @@ public:
   const bool is_focused() const { return _focused; }
   const bool is_pressed() const { return _pressed; }
 
-  const theme::label_skin * get_skin() const { 
-    return dynamic_cast<const theme::label_skin*>(current_theme().get_skin("label")); 
-  }
-  
 protected:
 
   virtual void paint(SDL_Renderer * r);

@@ -2,41 +2,35 @@
 
 namespace ui {
 
-button::button(const rect & pos,
-               const icon_pos & ip,
-               const h_align & ha,
-               const v_align & va,
-               const padding & pad):
-  label(pos, ip, ha, va, pad)
-{
-}
-
-void lbtn::load(const data &d) 
-{
-  button::load(d);
-
-  // lbtn has several styles of renderering
-  if (d.has_key("btn_shape")) {
-    if (d["btn_shape"].is_value_number()) {
-      shape::shape_type s = (shape::shape_type)d["btn_shape"].value<int>();
-      set_btn_shape(s);
-    }
-    if (d["btn_shape"].is_value_string()) {
-      std::string s = d["btn_shape"].value<std::string>();
-      if (s == "rectangle") {
-        set_btn_shape(shape::rectangle);
-      }
-      if (s == "rounded") {
-        set_btn_shape(shape::rounded);
-      }
-      if (s == "prism") {
-        set_btn_shape(shape::prism);
-      }
-    }
+button::button(const rect & pos, 
+    const icon_pos & ip,
+    const h_align & ha, 
+    const v_align & va,
+    const padding & pad):
+  label(pos, ip, ha, va, pad),
+	tileframe(ui::current_theme())
+  {
+    set_font(ui::manager::instance()->get_font());
+    set_idle_color(ui::manager::instance()->get_color_idle());
+    set_highlight_color(ui::manager::instance()->get_color_highlight());
   }
-  else {
-    set_btn_shape(shape::rectangle);
-  }
-}
 
+
+  void button::draw(SDL_Renderer * r, const rect & dst)
+  {
+    // draw button frame & back
+    if (is_pressed()) {
+      draw_frame(r, 3, 3, dst, false, false);
+    }
+    else if (is_hovered()) {
+      draw_frame(r, 3, 3, dst, false, false);  
+    }
+    else {
+      draw_frame(r, 0, 3, dst, false, false);
+    }
+  
+    // draw label contents on top
+    label::draw(r, dst);
+  }
+	
 }

@@ -404,8 +404,8 @@ void multi_texture::init(int fw, int fh)
       _fragments.push_back(new fragment(fragment_rect));
     }
   }
-#ifdef GM_DEBUG_MULTI_TEXTURE
-  SDL_Log("%s - created %d fragments of size (%d, %d), total size is (%d, %d)",
+#ifdef GM_DEBUG
+  SDL_Log("%s - created %zu fragments of size (%d, %d), total size is (%d, %d)",
     __METHOD_NAME__,
     _fragments.size(),
     fragments_w,
@@ -423,7 +423,7 @@ void multi_texture::render(SDL_Renderer * r, const point & at)
     point draw_at = at + f->pos().topleft();
     rect fragment_rect(draw_at.x, draw_at.y, f->pos().w, f->pos().h);
     f->get_texture().render(r, fragment_rect);
-#ifdef GM_DEBUG_MULTI_TEXTURE
+#ifdef GM_DEBUG
     color::yellow().apply(r);
     SDL_RenderDrawRect(r, &fragment_rect);
 #endif

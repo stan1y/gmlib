@@ -2,11 +2,11 @@
 #define _GM_UI_INPUT_H_
 
 #include "GMUILabel.h"
-#include "GMUIButton.h"
+#include "GMUIFrame.h"
 
 namespace ui {
 
-class text_input: public label {
+class text_input: public label, public tileframe {
 public:
 
   typedef enum {
@@ -57,7 +57,6 @@ protected:
   bool _readonly;
   bool _draw_frame;
 
-  shape::shape_type _inp_shape;
   input_validation _filter;
   size_t _cursor;
   uint8_t _cursor_alpha;

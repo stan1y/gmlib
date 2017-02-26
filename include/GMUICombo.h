@@ -3,26 +3,21 @@
 
 #include "GMUIBox.h"
 #include "GMUITextInput.h"
+#include "GMUIFrame.h"
 
 namespace ui {
 
 class combo: public text_input {
 public:
 
-  class area: public box {
+  class area: public box, public tileframe {
   public:
-    area(const rect & pos, const color & clr):
+    area(const rect & pos):
       box(pos, ui::box::vbox, h_align::left, v_align::middle, 0),
-      _back(clr)
+      tileframe(ui::current_theme())
     {}
 
     virtual void draw(SDL_Renderer* r, const rect & dst);
-
-    void set_back_color(const color & clr) { _back = clr; }
-    const color & get_back_color() { return _back; }
-
-  private:
-    color _back;
   };
 
   combo(const rect & pos,

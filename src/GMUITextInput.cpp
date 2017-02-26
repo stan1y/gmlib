@@ -11,9 +11,9 @@ text_input::text_input(const rect & pos,
                        const padding & pad):
 
   label(pos, ip, ha, va, pad),
+	tileframe(ui::current_theme()),
   _readonly(false),
   _draw_frame(true),
-  _inp_shape(shape::rectangle),
   _filter(filter),
   _cursor(0),
   _cursor_alpha(255),
@@ -222,21 +222,14 @@ void text_input::insert_at(size_t c, const std::string & val)
 void text_input::draw(SDL_Renderer * r, const rect & dst)
 {
   if (_draw_frame) {
-    // draw input frame
-    if (is_hovered()) {
-      get_hightlight_color().apply(r);
+    int column = 0;
+    if (is_focused()) {
+      column = 3;
     }
-    else if (is_focused()) {
-      get_hightlight_color().apply(r);
-    }
-    else {
-      get_idle_color().apply(r);
-    }
-    shape::draw(r, dst, _inp_shape);
-    label::draw(r, dst);
+		draw_frame(r, 6, column, dst, false, false);
   }
 
-#ifdef GM_DEBUG_UI
+#ifdef GM_DEBUG
   // debug blue frame for text input rect
   if (manager::instance()->get_focused_control() == this) 
   {

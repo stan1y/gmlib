@@ -1,58 +1,84 @@
 #include "GMUIBox.h"
 
+/* Names of the drag states */
+static const char * DRAG_STATE_NAME[] = {
+  "Stop",
+  "Start",
+  "Moving"
+};
+
 namespace ui {
 
 /** UI BOX Container Implementation **/
 
 box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & gap):
-    control(pos), _type(t), _ha(ha), _va(va),
-    _dirty(false),
-    _pad(pad), 
-    _children_rect(0, 0, _pad.top, _pad.left),
-    _gap(gap),
-    _scroll(NULL),
-    _selected_ctl(NULL)
+	control(pos), _type(t), _ha(ha), _va(va),
+	_dirty(false),
+	_pad(pad), 
+	_children_rect(0, 0, _pad.top, _pad.left),
+	_gap(gap),
+	_vscroll(nullptr),
+	_hscroll(nullptr),
+	_scroll_type(scroll_type::scrollbar_hidden),
+	_scroll_size(0),
+	_selected_ctl(nullptr)
 {
   mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
 }
 
+void box::set_scroll_type(scroll_type t, int ssize)
+{
+	_scroll_size = ssize;
+	
+	if (_vscroll != nullptr) {
+		remove_child(_vscroll);
+		ui::destroy(_vscroll);
+	}
+	if (_hscroll != nullptr) {
+		remove_child(_hscroll);
+		ui::destroy(_hscroll);
+	}
+	if (t & scroll_type::scrollbar_vertical) {
+		_vscroll = new button(get_vscroll_rect());
+		add_child(_vscroll);
+	}
+	if (t & scroll_type::scrollbar_horizontal) {
+		_hscroll = new button(get_hscroll_rect());
+		add_child(_hscroll);
+	}
+}
+
+void box::set_scroll_state(scroll_drag_state s)
+{
+	SDL_Log("%s: entered scroll state %s", __METHOD_NAME__, DRAG_STATE_NAME[s]);
+	_scroll_state = s;
+}
+
+rect box::get_vscroll_rect() const
+{
+	rect avail = get_scrolled_rect();
+	float step = _pos.h / (float)_children_rect.h;
+	int cursor_h = float_to_sint32(avail.h * step);
+	/* Y coord of the avail rect affects position of the cursor */
+	return rect(
+		2,
+		2 + float_to_sint32(avail.y * step), 
+		_pos.w - 4, cursor_h - 4);
+}
+
+rect box::get_hscroll_rect() const
+{
+	return rect();
+}
+
 void box::scroll_to_point(const point & pnt)
 {
-  rect cursor_rect = _scroll->get_cursor_rect(_children_rect);
-  int cursor_center_x = cursor_rect.x + cursor_rect.w / 2;
-  int cursor_center_y = cursor_rect.y + cursor_rect.h / 2;
-  do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
+//  rect cursor_rect = _scroll->get_cursor_rect(_children_rect);
+//  int cursor_center_x = cursor_rect.x + cursor_rect.w / 2;
+//  int cursor_center_y = cursor_rect.y + cursor_rect.h / 2;
+//  do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
 }
 
-
-void box::set_sbar(scrollbar_type t, uint32_t ssize) 
-{
-  if (_scroll != NULL) {
-    ui::destroy(_scroll);
-    _scroll = NULL;
-  }
-
-  switch (t) {
-    case scrollbar_right:
-      _scroll = new scrollbar(this, rect(_pos.w - ssize, 0, ssize, _pos.h), t);
-      _scroll->set_locked(true);
-      break;
-
-    case scrollbar_bottom:
-      // FIXME: implement bottom scrollbar
-      break;
-
-    default:
-    case scrollbar_hidden:
-      // do nothing
-      break;
-  };
-  
-  // display new type of scrollbar if configured now
-  if (_scroll) {
-    add_child(_scroll);
-  }
-}
 
 void box::draw_debug_frame(SDL_Renderer * r, const rect & dst)
 {
@@ -74,66 +100,75 @@ void box::draw_debug_frame(SDL_Renderer * r, const rect & dst)
       SDL_RenderDrawRect(r, &child_rect);
     }
 
-    if (!is_scrollbar_visible()) {
-      // no offscreen rendering
-      color::green().set_alpha(128).apply(r);
-      SDL_RenderDrawRect(r, &dst);
-      
-      color::yellow().set_alpha(128).apply(r);
-      rect area = theme::get_container_user_area(get_skin(), dst);
-      SDL_RenderDrawRect(r, &area);
-    }
-    else {
-      // with offset rendering
-      self_color.set_alpha(128).apply(r);
-      SDL_RenderDrawRect(r, &dst);
-
-      color::yellow().set_alpha(128).apply(r);
-      rect area = theme::get_container_user_area(get_skin(), dst);
-      SDL_RenderDrawRect(r, &area);
-
-      color::green().set_alpha(128).apply(r);
-      rect scrollbar_rect = _scroll->pos() + dst.topleft();
-      SDL_RenderDrawRect(r, &scrollbar_rect);
-    }
+    color::green().set_alpha(128).apply(r);
+    SDL_RenderDrawRect(r, &dst);
   }
+}
+
+void box::update()
+{
+	const point & pointer = manager::instance()->get_pointer();
+	if (_vscroll != nullptr) {
+		_vscroll->set_pos(get_vscroll_rect());
+		
+		if ( !(_vscroll->pos() + _pos.topleft()).collide_point(pointer) 
+			   && get_scroll_state() == scroll_drag_state::vdrag ) {
+			set_scroll_state(scroll_drag_state::stop);
+		}
+		
+	}
+	if (_hscroll != nullptr) {
+		_hscroll->set_pos(get_hscroll_rect());
+		
+		if ( !(_hscroll->pos() + _pos.topleft()).collide_point(pointer) 
+			   && get_scroll_state() == scroll_drag_state::hdrag ) {	
+			set_scroll_state(scroll_drag_state::stop);
+		}
+	}
+	
+  control::update();
 }
 
 void box::draw(SDL_Renderer * r, const rect & dst)
 {
-  if (is_scrollbar_visible()) {
-    
-    /** offscreen children rendering **/
-    if (_dirty) {
-      //create render target
-      _body.blank(_children_rect.w, _children_rect.h, SDL_TEXTUREACCESS_TARGET);
-      {
-        texture::render_context ctx(&_body, r);
-        control_list::iterator it = _children.begin();
-        for(; it != _children.end(); ++it) {
-          control * c = *it;
-          // render control with it's relative position
-          // to the target of the render_context 
-          // skip scrollbar since, it rendered separetly on top
-          if (c == _scroll) continue;
-          c->draw(r, c->pos());
-        }
-      }
-      _dirty = false;
-    }
-    // render pre-made children
-    _body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
-    // render scrollbar
-    rect scrollbar_rect = _scroll->pos() + dst.topleft();
-    _scroll->draw(r, scrollbar_rect);
-  }
-  else {
-    // direct children rendering
+	/* direct children rendering */
+	if (is_scrollbar_hidden()) {
     control::draw(r, dst);
-  }
+		return;
+	}
+	
+	/** offscreen children rendering **/
+	if (_dirty) {
+		//create render target
+		_body.blank(_children_rect.w, _children_rect.h, SDL_TEXTUREACCESS_TARGET);
+		{
+			texture::render_context ctx(&_body, r);
+			control_list::iterator it = _children.begin();
+			for(; it != _children.end(); ++it) {
+				control * c = *it;
+				// render control with it's relative position
+				// to the target of the render_context 
+				// skip scrollbar since, it rendered separately on top
+				if (c == _vscroll) continue;
+				if (c == _hscroll) continue;
+				c->draw(r, c->pos());
+			}
+		}
+		_dirty = false;
+	}
+	// render pre-made children
+	_body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
+	
+	// render scrollbars
+	if (_scroll_type & scroll_type::scrollbar_vertical) {
+		_vscroll->draw(r, _vscroll->pos());
+	}
+	if (_scroll_type & scroll_type::scrollbar_horizontal) {
+		_hscroll->draw(r, _hscroll->pos());
+	}
 
   // debug rendering on top of offset texture
-#if GM_DEBUG_UI
+#if GM_DEBUG
   draw_debug_frame(r, dst);
 #endif
 }
@@ -149,9 +184,9 @@ void box::clear_children()
     control_list::iterator it = children_copy.begin();
     for(; it != children_copy.end(); ++it) {
       ui::control * child = *it;
-      if (child != _scroll) {
-        ui::destroy(*it);
-      }
+      if (child == _vscroll || child == _hscroll)
+				continue;
+			ui::destroy(*it);
     }
     // clear the source list
     _children.clear();
@@ -249,12 +284,14 @@ void box::load(const data & d)
 
   if (d.has_key("scroll")) {
     if (d["scroll"].is_value_string()) {
-      scrollbar_type stype = scrollbar_type::scrollbar_hidden;
+      scroll_type stype = scroll_type::scrollbar_hidden;
       std::string scroll = d["scroll"].value<std::string>();
-      if (scroll == "right")
-        stype = scrollbar_type::scrollbar_right;
-      if (scroll == "bottom")
-        stype = scrollbar_type::scrollbar_bottom;
+      if (scroll == "vertical")
+        stype = scroll_type::scrollbar_vertical;
+      if (scroll == "horizonal")
+        stype = scroll_type::scrollbar_horizontal;
+			if (scroll == "both")
+        stype = scroll_type::scrollbar_both;
     
       int ssize = 16;
       if (d.has_key("scrollbar_size")) {
@@ -263,7 +300,7 @@ void box::load(const data & d)
         }
       }
 
-      set_sbar(stype, ssize);
+      set_scroll_type(stype, ssize);
     }
   }
 
@@ -297,21 +334,23 @@ void box::switch_selection(control * target)
 
 void box::do_scroll(int dx, int dy)
 {
-  if (_scroll == NULL)
+  if (is_scrollbar_hidden())
     return;
 
-  if (_scroll->type() == scrollbar_type::scrollbar_right) {
-    float step = _scroll->pos().h / (float)_children_rect.h;
+  if (_scroll_type && scroll_type::scrollbar_vertical) {
+    float step = _vscroll->pos().h / (float)_children_rect.h;
     _scrolled_rect.y += float_to_sint32(step * dy);
     if (_scrolled_rect.y < 0) 
       _scrolled_rect.y = 0;
     if (_scrolled_rect.y > _children_rect.h - _scrolled_rect.h)
       _scrolled_rect.y = _children_rect.h - _scrolled_rect.h;
   }
-  if (_scroll->type() == scrollbar_type::scrollbar_bottom) {
-    throw std::runtime_error("not implemented");
+  
+	if (_scroll_type && scroll_type::scrollbar_horizontal) {
+    /* FIXME !!! */
   }
-#ifdef GM_DEBUG_UI
+	
+#ifdef GM_DEBUG
   SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
     _scrolled_rect.tostr().c_str(), dx, dy);
 #endif
@@ -337,14 +376,10 @@ void box::update_children()
 
   // get available area for children
   // all box rect is available by default
-  const theme::container_skin * sk = get_skin();
   rect area(0, 0, _pos.w, _pos.h);
-  if (sk != theme::container_skin::dummy()) {
-    area = theme::get_container_user_area(sk, area);
-  }
 
-#ifdef GM_DEBUG_UI
-  SDL_Log("%s(%d) - type: %s, h_align: %s, v_align: %s, area: %s/%s",
+#ifdef GM_DEBUG
+  SDL_Log("%s(%zu) - type: %s, h_align: %s, v_align: %s, area: %s/%s",
     __METHOD_NAME__,
     _children.size(),
     get_box_type_name().c_str(),
@@ -507,12 +542,19 @@ void box::update_children()
   _children_rect.w = max(_children_rect.w, _scrolled_rect.w);
   _children_rect.h = max(_children_rect.h, _scrolled_rect.h);
   
-
-  if (_scroll) {
-    it = find_child(_scroll);
+	// make sure scrollbars rendered on top of all other children
+  if (_vscroll) {
+    it = find_child(_vscroll);
     if (it != _children.end())
       _children.erase(it);
-    _children.push_back(_scroll);
+    _children.push_back(_vscroll);
+  }
+	
+	if (_hscroll) {
+    it = find_child(_hscroll);
+    if (it != _children.end())
+      _children.erase(it);
+    _children.push_back(_hscroll);
   }
   
   // rebuild on children add/remove/show/hide/reorder
@@ -524,15 +566,13 @@ void box::update_children()
   */
 
 panel::panel(const rect & pos, 
-             const panel_style & ps, 
              const box_type & t,
              const h_align & ha, 
              const v_align & va,
              const padding & pad,
              const int & gap):
   box(pos, t, ha, va, pad, gap),
-  _ps(ps),
-  _color_back(get_skin()->color_back)
+	tileframe(ui::current_theme())
 {
 }
 
@@ -551,41 +591,13 @@ void panel::load(const data & d)
     }
   }
 
-  if (d.has_key("panel_style")) {
-    if (d["panel_style"].is_value_string()) {
-      std::string pstyle = d["panel_style"].value<std::string>();
-      if (pstyle == "dialog") {
-        set_panel_style(panel_style::dialog);
-      }
-      if (pstyle == "toolbox") {
-        set_panel_style(panel_style::toolbox);
-      }
-      if (pstyle == "group") {
-        set_panel_style(panel_style::group);
-      }
-    }
-  }
-  else {
-    // panel is dialog by default
-    set_panel_style(panel_style::dialog);
-  }
-
   box::load(d);
 }
 
 void panel::draw(SDL_Renderer * r, const rect & dst)
 {
-  // render background
-  const theme::container_skin * s = get_skin();
-  rect user_area = theme::get_container_user_area(s, dst);
-  _color_back.apply(r);
-  SDL_RenderFillRect(r, &user_area);
-
-  // render box content
+  draw_frame(r, 0, 0, dst, true, true);
   box::draw(r, dst);
-
-  // render box frame
-  current_theme().draw_container_skin(s, r, dst);
 }
 
 } //namespace ui

@@ -136,7 +136,11 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     
     // init UI
     rect display = GM_GetDisplayRect();
-    ui::manager::initialize(display);
+		if (cfg->ui_theme().find(".png") != std::string::npos)
+			ui::manager::init(display, cfg->ui_theme());
+		
+		if (cfg->ui_theme().find(".json") != std::string::npos)
+			ui::manager::initialize(display, cfg->ui_theme());
     
     // setup screens
     g_screen_current = nullptr;
@@ -490,18 +494,6 @@ void color::apply() const
 
 color color::from_string(const std::string & sclr)
 {
-  const ui::theme & th = ui::current_theme();
-  if (sclr == std::string("idle") || 
-      sclr == std::string("normal") || 
-      sclr == std::string("default")) {
-    return th.color_idle;
-  }
-  if (sclr == std::string("back")) {
-    return th.color_back;
-  }
-  if (sclr == std::string("highlight")) {
-    return th.color_highlight;
-  }
   if (sclr == std::string("red")) {
     return color::red();
   }
