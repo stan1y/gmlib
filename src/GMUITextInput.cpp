@@ -222,23 +222,12 @@ void text_input::insert_at(size_t c, const std::string & val)
 void text_input::draw(SDL_Renderer * r, const rect & dst)
 {
   if (_draw_frame) {
-    int column = 0;
+    int row = 0;
     if (is_focused()) {
-      column = 3;
+      row = 3;
     }
-		draw_frame(r, 6, column, dst, false, false);
+    draw_frame(r, row, 6, dst, false, false);
   }
-
-#ifdef GM_DEBUG
-  // debug blue frame for text input rect
-  if (manager::instance()->get_focused_control() == this) 
-  {
-    static color blue(0, 0, 255, 255);
-    blue.apply(r);
-    rect cdst(dst.x + 1, dst.y + 1, dst.w - 2, dst.h - 2);
-    SDL_RenderDrawRect(r, &cdst);
-  }
-#endif
 
   label::draw(r, dst);
 

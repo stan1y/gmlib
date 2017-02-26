@@ -133,7 +133,7 @@ void box::draw(SDL_Renderer * r, const rect & dst)
 {
 	/* direct children rendering */
 	if (is_scrollbar_hidden()) {
-    control::draw(r, dst);
+        control::draw(r, dst);
 		return;
 	}
 	

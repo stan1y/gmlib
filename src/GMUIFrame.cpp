@@ -38,7 +38,7 @@ void tileframe::draw_frame(SDL_Renderer * r,
   int x = dst.x, y = dst.y, w = dst.w, h = dst.h;
 	
 	/* fill with background */
-  draw_tile_fill(r, row + 1, column + 1, 
+    draw_tile_fill(r, row + 1, column + 1,
                  x + _tilesize, y + _tilesize, w - _tilesize * 2, h - _tilesize * 2,
 								 stretch_center);
 	

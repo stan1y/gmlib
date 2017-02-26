@@ -15,7 +15,6 @@ button::button(const rect & pos,
     set_highlight_color(ui::manager::instance()->get_color_highlight());
   }
 
-
   void button::draw(SDL_Renderer * r, const rect & dst)
   {
     // draw button frame & back

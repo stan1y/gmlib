@@ -66,7 +66,7 @@ public:
   /* if this box displays scroll bar */
   bool is_scrollbar_hidden() 
   { 
-    return (_scroll_type & scroll_type::scrollbar_hidden ? true : false);
+    return (_scroll_type == scroll_type::scrollbar_hidden);
   }
   
   // scrollbar event handlers
