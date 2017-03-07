@@ -46,11 +46,18 @@ public:
       }
     }
 
-    virtual ~render_context() {
+    virtual ~render_context()
+    {
       int ret = SDL_SetRenderTarget(_r, _prev);
       if (ret != 0) {
         throw sdl_exception();
       }
+    }
+
+    void clear_target()
+    {
+      color(0, 0, 0, 0).apply(_r);
+      SDL_RenderClear(_r);
     }
 
   private:

@@ -458,7 +458,8 @@ void multi_texture::render_texture(SDL_Renderer * r, const texture & tx, const p
       {
         rect src(clipped.x - at.x, clipped.y - at.y, clipped.w, clipped.h);
         rect dst(clipped.x - fpos.x, clipped.y - fpos.y, clipped.w, clipped.h);
-        texture::render_context context(&f->get_texture(), r);
+        texture::render_context ctx(&f->get_texture(), r);
+        ctx.clear_target();
         tx.render(r, src, dst);
       }
     }
