@@ -20,7 +20,7 @@ box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align
 	_vscroll(nullptr),
 	_hscroll(nullptr),
 	_scroll_type(scroll_type::scrollbar_hidden),
-	_scroll_size(0),
+    _scroll_size(20),
 	_selected_ctl(nullptr)
 {
   mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
@@ -56,14 +56,15 @@ void box::set_scroll_state(scroll_drag_state s)
 
 rect box::get_vscroll_rect() const
 {
+    /* Y coord of the avail rect affects position of the cursor */
 	rect avail = get_scrolled_rect();
 	float step = _pos.h / (float)_children_rect.h;
 	int cursor_h = float_to_sint32(avail.h * step);
-	/* Y coord of the avail rect affects position of the cursor */
 	return rect(
-		2,
-		2 + float_to_sint32(avail.y * step), 
-		_pos.w - 4, cursor_h - 4);
+        _pos.w - _scroll_size - _pad.right,
+        _pad.top + float_to_sint32(avail.y * step),
+        _scroll_size,
+        cursor_h - _pad.top - _pad.bottom);
 }
 
 rect box::get_hscroll_rect() const
@@ -77,32 +78,6 @@ void box::scroll_to_point(const point & pnt)
 //  int cursor_center_x = cursor_rect.x + cursor_rect.w / 2;
 //  int cursor_center_y = cursor_rect.y + cursor_rect.h / 2;
 //  do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
-}
-
-
-void box::draw_debug_frame(SDL_Renderer * r, const rect & dst)
-{
-  const control * hovered = ui::get_hovered_control();
-  control_list::const_iterator child = find_child(hovered);
-
-  if (!SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL]) {
-    return;
-  }
-  
-  if (this == hovered || child != _children.end()) {
-
-    color self_color = color::red().set_alpha(128);
-    if (child != _children.end()) {
-      self_color = color::dark_red().set_alpha(128);
-      // hovered child frame
-      rect child_rect = (*child)->pos() + dst.topleft();
-      color::red().set_alpha(128).apply(r);
-      SDL_RenderDrawRect(r, &child_rect);
-    }
-
-    color::green().set_alpha(128).apply(r);
-    SDL_RenderDrawRect(r, &dst);
-  }
 }
 
 void box::update()
@@ -131,7 +106,7 @@ void box::update()
 
 void box::draw(SDL_Renderer * r, const rect & dst)
 {
-	/* direct children rendering */
+    /** direct children rendering **/
 	if (is_scrollbar_hidden()) {
         control::draw(r, dst);
 		return;
@@ -166,11 +141,6 @@ void box::draw(SDL_Renderer * r, const rect & dst)
 	if (_scroll_type & scroll_type::scrollbar_horizontal) {
 		_hscroll->draw(r, _hscroll->pos());
 	}
-
-  // debug rendering on top of offset texture
-#if GM_DEBUG
-  draw_debug_frame(r, dst);
-#endif
 }
 
 void box::clear_children()
@@ -405,6 +375,9 @@ void box::update_children()
     // skip hidden
     if (!child->visible())
       continue;
+    // skip scrollbars
+    if (child == _vscroll || child == _hscroll)
+        continue;
     
     rect pos = child->pos();
     switch(_type) {

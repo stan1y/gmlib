@@ -111,9 +111,6 @@ public:
   // render this box contents
   virtual void draw(SDL_Renderer* r, const rect & dst);
 
-  // render debug frame
-  void draw_debug_frame(SDL_Renderer * r, const rect & dst);
-
   // add and auto-postion child on this box
   virtual void add_child(control* child);
 
