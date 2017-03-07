@@ -52,9 +52,6 @@ std::string data::tostr(int ident) const
 
 void data::load(const std::string & json_file)
 {
-#ifdef GM_DEBUG
-  SDL_Log("data::load - reading %s\n", json_file.c_str()); 
-#endif
   assign(GM_LoadJSON(json_file));
   // decref after assign
   json_decref(_json);
