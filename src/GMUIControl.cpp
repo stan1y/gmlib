@@ -142,7 +142,7 @@ void control::set_parent(control* parent)
 {
   std::string s;
 #ifdef GM_DEBUG
-  SDL_Log("control::set_parent id: %s changed parent from %s to %s", 
+  SDL_Log("control::set_parent {%s} changed parent from %s to %s",
     identifier().c_str(), 
     _parent == NULL ? "<nobody>" : _parent->identifier().c_str(), 
     parent == NULL ? "<nobody>" : parent->identifier().c_str()

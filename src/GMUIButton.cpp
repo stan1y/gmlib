@@ -22,7 +22,7 @@ button::button(const rect & pos,
       draw_frame(r, 3, 3, dst, false, false);
     }
     else if (is_hovered()) {
-      draw_frame(r, 3, 3, dst, false, false);  
+      draw_frame(r, 3, 3, dst, false, false);
     }
     else {
       draw_frame(r, 0, 3, dst, false, false);

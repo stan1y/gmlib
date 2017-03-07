@@ -12,55 +12,57 @@ namespace ui {
 /** UI BOX Container Implementation **/
 
 box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & gap):
-	control(pos), _type(t), _ha(ha), _va(va),
-	_dirty(false),
-	_pad(pad), 
-	_children_rect(0, 0, _pad.top, _pad.left),
-	_gap(gap),
-	_vscroll(nullptr),
-	_hscroll(nullptr),
-	_scroll_type(scroll_type::scrollbar_hidden),
-    _scroll_size(20),
-	_selected_ctl(nullptr)
+  control(pos),
+  _type(t), _ha(ha), _va(va),
+  _dirty(false),
+  _pad(pad),
+  _children_rect(0, 0, _pad.top, _pad.left),
+  _gap(gap),
+  _vscroll(nullptr),
+  _hscroll(nullptr),
+  _scroll_type(scroll_type::scrollbar_hidden),
+  _scroll_size(20),
+  _selected_ctl(nullptr)
 {
   mouse_wheel += boost::bind(&box::on_box_wheel, this, _1);
 }
 
 void box::set_scroll_type(scroll_type t, int ssize)
 {
-	_scroll_size = ssize;
-	
-	if (_vscroll != nullptr) {
-		remove_child(_vscroll);
-		ui::destroy(_vscroll);
-	}
-	if (_hscroll != nullptr) {
-		remove_child(_hscroll);
-		ui::destroy(_hscroll);
-	}
-	if (t & scroll_type::scrollbar_vertical) {
-		_vscroll = new button(get_vscroll_rect());
-		add_child(_vscroll);
-	}
-	if (t & scroll_type::scrollbar_horizontal) {
-		_hscroll = new button(get_hscroll_rect());
-		add_child(_hscroll);
-	}
+  _scroll_type = t;
+  _scroll_size = ssize;
+
+  if (_vscroll != nullptr) {
+    remove_child(_vscroll);
+    ui::destroy(_vscroll);
+  }
+  if (_hscroll != nullptr) {
+    remove_child(_hscroll);
+    ui::destroy(_hscroll);
+  }
+  if (t & scroll_type::scrollbar_vertical) {
+    _vscroll = new button(get_vscroll_rect());
+    add_child(_vscroll);
+  }
+  if (t & scroll_type::scrollbar_horizontal) {
+    _hscroll = new button(get_hscroll_rect());
+    add_child(_hscroll);
+  }
 }
 
 void box::set_scroll_state(scroll_drag_state s)
 {
-	SDL_Log("%s: entered scroll state %s", __METHOD_NAME__, DRAG_STATE_NAME[s]);
-	_scroll_state = s;
+  SDL_Log("%s: entered scroll state %s", __METHOD_NAME__, DRAG_STATE_NAME[s]);
+  _scroll_state = s;
 }
 
 rect box::get_vscroll_rect() const
 {
     /* Y coord of the avail rect affects position of the cursor */
-	rect avail = get_scrolled_rect();
-	float step = _pos.h / (float)_children_rect.h;
-	int cursor_h = float_to_sint32(avail.h * step);
-	return rect(
+  rect avail = get_scrolled_rect();
+  float step = _pos.h / (float)_children_rect.h;
+  int cursor_h = float_to_sint32(avail.h * step);
+  return rect(
         _pos.w - _scroll_size - _pad.right,
         _pad.top + float_to_sint32(avail.y * step),
         _scroll_size,
@@ -69,7 +71,7 @@ rect box::get_vscroll_rect() const
 
 rect box::get_hscroll_rect() const
 {
-	return rect();
+  return rect();
 }
 
 void box::scroll_to_point(const point & pnt)
@@ -82,65 +84,67 @@ void box::scroll_to_point(const point & pnt)
 
 void box::update()
 {
-	const point & pointer = manager::instance()->get_pointer();
-	if (_vscroll != nullptr) {
-		_vscroll->set_pos(get_vscroll_rect());
-		
-		if ( !(_vscroll->pos() + _pos.topleft()).collide_point(pointer) 
-			   && get_scroll_state() == scroll_drag_state::vdrag ) {
-			set_scroll_state(scroll_drag_state::stop);
-		}
-		
-	}
-	if (_hscroll != nullptr) {
-		_hscroll->set_pos(get_hscroll_rect());
-		
-		if ( !(_hscroll->pos() + _pos.topleft()).collide_point(pointer) 
-			   && get_scroll_state() == scroll_drag_state::hdrag ) {	
-			set_scroll_state(scroll_drag_state::stop);
-		}
-	}
-	
+  const point & pointer = manager::instance()->get_pointer();
+  if (_vscroll != nullptr) {
+    _vscroll->set_pos(get_vscroll_rect());
+
+    if ( !(_vscroll->pos() + _pos.topleft()).collide_point(pointer)
+         && get_scroll_state() == scroll_drag_state::vdrag ) {
+      set_scroll_state(scroll_drag_state::stop);
+    }
+
+  }
+  if (_hscroll != nullptr) {
+    _hscroll->set_pos(get_hscroll_rect());
+
+    if ( !(_hscroll->pos() + _pos.topleft()).collide_point(pointer)
+         && get_scroll_state() == scroll_drag_state::hdrag ) {
+      set_scroll_state(scroll_drag_state::stop);
+    }
+  }
+
   control::update();
 }
 
 void box::draw(SDL_Renderer * r, const rect & dst)
 {
-    /** direct children rendering **/
-	if (is_scrollbar_hidden()) {
-        control::draw(r, dst);
-		return;
-	}
-	
-	/** offscreen children rendering **/
-	if (_dirty) {
-		//create render target
-		_body.blank(_children_rect.w, _children_rect.h, SDL_TEXTUREACCESS_TARGET);
-		{
-			texture::render_context ctx(&_body, r);
-			control_list::iterator it = _children.begin();
-			for(; it != _children.end(); ++it) {
-				control * c = *it;
-				// render control with it's relative position
-				// to the target of the render_context 
-				// skip scrollbar since, it rendered separately on top
-				if (c == _vscroll) continue;
-				if (c == _hscroll) continue;
-				c->draw(r, c->pos());
-			}
-		}
-		_dirty = false;
-	}
-	// render pre-made children
-	_body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
-	
-	// render scrollbars
-	if (_scroll_type & scroll_type::scrollbar_vertical) {
-		_vscroll->draw(r, _vscroll->pos());
-	}
-	if (_scroll_type & scroll_type::scrollbar_horizontal) {
-		_hscroll->draw(r, _hscroll->pos());
-	}
+  /** direct children rendering **/
+  if (is_scrollbar_hidden()) {
+    control::draw(r, dst);
+    return;
+  }
+
+  /** offscreen children rendering **/
+  if (_dirty) {
+    //create render target
+    _body.blank(_children_rect.w, _children_rect.h, SDL_TEXTUREACCESS_TARGET);
+    {
+      texture::render_context ctx(&_body, r);
+      ctx.clear_target();
+      control_list::iterator it = _children.begin();
+      for(; it != _children.end(); ++it) {
+        control * c = *it;
+        // render control with it's relative position
+        // to the target of the render_context
+        // skip scrollbar since, it rendered separately on top
+        if (c == _vscroll) continue;
+        if (c == _hscroll) continue;
+        c->draw(r, c->pos());
+      }
+    }
+    _dirty = false;
+  }
+  // render pre-made children
+  _body.render(r, _scrolled_rect, rect(dst.x, dst.y, _scrolled_rect.w, _scrolled_rect.h));
+
+  // render scrollbars
+  point abs_offset = get_absolute_pos().topleft();
+  if (_scroll_type & scroll_type::scrollbar_vertical) {
+    _vscroll->draw(r, _vscroll->pos() + abs_offset);
+  }
+  if (_scroll_type & scroll_type::scrollbar_horizontal) {
+    _hscroll->draw(r, _hscroll->pos() + abs_offset);
+  }
 }
 
 void box::clear_children()
@@ -155,8 +159,8 @@ void box::clear_children()
     for(; it != children_copy.end(); ++it) {
       ui::control * child = *it;
       if (child == _vscroll || child == _hscroll)
-				continue;
-			ui::destroy(*it);
+        continue;
+      ui::destroy(*it);
     }
     // clear the source list
     _children.clear();
@@ -260,7 +264,7 @@ void box::load(const data & d)
         stype = scroll_type::scrollbar_vertical;
       if (scroll == "horizonal")
         stype = scroll_type::scrollbar_horizontal;
-			if (scroll == "both")
+      if (scroll == "both")
         stype = scroll_type::scrollbar_both;
     
       int ssize = 16;
@@ -269,7 +273,6 @@ void box::load(const data & d)
           ssize = d["scrollbar_size"].value<int>();
         }
       }
-
       set_scroll_type(stype, ssize);
     }
   }
@@ -316,10 +319,10 @@ void box::do_scroll(int dx, int dy)
       _scrolled_rect.y = _children_rect.h - _scrolled_rect.h;
   }
   
-	if (_scroll_type && scroll_type::scrollbar_horizontal) {
+  if (_scroll_type && scroll_type::scrollbar_horizontal) {
     /* FIXME !!! */
   }
-	
+
 #ifdef GM_DEBUG
   SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
     _scrolled_rect.tostr().c_str(), dx, dy);
@@ -515,15 +518,15 @@ void box::update_children()
   _children_rect.w = max(_children_rect.w, _scrolled_rect.w);
   _children_rect.h = max(_children_rect.h, _scrolled_rect.h);
   
-	// make sure scrollbars rendered on top of all other children
+  // make sure scrollbars rendered on top of all other children
   if (_vscroll) {
     it = find_child(_vscroll);
     if (it != _children.end())
       _children.erase(it);
     _children.push_back(_vscroll);
   }
-	
-	if (_hscroll) {
+
+  if (_hscroll) {
     it = find_child(_hscroll);
     if (it != _children.end())
       _children.erase(it);
@@ -545,7 +548,7 @@ panel::panel(const rect & pos,
              const padding & pad,
              const int & gap):
   box(pos, t, ha, va, pad, gap),
-	tileframe(ui::current_theme())
+  tileframe(ui::current_theme())
 {
 }
 
