@@ -145,7 +145,7 @@ void manager::set_hovered_control(control * target)
   _hovered_cnt = target;
   if (prev != NULL) {
 #ifdef GM_DEBUG
-      SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s", 
+      SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s",
       prev->identifier().c_str(),
       _pointer.tostr().c_str(),
       prev->get_absolute_pos().tostr().c_str());
@@ -155,7 +155,7 @@ void manager::set_hovered_control(control * target)
   // setup new
   if (_hovered_cnt != NULL) {
 #ifdef GM_DEBUG
-    SDL_Log("manager::set_hovered_control - hover gain id: %s at %s", 
+    SDL_Log("manager::set_hovered_control - hover gain id: %s at %s",
       _hovered_cnt->identifier().c_str(),
       _hovered_cnt->get_absolute_pos().tostr().c_str()
     );
