@@ -67,7 +67,7 @@ public:
   texture(int w, int h, 
           SDL_TextureAccess access,
           SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
-          uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+          uint32_t pixel_format = SDL_PIXELFORMAT_RGBA8888);
 
   /* Create new texture from a file */
   texture(const std::string & file_path);
@@ -82,7 +82,7 @@ public:
   texture(SDL_Renderer *r,
           SDL_Surface *src,
           SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
-          uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+          uint32_t pixel_format = SDL_PIXELFORMAT_RGBA8888);
 
   /* create new SDL_TEXTURE_STREAMING texture with
      pixels loaded from given SDL_Surface
@@ -99,7 +99,7 @@ public:
   void blank(int w, int h,
     SDL_TextureAccess access = SDL_TEXTUREACCESS_STREAMING,
     SDL_BlendMode bmode = SDL_BLENDMODE_BLEND,
-    uint32_t pixel_format = SDL_PIXELFORMAT_ABGR8888);
+    uint32_t pixel_format = SDL_PIXELFORMAT_RGBA8888);
 
   /* check if texture was initialized property */
   bool is_valid() const { return (_texture != NULL); }
@@ -194,7 +194,7 @@ private:
   SDL_BlendMode _bmode;
 
   // raw pixels copy access
-  void set_pixels(void *pixels, size_t len);
+  void set_pixels(void *pixels);
   
   // transfer _texture ownership and
   // clone all properties

@@ -10,7 +10,7 @@ texture::texture():
   _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _format(SDL_PIXELFORMAT_ABGR8888),
+  _format(SDL_PIXELFORMAT_RGBA8888),
   _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(SDL_BLENDMODE_BLEND)
 {
@@ -24,7 +24,7 @@ texture::texture(SDL_Texture * tx, SDL_BlendMode bmode):
   _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _format(SDL_PIXELFORMAT_ABGR8888),
+  _format(SDL_PIXELFORMAT_RGBA8888),
   _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(bmode)
 {
@@ -59,7 +59,7 @@ texture::texture(const std::string & file_path):
   _scale_h(0),
   _pixels(nullptr),
   _pitch(0),
-  _format(SDL_PIXELFORMAT_ABGR8888),
+  _format(SDL_PIXELFORMAT_RGBA8888),
   _access(SDL_TEXTUREACCESS_STATIC),
   _bmode(SDL_BLENDMODE_BLEND)
 {
@@ -87,15 +87,25 @@ texture::texture(int w, int h,
 
 texture::texture(SDL_Surface* src,
                  SDL_BlendMode bmode,
-                 bool convert_transparency)
+                 bool convert_transparency):
+    _texture(nullptr),
+    _width(0),
+    _scale_w(0),
+    _height(0),
+    _scale_h(0),
+    _pixels(nullptr),
+    _pitch(0),
+    _format(SDL_PIXELFORMAT_RGBA8888),
+    _access(SDL_TEXTUREACCESS_STREAMING),
+    _bmode(bmode)
 {
   blank(src->w, src->h, SDL_TEXTUREACCESS_STREAMING, bmode);
-  set_pixels(src->pixels, src->pitch * src->h);
+  set_pixels(src->pixels);
   if (convert_transparency) {
-    uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
+    /*uint32_t pixel = SDLEx_GetPixel(src, 0, 0);
     uint8_t r = 0, g = 0, b = 0;
     SDL_GetRGB(pixel, src->format, &r, &g, &b);
-    replace_color(color(r, g, b, 255), color(0, 0, 0, 0));
+    replace_color(color(r, g, b, 255), color(0, 0, 0, 0));*/
   }
 }
 
@@ -138,6 +148,9 @@ void texture::blank(int w, int h, SDL_TextureAccess access, SDL_BlendMode bmode,
   _access = access;
   _format = pixel_format;
   _bmode = bmode;
+  _width = w;
+  _height = h;
+
   _texture = GM_CreateTexture(w, h, access, pixel_format);
   if (_texture == NULL) {
     throw sdl_exception();
@@ -175,19 +188,19 @@ texture * texture::copy_pixels()
     SDL_TEXTUREACCESS_STREAMING,
     _bmode,
     _format);
-  cp->set_pixels(_pixels, sizeof(_pixels));
+  cp->set_pixels(_pixels);
   unlock();
 
   return cp;
 }
 
-void texture::set_pixels(void *pixels, size_t len)
+void texture::set_pixels(void *pixels)
 {
   if (_access != SDL_TEXTUREACCESS_STREAMING) {
     throw std::runtime_error("texture::set_pixels - this texture is not SDL_TEXTUREACCESS_STREAMING");
   }
   lock();
-  memcpy(_pixels, pixels, len);
+  memcpy(_pixels, pixels, _pitch * _height);
   unlock();
 }
 
@@ -224,12 +237,12 @@ void texture::unlock()
 
 void texture::replace_color(const color & from, const color & to)
 {
-  if (_format != SDL_PIXELFORMAT_ABGR8888) {
-    SDL_Log("%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_ABGR8888 is supported.", 
+  if (_format != SDL_PIXELFORMAT_RGBA8888) {
+    SDL_Log("%s - unsupported pixel format (%d) for this method. Only SDL_PIXELFORMAT_RGBA8888 is supported.",
       __METHOD_NAME__, _format);
     throw std::runtime_error("Unsupported pixel format for method");
   }
-  // SDL_PIXELFORMAT_ABGR8888 is 8 bits long each
+  // SDL_PIXELFORMAT_RGBA8888 is 8 bits long each
   static const size_t pixel_size = 8;
 
   lock();
