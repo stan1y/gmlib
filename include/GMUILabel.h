@@ -30,8 +30,8 @@ public:
   /* Public constructor for labels */
   label(const rect & pos, 
     const icon_pos & icon = icon_pos::icon_left,
-    const h_align & ha = h_align::left, 
-    const v_align & va = v_align::top,
+    const h_align & ha = h_align::center,
+    const v_align & va = v_align::middle,
     const padding & pad = padding(2),
     const int gap = 2);
 
