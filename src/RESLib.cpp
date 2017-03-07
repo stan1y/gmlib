@@ -176,10 +176,6 @@ size_t find_files(const strings_list & ext_list, paths_list & output)
     std::string ext = asset_root_it->first.extension().string();
     auto found = std::find(ext_list.begin(), ext_list.end(), ext);
     if ( found != ext_list.end() ) {
-      SDL_Log("!!! found first=%s second=%s ext=%s", 
-        asset_root_it->first.string().c_str(),
-        asset_root_it->second.string().c_str(), 
-        ext.c_str());
       output.push_back(asset_root_it->second);
     }
   }
