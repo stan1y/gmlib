@@ -307,10 +307,13 @@ void label::draw(SDL_Renderer * r, const rect & dst)
 
 void label::paint_text(texture & tx, const std::string & text, const ttf_font & fnt, const color & clr)
 {
+  SDL_Surface *s;
   if (_font_style == font_style::blended)
-    tx.set_surface(fnt.print_blended(text.length() > 0 ? text : " ", clr));
+    s = fnt.print_blended(text.length() > 0 ? text : " ", clr);
   else
-    tx.set_surface(fnt.print_solid(text.length() > 0 ? text : " ", clr));
+    s = fnt.print_solid(text.length() > 0 ? text : " ", clr);
+  tx.set_surface(s);
+  SDL_FreeSurface(s);
 }
 
 void label::paint(SDL_Renderer * r)

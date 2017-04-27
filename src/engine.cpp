@@ -216,7 +216,6 @@ void GM_UpdateFrame()
 void GM_RenderFrame()
 {
   mutex_lock guard(g_screen_lock);
-  SDL_Log("render start");
 
   // update current screen
   if (g_screen_current == NULL) {
@@ -225,23 +224,26 @@ void GM_RenderFrame()
     throw std::runtime_error("No active screen to render");
   }
   SDL_Renderer * r = GM_GetRenderer();
-  
+
+  // reset renderer
+  SDL_SetRenderTarget(r, NULL);
+  color::black().apply(r);
+  SDL_RenderClear(r);
+
   g_screen_current->render(r);
   
   // render avg fps
   if (g_fps_timer) {
-    g_fps.set_surface(
-      g_fps_font->print_solid(
-        std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())),
-        g_fps_color
-      )
-    );
+    SDL_Surface *s = g_fps_font->print_solid(
+      std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())),
+      g_fps_color);
+    g_fps.set_surface(s);
+    SDL_FreeSurface(s);
     g_fps.render(GM_GetRenderer(), point(5, 5));
   }
 
   //re-start frame timer
   g_frame_timer->start();
-  SDL_Log("render finished");
 }
 
 void GM_EndFrame()

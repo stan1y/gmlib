@@ -398,7 +398,9 @@ void message::reset(const std::string & text, const ttf_font & f, const color & 
   _timer.stop();
   set_visible(false);
   _text = text;
-  _tx.set_surface(f.print_solid(_text, c));
+  SDL_Surface *s = f.print_solid(_text, c);
+  _tx.set_surface(s);
+  SDL_FreeSurface(s);
   rect display = GM_GetDisplayRect();
 
   _pos.w = _tx.width();
