@@ -17,8 +17,9 @@ CFLAGS+=-std=c++11 \
 		-Wno-unused-function
 CFLAGS+=-Wsign-compare -Wshadow -Wpointer-arith -Wcast-qual
 CFLAGS+=-DPREFIX='"$(PREFIX)"' \
+    -I./sdl_ex  \
 		-I./include \
-		-I./sdl_ex
+    -I./include/ui
 LDFLAGS+="-liconv"
 
 ifeq ("$(OSNAME)", "darwin")
