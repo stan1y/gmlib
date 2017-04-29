@@ -208,12 +208,6 @@ void manager::on_event(SDL_Event* ev)
   if (_hovered_cnt != NULL && _hovered_cnt->visible() && !_hovered_cnt->proxy()) 
     target = _hovered_cnt;
 
-  SDL_Log("%s - event %p type: %d to %s",
-          __METHOD_NAME__,
-          (void*)ev,
-          ev->type,
-          target->tostr().c_str());
-
   // find and call a handler for event
   switch(ev->type)
   {  

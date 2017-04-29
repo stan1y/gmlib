@@ -17,9 +17,9 @@ CFLAGS+=-std=c++11 \
 		-Wno-unused-function
 CFLAGS+=-Wsign-compare -Wshadow -Wpointer-arith -Wcast-qual
 CFLAGS+=-DPREFIX='"$(PREFIX)"' \
-    -I./sdl_ex  \
+	-I./sdl_ex  \
 		-I./include \
-    -I./include/ui
+	-I./include/ui
 LDFLAGS+="-liconv"
 
 ifeq ("$(OSNAME)", "darwin")
@@ -40,6 +40,13 @@ endif
 
 S_OBJS=	$(S_SRC:%.cpp=$(OBJDIR)/%.o)
 
+#
+# GMLib Demo App 
+#
+DEMO=./bin/demo
+S_DEMO_SRC= $(wildcard src/demo/*.cpp)
+S_DEMO_OBJS= $(S_DEMO_SRC:%.cpp=$(OBJDIR)/%.o)
+
 static: $(OBJDIR) $(S_OBJS)
 	@ar rcs $(GMLIB).a $(S_OBJS)
 	@echo "AR $(GMLIB).a"
@@ -50,10 +57,16 @@ shared: $(OBJDIR) $(S_OBJS)
 
 objects: $(OBJDIR) $(S_OBJS)
 
-all: python static 
+demo: static $(OBJDIR) $(S_DEMO_OBJS)
+	@mkdir -p ./bin
+	@$(CXX) $(LDFLAGS) -L. -lgm $(S_DEMO_OBJS) -o $(DEMO)
+	@echo "LINK $(DEMO)"
+
+all: python static demo
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)/src
+	@mkdir -p $(OBJDIR)/src/demo
 	@mkdir -p $(OBJDIR)/sdl_ex
 
 install:
@@ -81,6 +94,6 @@ $(OBJDIR)/%.o: %.cpp
 
 clean:
 	find . -type f -name \*.o -exec rm {} \;
-	rm -rf $(GMLIB).$(STATIC_SUFFIX) $(GMLIB).$(SHARED_SUFFIX) $(OBJDIR)
+	rm -rf $(DEMO) $(GMLIB).$(STATIC_SUFFIX) $(GMLIB).$(SHARED_SUFFIX) $(OBJDIR)
 
 .PHONY: all clean

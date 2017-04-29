@@ -77,14 +77,6 @@ rect box::get_hscroll_rect() const
   return rect();
 }
 
-void box::scroll_to_point(const point & pnt)
-{
-//  rect cursor_rect = _scroll->get_cursor_rect(_children_rect);
-//  int cursor_center_x = cursor_rect.x + cursor_rect.w / 2;
-//  int cursor_center_y = cursor_rect.y + cursor_rect.h / 2;
-//  do_scroll(pnt.x - cursor_center_x, pnt.y - cursor_center_y);
-}
-
 void box::update()
 {
   const point & pointer = manager::instance()->get_pointer();
@@ -115,17 +107,15 @@ void box::draw(SDL_Renderer * r, const rect & dst)
     return;
 
   /** scrolled children rendering **/
-  point abs_offset = get_absolute_pos().topleft();
-
   lock_container(_children);
   control_list::iterator it = _children.begin();
   {
     texture::clip_context clip(r, dst);
     for(; it != _children.end(); ++it) {
       control * c = *it;
-      if (c->destroyed() || !c->visible())
+      if (c->destroyed() || !c->visible() || c == _vscroll || c == _hscroll)
         continue;
-      rect child_pos = c->pos() + abs_offset;
+      rect child_pos = c->get_absolute_pos();
       if (!child_pos.collide_rect(dst))
         continue;
       c->draw(r, child_pos);
@@ -134,10 +124,10 @@ void box::draw(SDL_Renderer * r, const rect & dst)
 
   // render scrollbars
   if (_vscroll && _scroll_type & scroll_type::scrollbar_vertical) {
-    _vscroll->draw(r, _vscroll->pos() + abs_offset);
+    _vscroll->draw(r, _vscroll->pos() + dst.topleft());
   }
   if (_hscroll && _scroll_type & scroll_type::scrollbar_horizontal) {
-    _hscroll->draw(r, _hscroll->pos() + abs_offset);
+    _hscroll->draw(r, _hscroll->pos() + dst.topleft());
   }
 
   /** hovered box **/
@@ -148,10 +138,10 @@ void box::draw(SDL_Renderer * r, const rect & dst)
   color::yellow().apply(r);
   SDL_RenderDrawRect(r, &dst);
   color::dark_gray().apply(r);
-  rect whole_rect(_children_rect + abs_offset);
+  rect whole_rect(_children_rect + dst.topleft());
   SDL_RenderDrawRect(r, &whole_rect);
   color::dark_red().apply(r);
-  rect scroll_rect(_scrolled_rect + abs_offset);
+  rect scroll_rect(_scrolled_rect + dst.topleft());
   SDL_RenderDrawRect(r, &scroll_rect);
 #endif
 }
@@ -198,14 +188,14 @@ void box::add_child(control* c)
 
 void box::on_box_wheel(control * target)
 {
-  //SDL_Log("box::on_box_wheel");
-  //const SDL_Event* sdl_ev = manager::instance()->current_event();
+  const SDL_Event* sdl_ev = manager::instance()->current_event();
+  do_scroll(sdl_ev->wheel.x, sdl_ev->wheel.y);
 }
 
 void box::on_child_wheel(control * target)
 {
-  //SDL_Log("box::on_child_wheel");
-  //const SDL_Event* sdl_ev = manager::instance()->current_event();
+  const SDL_Event* sdl_ev = manager::instance()->current_event();
+  do_scroll(sdl_ev->wheel.x, sdl_ev->wheel.y);
 }
 
 void box::on_child_hover_changed(control * target)
@@ -311,7 +301,7 @@ void box::do_scroll(int dx, int dy)
     return;
 
   if (_scroll_type && scroll_type::scrollbar_vertical) {
-    float step = _vscroll->pos().h / (float)_children_rect.h;
+    float step = (float)_children_rect.h / _vscroll->pos().h;
     _scrolled_rect.y += float_to_sint32(step * dy);
     if (_scrolled_rect.y < 0) 
       _scrolled_rect.y = 0;

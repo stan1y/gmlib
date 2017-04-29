@@ -322,6 +322,7 @@ template<class T> T * build(const json & d)
 template<class T> T * build_file(const std::string & file)
 {
   json d;
+  SDL_Log("ui::build_file - loading %s", file.c_str());
   std::ifstream (media_path(file)) >> d;
   return dynamic_cast<T *>( manager::instance()->build(d) );
 }

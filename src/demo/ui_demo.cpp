@@ -5,7 +5,6 @@
 #include "box.h"
 #include "button.h"
 #include "text.h"
-#include "GMUIPushButton.h"
 
 class demo_screen : public screen {
 private:
@@ -22,15 +21,15 @@ public:
     add_component(ui::manager::instance());
 
     // build background
-    texture const * start = resources::get_texture("background.png");
-    _back.render_texture(GM_GetRenderer(), *start, point(rand_int(10, 500), rand_int(10, 350)));
+    texture start("start.png");
+    _back.render_texture(GM_GetRenderer(), start, point(rand_int(10, 500), rand_int(10, 350)));
     //_back.render_texture(GM_GetRenderer(), *start, point(32, 32));
     
     // build UI manually
     _panel_with_buttons = build_panel();
     
     // build UI automatically from ui.json file
-    _panel_from_json = ui::build<ui::panel>(resources::get_data("demo.ui.json"));
+    _panel_from_json = ui::build_file<ui::panel>("ui/demo.json");
     _panel_from_json->find_child("btn_one")->mouse_up \
       += boost::bind(&demo_screen::on_btn_clicked, this, _1);
     _panel_from_json->find_child("btn_two")->mouse_up \
@@ -65,7 +64,7 @@ public:
     lbl->set_text("The Label with text in VBox");
     pnl->add_child(lbl);
 
-    auto btn = new ui::btn(rect(0, 0, 100, 40));
+    auto btn = new ui::button(rect(0, 0, 100, 40));
     btn->set_idle_color(color::red());
     btn->set_highlight_color(color::magenta());
     btn->set_halign(ui::h_align::center);
@@ -80,16 +79,8 @@ public:
     input->set_text("alphanum text input");
     pnl->add_child(input);
     
-    auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox);
-    // here we specify path to the file with icon with help of theme's relative resources path api
-    // in json, the value for "icon_idle" and others is a resource id for simplification of the declarative use
-    btn_group->add_child(new ui::push_btn(resources::find_file("default-icon-left.png").string()));
-    auto info_btn = new ui::push_btn(resources::find_file("default-icon-info.png").string());
-    info_btn->set_disabled(true);
-    btn_group->add_child(info_btn);
-    btn_group->add_child(new ui::push_btn(resources::find_file("default-icon-right.png").string()));
-    pnl->add_child(btn_group);
-    
+    //auto btn_group = new ui::box(rect(0, 0, 200, 50), ui::box::hbox);
+
     return pnl;
   }
 

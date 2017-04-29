@@ -129,9 +129,6 @@ public:
   // scroll box width given delta pixels
   void do_scroll(int dx, int dy);
 
-  // scroll box to a point on it's absolute body
-  void scroll_to_point(const point & pnt);
-
   // auto-positioning of children controls
   // children can override to implement more layouting options
   virtual void update_children();

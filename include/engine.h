@@ -540,10 +540,6 @@ public:
 
   /* Screen On Event Callback */
   virtual void on_event(SDL_Event* ev) {
-    SDL_Log("%s - handle event %p type: %d",
-            __METHOD_NAME__,
-            (void*)ev,
-            ev->type);
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {

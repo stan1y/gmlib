@@ -4,8 +4,7 @@
     "display_width": 1024,
     "display_height": 768,
     "fullscreen": false,
-    "assets": [
-      ".""
-    ],
-    "ui_theme": "default"
+    "media": "media",
+    "ui_theme": "ui/theme.png",
+    "python_path": "./bin/python3.6m.zip"
 }
