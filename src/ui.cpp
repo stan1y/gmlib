@@ -417,7 +417,7 @@ void message::update()
   uint32_t depleted = ticked / step;
   if (depleted >= 255) {
     _timer.stop();
-#ifdef GM_DEBUG
+#ifdef GM_DEBUG_UI
     SDL_Log("message::update() - self-destruct msg \"%s\"", _text.c_str());
 #endif
     //self-destruct when alpha depleted
@@ -434,7 +434,7 @@ void message::show()
 {
   set_visible(true);
   _timer.start();
-#ifdef GM_DEBUG
+#ifdef GM_DEBUG_UI
   SDL_Log("message::show() - show message with text \"%s\" at %s", _text.c_str(), _pos.tostr().c_str());
 #endif
 }

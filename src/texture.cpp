@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "multi_texture.h"
 
 /* Texture */
 
@@ -428,6 +429,18 @@ void multi_texture::init(int fw, int fh)
 #endif
 }
 
+void multi_texture::render(SDL_Renderer * r, const rect & src, const rect &dst)
+{
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    if (!f->pos().collide_rect(src))
+      continue;
+    rect fragment_src = f->pos().clip(src);
+    f->get_texture().render(r, fragment_src, dst);
+  }
+}
+
 void multi_texture::render(SDL_Renderer * r, const point & at)
 {
   container<fragment*>::iterator it = _fragments.begin();
@@ -436,10 +449,28 @@ void multi_texture::render(SDL_Renderer * r, const point & at)
     point draw_at = at + f->pos().topleft();
     rect fragment_rect(draw_at.x, draw_at.y, f->pos().w, f->pos().h);
     f->get_texture().render(r, fragment_rect);
-#ifdef GM_DEBUG
-    color::yellow().apply(r);
-    SDL_RenderDrawRect(r, &fragment_rect);
-#endif
+  }
+}
+
+void multi_texture::render_sprite(SDL_Renderer * r, const sprite & s, const point & at)
+{
+  lock_container(_fragments);
+  rect texture_collide_rect(at.x, at.y, s.w, s.h);
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    const rect & fpos = f->pos();
+    // check if texture collides with this fragment and clip it's rect if yes
+    if (fpos.collide_rect(texture_collide_rect)) {
+      rect clipped = texture_collide_rect.clip(fpos);
+      // render into the fragment's texture with clipped rect
+      {
+        rect src(clipped.x - at.x, clipped.y - at.y, clipped.w, clipped.h);
+        rect dst(clipped.x - fpos.x, clipped.y - fpos.y, clipped.w, clipped.h);
+        texture::render_context ctx(&f->get_texture(), r);
+        s.sheet()->render(r, src + s.get_clip_rect().topleft(), dst);
+      }
+    }
   }
 }
 
@@ -459,7 +490,6 @@ void multi_texture::render_texture(SDL_Renderer * r, const texture & tx, const p
         rect src(clipped.x - at.x, clipped.y - at.y, clipped.w, clipped.h);
         rect dst(clipped.x - fpos.x, clipped.y - fpos.y, clipped.w, clipped.h);
         texture::render_context ctx(&f->get_texture(), r);
-        ctx.clear_target();
         tx.render(r, src, dst);
       }
     }

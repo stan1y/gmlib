@@ -134,7 +134,7 @@ void box::draw(SDL_Renderer * r, const rect & dst)
   if (this != ui::get_hovered_control())
     return;
 
-#ifdef GM_DEBUG
+#ifdef GM_DEBUG_UI
   color::yellow().apply(r);
   SDL_RenderDrawRect(r, &dst);
   color::dark_gray().apply(r);

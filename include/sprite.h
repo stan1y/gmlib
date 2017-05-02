@@ -85,6 +85,9 @@ public:
   void render(SDL_Renderer * r, const rect & dsrc, const rect & dst) const;
   void render(SDL_Renderer * r, const rect & dsrc, const point & dst_pnt) const;
 
+  const sprites_sheet* sheet() const { return _sheet; }
+  rect get_clip_rect() const { return _sheet->get_sprite_cliprect(idx); }
+
 protected:
   /* sprites sheet*/
   const sprites_sheet* _sheet;
