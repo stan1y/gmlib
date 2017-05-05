@@ -32,7 +32,7 @@ SDL_Texture* GM_CreateTexture(int width, int height, SDL_TextureAccess access, u
   */
 
 sprites_sheet::sprites_sheet(const std::string & file_path, uint32_t sprite_w, uint32_t sprite_h)
-  :texture(GM_LoadSurface(file_path), SDL_BLENDMODE_BLEND, true)
+  :texture(GM_LoadSurface(media_path(file_path)), SDL_BLENDMODE_BLEND, true)
 {
   _cols = width() / sprite_w;
   _rows = height() / sprite_h;
