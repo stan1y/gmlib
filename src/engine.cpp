@@ -22,8 +22,10 @@ static ttf_font const * g_fps_font = nullptr;
 
 /* Screens */
 static sdl_mutex g_screen_lock;
-static screen * g_screen_current;
-static screen * g_screen_next;
+static screen * g_screen_current = nullptr;
+static screen * g_screen_next = nullptr;
+static bool g_destroy_on_change = false;
+static bool g_quit = false;
 
 SDL_Window* GM_GetWindow() {
     if (g_window == nullptr) {
@@ -197,8 +199,9 @@ void GM_UpdateFrame()
 
   // update game state
   if (g_screen_current != g_screen_next) {
+    if (g_screen_current != nullptr && g_destroy_on_change)
+      delete g_screen_current;
     g_screen_current = g_screen_next;
-    g_screen_current->activate();
   }
     
   // update global & current screens
@@ -209,6 +212,11 @@ void GM_UpdateFrame()
   // process events
   SDL_Event ev;
   while (SDL_PollEvent(&ev)) {
+    if (ev.type == SDL_QUIT) {
+      g_quit = true;
+      break;
+    }
+
     g_screen_current->on_event(&ev);
   }
 }
@@ -260,25 +268,37 @@ void GM_EndFrame()
   }
 }
 
+void GM_Loop()
+{
+  while (!SDL_QuitRequested() && !g_quit) {
+    GM_StartFrame();
+    GM_UpdateFrame();
+    GM_RenderFrame();
+    GM_EndFrame();
+  }
+}
+
 /* 
     Game Screens 
 */
 
 screen::screen():
-  _wnd(GM_GetWindow()),
-  _glctx(SDL_GL_CreateContext(_wnd))
+  _wnd(GM_GetWindow())
 {
+  SDL_Log("created game screen %p for window %p",
+          (void*)this, (void*)_wnd);
 }
 
 screen::screen(SDL_Window* wnd):
-  _wnd(wnd),
-  _glctx(SDL_GL_CreateContext(_wnd))
+  _wnd(wnd)
 {
+  SDL_Log("created game screen %p for window %p",
+          (void*)this, (void*)_wnd);
 }
 
 screen::~screen()
 {
-  SDL_GL_DeleteContext(_glctx);
+  SDL_Log("destroyed game screen %p", (void*)this);
 }
 
 const screen* screen::current() 
@@ -286,12 +306,13 @@ const screen* screen::current()
   return g_screen_current;
 }
 
-void screen::set_current(screen* s)
+void screen::set_current(screen* s, bool destroy_on_change)
 {
   mutex_lock guard(g_screen_lock);
   if (g_screen_current != s && g_screen_next != s) {
     // requested screen becomes next one
     g_screen_next = s;
+    g_destroy_on_change = destroy_on_change;
   }
 }
 

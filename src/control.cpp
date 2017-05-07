@@ -16,9 +16,6 @@ control::control(const rect & pos):
   _id(rand_string(CONTROL_ID_LEN))
   
 {
-#ifdef GM_DEBUG
-  SDL_Log("control::control created new %s", tostr().c_str());
-#endif
   manager::instance()->add_child(this);
 }
 
@@ -30,9 +27,6 @@ control::control(const rect & pos, const std::string id):
   _destroyed(false), _disabled(false),
   _id(id)
 {
-#ifdef GM_DEBUG
-  SDL_Log("control::control created new %s", tostr().c_str());
-#endif
   manager::instance()->add_child(this);
 }
 
@@ -44,32 +38,19 @@ control::control():
   _destroyed(false), _disabled(false),
   _id("root")
 {
-#ifdef GM_DEBUG
   SDL_Log("%s - ui manager intialized with %s", 
     __METHOD_NAME__,
     _pos.tostr().c_str());
-#endif
 }
 
 control::~control()
 {
   // destroy children of this control
-#ifdef GM_DEBUG
-  SDL_Log("%s - destroying %zu children of id: %s",
-    __METHOD_NAME__,
-    _children.size(),
-    identifier().c_str());
-#endif
   control_list::iterator it = _children.begin();
   for(; it != _children.end(); ++it) {
     control * child = *it;
     delete child;
   }
-#ifdef GM_DEBUG
-  SDL_Log("%s - destroyed id: %s", 
-    __METHOD_NAME__,
-    identifier().c_str());
-#endif
 }
 
 std::string control::tostr() const
@@ -128,14 +109,6 @@ rect control::get_absolute_pos() const
 
 void control::set_parent(control* parent)
 {
-  std::string s;
-#ifdef GM_DEBUG
-  SDL_Log("control::set_parent {%s} changed parent from %s to %s",
-    identifier().c_str(), 
-    _parent == NULL ? "<nobody>" : _parent->identifier().c_str(), 
-    parent == NULL ? "<nobody>" : parent->identifier().c_str()
-    );
-#endif
   _parent = parent;
 }
 
@@ -264,4 +237,4 @@ void control::update()
   }
 }
 
-}; //namespace ui
+} //namespace ui

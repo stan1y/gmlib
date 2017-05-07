@@ -462,14 +462,21 @@ inline SDL_Rect GM_GetDisplayRect()
   SDL_Rect r = {0, 0, w, h};
   return r;
 }
+
 /* Start game frame, upate frame ticks and clears renderer */
 void GM_StartFrame();
+
 /* Update state, timers and animations */
 void GM_UpdateFrame();
+
 /* Draws current screen and presents renderer. */
 void GM_RenderFrame();
+
 /* End game frame, update last ticks, delay for fps cap */
 void GM_EndFrame();
+
+/* Main game loop. Returns only on exit. */
+void GM_Loop();
 
 /* Get miliseconds elapsed since start of the current frame */
 uint32_t GM_GetFrameTicks();
@@ -487,7 +494,6 @@ class screen {
 
   /* Screen private handles */
   SDL_Window * _wnd;
-  SDL_GLContext _glctx;
 
 public:
 
@@ -504,21 +510,16 @@ public:
     screen * _parent_screen;
   };
 
-  /* Active OpenGL context attached to this screen */
-  virtual void activate() { SDL_GL_MakeCurrent(_wnd, _glctx); }
-
-  /* Construct new custom screen instance */
-  
-  /* New screen with shared window and gl context */
+  /* New screen with shared window */
   screen();
-  /* New screen with custom window and gl content */
+  /* New screen with custom window */
   screen(SDL_Window* wnd);
 
   virtual ~screen();
 
   /* Current game screen pointer */
   static const screen* current();
-  static void set_current(screen* s);
+  static void set_current(screen* s, bool destroy_on_change = true);
 
   /* Screen Update */
   virtual void update() {

@@ -341,17 +341,6 @@ void box::update_children()
   // all box rect is available by default
   rect area(0, 0, _pos.w, _pos.h);
 
-#ifdef GM_DEBUG
-  SDL_Log("%s(%zu) - type: %s, h_align: %s, v_align: %s, area: %s/%s",
-    __METHOD_NAME__,
-    _children.size(),
-    get_box_type_name().c_str(),
-    halign_to_str(_ha).c_str(),
-    valign_to_str(_va).c_str(),
-    area.tostr().c_str(),
-    _pos.tostr().c_str());
-#endif
-
   // minimum size
   _children_rect.w = _pad.left + _pad.right;
   _children_rect.h = _pad.top + _pad.bottom;

@@ -81,13 +81,10 @@ manager::manager(rect & available_rect,
 
 void manager::destroy(control* child)
 {
+  mutex_lock guard(g_graveyard.mutex());
+  g_graveyard.push_back(child);
   child->set_visible(false);
   child->set_destroyed(true);
-
-  {
-    mutex_lock guard(g_graveyard.mutex());
-    g_graveyard.push_back(child);
-  }
 }
 
 std::string manager::tostr() const
@@ -107,16 +104,10 @@ void manager::set_focused_control(control * target)
   if (target == NULL)
     target = this;
   if (_focused_cnt != NULL) {
-#ifdef GM_DEBUG
-    SDL_Log("manager::set_focused_control - focus lost id: %s", _focused_cnt->identifier().c_str());
-#endif
     _focused_cnt->focus_lost(_focused_cnt);
   }
   _focused_cnt = target;
   if (_focused_cnt != NULL) {
-#ifdef GM_DEBUG
-    SDL_Log("manager::set_focused_control - focus gain id: %s", _focused_cnt->identifier().c_str());
-#endif
     _focused_cnt->focused(_focused_cnt);
   }
 }
@@ -125,26 +116,14 @@ void manager::set_hovered_control(control * target)
 {
   if (_hovered_cnt == target)
     return;
-  // notify prev
+
   control * prev = _hovered_cnt;
   _hovered_cnt = target;
   if (prev != NULL) {
-#ifdef GM_DEBUG
-      SDL_Log("manager::set_hovered_control - hover lost id: %s, %s left %s",
-      prev->identifier().c_str(),
-      _pointer.tostr().c_str(),
-      prev->get_absolute_pos().tostr().c_str());
-#endif
     prev->hover_lost(prev);
   }
   // setup new
   if (_hovered_cnt != NULL) {
-#ifdef GM_DEBUG
-    SDL_Log("manager::set_hovered_control - hover gain id: %s at %s",
-      _hovered_cnt->identifier().c_str(),
-      _hovered_cnt->get_absolute_pos().tostr().c_str()
-    );
-#endif
     _hovered_cnt->hovered(_hovered_cnt);
   }
 }
@@ -179,7 +158,7 @@ void manager::on_update(screen *)
         child->parent()->remove_child(child);
         child->set_parent(nullptr);
       }
-
+      SDL_Log("destroying %s", child->tostr().c_str());
       delete child;
     }
     g_graveyard.clear();
@@ -417,9 +396,7 @@ void message::update()
   uint32_t depleted = ticked / step;
   if (depleted >= 255) {
     _timer.stop();
-#ifdef GM_DEBUG_UI
-    SDL_Log("message::update() - self-destruct msg \"%s\"", _text.c_str());
-#endif
+
     //self-destruct when alpha depleted
     ui::destroy(this);
     g_message = NULL;
@@ -434,9 +411,6 @@ void message::show()
 {
   set_visible(true);
   _timer.start();
-#ifdef GM_DEBUG_UI
-  SDL_Log("message::show() - show message with text \"%s\" at %s", _text.c_str(), _pos.tostr().c_str());
-#endif
 }
 
 void message::alert(const std::string & text, uint32_t timeout_ms)
