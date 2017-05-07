@@ -208,9 +208,9 @@ public:
                          const std::string & theme,
                          const std::string & font = "default.ttf",
                          const int font_size = 12,
-                         color color_idle = color::black(),
-                         color color_highlight = color::black(),
-                         color color_back = color::white());
+                         color color_idle = color::gray(),
+                         color color_highlight = color::white(),
+                         color color_back = color::black());
                          
 
   /* Pointer to a currently processed event (during event handlers execution) */

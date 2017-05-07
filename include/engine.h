@@ -137,6 +137,7 @@ struct color : SDL_Color {
   void apply() const;
 
   static color from_string(const std::string & sclr);
+  static color from_json(const json & d);
 
   static color red() { return color(255, 0, 0, 255); }
   static color dark_red() { return color(196, 0, 0, 255); }
@@ -447,6 +448,9 @@ int GM_Init(const std::string & cfg_path,
 
 /* Shutdown GMLib */
 void GM_Quit();
+
+/* Request graceful shutdown */
+void GM_PostQuit();
 
 /* Get main SDL Window */
 SDL_Window* GM_GetWindow();

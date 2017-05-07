@@ -190,42 +190,15 @@ void label::load(const json & d)
   }
 
   if (d.find("color_back") != d.end()) {
-    if (d["color_back"].is_string()) {
-      _color_back = color::from_string(d["color_back"]);
-    }
-    if (d["color_back"].is_array()) {
-      _color_back = color(
-          d["color_back"].at(0),
-          d["color_back"].at(1),
-          d["color_back"].at(2),
-          d["color_back"].at(3));
-    }
+    _color_back = color::from_json(d["color_back"]);
   }
 
   if (d.find("color_idle") != d.end()) {
-    if (d["color_idle"].is_string()) {
-      _color_idle = color::from_string(d["color_idle"]);
-    }
-    if (d["color_idle"].is_array()) {
-      _color_idle = color(
-          d["color_idle"].at(0),
-          d["color_idle"].at(1),
-          d["color_idle"].at(2),
-          d["color_idle"].at(3));
-    }
+    _color_idle = color::from_json(d["color_idle"]);
   }
 
   if (d.find("color_highlight") != d.end()) {
-    if (d["color_highlight"].is_string()) {
-      _color_highlight = color::from_string(d["color_idle"]);
-    }
-    if (d["color_highlight"].is_array()) {
-      _color_highlight = color(
-          d["color_highlight"].at(0),
-          d["color_highlight"].at(1),
-          d["color_highlight"].at(2),
-          d["color_highlight"].at(3));
-    }
+    _color_highlight = color::from_json(d["color_highlight"]);
   }
 
   if (d.find("padding") != d.end()) {

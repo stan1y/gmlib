@@ -90,27 +90,27 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     }
     boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
     config::load(abspath.string());
-    const config & cfg = config::current();
+    const json & cfg = config::current().get_data();
     
     // init SDL window & renderer
     int flags = SDL_WINDOW_SHOWN;
-    if (cfg.get_data()["fullscreen"].get<bool>())
+    if (cfg["fullscreen"].get<bool>())
       flags |= SDL_WINDOW_FULLSCREEN;
-    if (cfg.get_data()["driver"].get<std::string>() == std::string("opengl"))
+    if (cfg["driver"].get<std::string>() == std::string("opengl"))
       flags |= SDL_WINDOW_OPENGL;
 
     g_window = SDL_CreateWindow(name.c_str(), 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-        cfg.get_data()["display_width"],
-        cfg.get_data()["display_height"],
+        cfg["display_width"],
+        cfg["display_height"],
         flags);
     if ( g_window == nullptr ) {
         SDL_Log("%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
         return -1;
     }
     // setup renderer
-    int driver = cfg.get_driver_index();
-    g_renderer = SDL_CreateRenderer(g_window, driver, cfg.get_window_flags());
+    int driver = config::current().get_driver_index();
+    g_renderer = SDL_CreateRenderer(g_window, driver, config::current().get_window_flags());
     if ( g_renderer == nullptr ) {
         SDL_Log("%s: Failed to create renderer driver_index=%d", __METHOD_NAME__, driver);
         return -1;
@@ -120,12 +120,6 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     // log renderer info
     SDL_RendererInfo renderer_info;
     SDL_GetRendererInfo(g_renderer, &renderer_info);
-#ifdef GM_DEBUG
-    SDL_Log("%s: using driver: %s, index=%d",
-            __METHOD_NAME__,
-            renderer_info.name,
-            driver);
-#endif
 
     // setup random
     srand((unsigned int)time(NULL));
@@ -135,24 +129,28 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
 
     // fps timer
     g_frame_timer = new timer();
-    g_screen_ticks_per_frame = 1000 / cfg.get_data()["fps_cap"].get<int>();
+    g_screen_ticks_per_frame = 1000 / cfg["fps_cap"].get<int>();
     
     // init UI
     rect display = GM_GetDisplayRect();
-    ui::manager::initialize(display, cfg.get_data()["ui_theme"]);
+    color clr = color::from_json(cfg["ui_color"]);
+    ui::manager::initialize(display,
+                            cfg["ui_theme"],
+                            cfg["ui_font"][0], cfg["ui_font"][1],
+                            clr, clr);
     
     // setup screens
     g_screen_current = nullptr;
     g_screen_next = nullptr;
 
-    // fps counter
-#ifdef GM_DEBUG
-    g_fps_timer = new timer();
-    g_fps_color = color( 0, 255, 0, 255 );
-    g_fps_font = new ttf_font("default.ttf", 12);
-#endif
+    // fps counter    
+    if (cfg.find("fps_counter") != cfg.end() &&
+        cfg["fps_counter"].get<bool>()) {
+      g_fps_timer = new timer();
+      g_fps_color = color( 0, 255, 0, 255 );
+      g_fps_font = new ttf_font("default.ttf", 12);
+    }
 
-    printf("GMLib: ready\n");
     return 0;
 }
 
@@ -172,15 +170,23 @@ void GM_Quit()
   SDL_Quit();
 }
 
+void GM_PostQuit()
+{
+  SDL_Event ev;
+  ev.type = SDL_QUIT;
+  SDL_PushEvent(&ev);
+}
+
 void GM_StartFrame()
 {
   mutex_lock guard(g_screen_lock);
 
-  if (g_fps_timer) {
+  if (g_fps_timer != nullptr) {
+
     // init fps timer first on first frame
     if(!g_fps_timer->is_started())
       g_fps_timer->start();
-    // update avg fps
+
     g_avg_fps = g_counted_frames / ( g_fps_timer->get_ticks() / 1000.f );
     if (g_avg_fps > 2000000) {
       g_avg_fps = 0;
@@ -514,6 +520,21 @@ void color::apply(SDL_Renderer* rnd) const
 void color::apply() const
 {
   apply(GM_GetRenderer());
+}
+
+color color::from_json(const json & d)
+{
+  if (d.is_string()) {
+    return color::from_string(d);
+  }
+  if (d.is_array()) {
+    return color(
+        d.at(0),
+        d.at(1),
+        d.at(2),
+        d.at(3));
+  }
+  throw std::runtime_error("json is not a color.");
 }
 
 color color::from_string(const std::string & sclr)
