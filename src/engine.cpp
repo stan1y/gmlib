@@ -73,10 +73,10 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     SDL_version l_ver;
     SDL_GetVersion(&l_ver);
 
-    printf("Starting...\n");
-    printf("GMLib        %d.%d.%s.%d\n", GM_LIB_MAJOR, GM_LIB_MINOR, GM_LIB_RELESE, GM_LIB_PATCH);
-    printf("SDL runtime  %d.%d.%d\n", l_ver.major, l_ver.minor, l_ver.patch);
-    printf("SDL compiled %d.%d.%d\n", c_ver.major, c_ver.minor, c_ver.patch);
+    SDL_Log("loading - version %d.%d.%s.%d, sdl runtime: %d.%d.%d, sdl compilied: %d.%d.%d",
+            GM_LIB_MAJOR, GM_LIB_MINOR, GM_LIB_RELESE, GM_LIB_PATCH,
+            l_ver.major, l_ver.minor, l_ver.patch,
+            c_ver.major, c_ver.minor, c_ver.patch);
 
     //check cfg path is ok
     if (cfg_path.empty()) {
@@ -85,7 +85,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     }
     boost::filesystem::path p_path(cfg_path);
     if (!boost::filesystem::exists(p_path)) {
-      SDL_Log("GM_Init: config path does not exist");
+      SDL_Log("%s: config path does not exist", __METHOD_NAME__);
       return -1;
     }
     boost::filesystem::path abspath = boost::filesystem::absolute(p_path);
@@ -105,7 +105,8 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         cfg["display_height"],
         flags);
     if ( g_window == nullptr ) {
-        SDL_Log("%s: Failed to system window. SDL Error: %s", __METHOD_NAME__, SDL_GetError());
+        SDL_Log("%s: Failed to system window. SDL Error: %s",
+                __METHOD_NAME__, SDL_GetError());
         return -1;
     }
     // setup renderer
@@ -291,20 +292,22 @@ void GM_Loop()
 screen::screen():
   _wnd(GM_GetWindow())
 {
-  SDL_Log("created game screen %p for window %p",
-          (void*)this, (void*)_wnd);
 }
 
 screen::screen(SDL_Window* wnd):
   _wnd(wnd)
 {
-  SDL_Log("created game screen %p for window %p",
-          (void*)this, (void*)_wnd);
 }
 
 screen::~screen()
 {
-  SDL_Log("destroyed game screen %p", (void*)this);
+  lock_container(_components);
+  container<screen::component*>::iterator it = _components.begin();
+  for(; it != _components.end(); ++it) {
+    if (*it == ui::manager::instance())
+      continue;
+    delete *it;
+  }
 }
 
 const screen* screen::current() 

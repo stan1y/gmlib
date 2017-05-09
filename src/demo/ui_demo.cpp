@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "manager.h"
+#include "dlg.h"
 #include "multi_texture.h"
 
 #include "box.h"

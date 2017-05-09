@@ -6,15 +6,12 @@
 #include "sprite.h"
 
 /**
-   Class multi_texture
-   This class allows transparent rendering on a
-   texture-like object which is bigger than largest
-   texture size supported by SDL.
-   The class will initialize a number of sub-textures
-   to actually hold parts of the bigger overall texture.
-   These textures all will be with access = SDL_TEXTUREACCESS_TARGET
-   for rendering onto them via multi_texture::render_texture
-*/
+ * @brief the multi_texture offscreen rendering cache
+ * This class allows offscreen rendering on a texture-like object which is bigger than largest
+ * texture size supported by SDL. The class will initialize a number of sub-textures (fragments)
+ * to actually hold parts of the bigger overall texture. These textures all will be with
+ * access = SDL_TEXTUREACCESS_TARGET for rendering onto them via multi_texture::render_texture
+ */
 class multi_texture {
 public:
 
@@ -55,16 +52,19 @@ public:
   const int height() { return _height; }
 
   /* render this multi_texture with given renderer at given screen point */
-  void render(SDL_Renderer * r, const point & at = point(0, 0));
+  void render(SDL_Renderer *, const point & at = point(0, 0));
 
-  void render(SDL_Renderer * r, const rect & src, const rect &dst);
+  void render(SDL_Renderer *, const rect & src, const rect & dst);
 
   /* render 'texture' instance onto this multi_texture at given point */
-  void render_texture(SDL_Renderer * r, const texture & tx, const point & at = point(0, 0));
+  void render_texture(SDL_Renderer *, const texture & tx, const point & at = point(0, 0));
 
   /* render 'sprite' instance onto this multi_texture at given point */
-  void render_sprite(SDL_Renderer * r, const sprite & s, const point & at = point(0, 0));
+  void render_sprite(SDL_Renderer *, const sprite & s, const point & at = point(0, 0));
 
+  void render_draw_rect(SDL_Renderer *, const rect &);
+  void render_fill_rect(SDL_Renderer *, const rect &);
+  void render_clear(SDL_Renderer *);
 
 private:
   void init(int fragments_w = 0, int fragments_h = 0);

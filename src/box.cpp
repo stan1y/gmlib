@@ -312,11 +312,6 @@ void box::do_scroll(int dx, int dy)
   if (_scroll_type && scroll_type::scrollbar_horizontal) {
     /* FIXME !!! */
   }
-
-#ifdef GM_DEBUG
-  SDL_Log("box::do_scroll - scrolled to %s by (%d,%d)",
-    _scrolled_rect.tostr().c_str(), dx, dy);
-#endif
 }
 
 std::string box::get_box_type_name() const

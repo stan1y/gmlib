@@ -52,7 +52,6 @@ void text_input::load(const json & d)
       if (sval == std::string("everything")) {
         v = (input_validation)everything;
       }
-      SDL_Log("text_input: allow %s (%d)", sval.c_str(), v);
       set_validation(v);
     }
   }

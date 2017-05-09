@@ -1,4 +1,5 @@
 #include "manager.h"
+#include "dlg.h"
 #include "util.h"
 
 #include "box.h"

@@ -1,5 +1,6 @@
 #include <Python.h>
 #include "script.h"
+#include "util.h"
 
 /* Check if list or tuple contain an object */
 bool PyObject_Contains(PyObject * obj, PyObject * needle)
@@ -33,10 +34,7 @@ void Py_AddModulePath(const std::string & folder)
   PyObject* module_path = PyUnicode_FromString(folder.c_str());
   PyObject* py_sys_path = PySys_GetObject((char*)"path");
   if (!PyObject_Contains(py_sys_path, module_path)) {
-#ifdef GM_DEBUG
-    SDL_Log("%s - adding %s to python modules path",
-      __METHOD_NAME__, folder.c_str());
-#endif
+    SDL_Log("adding %s to python modules path", folder.c_str());
     PyList_Append(py_sys_path, module_path);
   }
   Py_DECREF(module_path);
@@ -44,39 +42,38 @@ void Py_AddModulePath(const std::string & folder)
 
 /* create PyObject from json data */
 static PyObject * PyObject_FromJSON(const json & json_data)
-{/*
-   FIXME: json to python
-  if (json_is_integer(json_data)) {
-    return PyLong_FromDouble(json_number_value(json_data));
+{
+  if (json_data.is_number_integer()) {
+    return PyLong_FromLong(json_data.get<long>());
   }
-  if (json_is_real(json_data)) {
-    return PyFloat_FromDouble(json_number_value(json_data));
+  if (json_data.is_number_float()) {
+    return PyFloat_FromDouble(json_data.get<float>());
   }
-  if (json_is_string(json_data)) {
-    return PyUnicode_FromString(json_string_value(json_data));
+  if (json_data.is_string()) {
+    return PyUnicode_FromString(json_data.get<std::string>().c_str());
   }
-  if (json_is_array(json_data)) {
-    size_t sz = json_array_size(json_data);
+  if (json_data.is_array()) {
+    size_t sz = json_data.size();
     PyObject * arr = PyList_New(sz);
     for(size_t i = 0; i < sz; ++i) {
-      PyObject * item = PyObject_FromJSON(json_array_get(json_data, i));
+      PyObject * item = PyObject_FromJSON(json_data.at(i));
       PyList_SetItem(arr, i, item);
       Py_DECREF(item);
     }
     return arr;
   }
-  if (json_is_object(json_data)) {
+  if (json_data.is_object()) {
     PyObject * dict = PyDict_New();
-    void * it = json_object_iter((json_t *) json_data);
-    for(; it != nullptr; it = json_object_iter_next((json_t *) json_data, it)) {
-      PyObject * key = PyUnicode_FromString(json_object_iter_key(it));
-      PyObject * val = PyObject_FromJSON(json_object_iter_value(it));
+    json::const_iterator i = json_data.begin();
+    for(; i != json_data.end(); ++i) {
+      PyObject * key = PyUnicode_FromString(i->get<std::string>().c_str());
+      PyObject * val = PyObject_FromJSON(*i);
       PyDict_SetItem(dict, key, val);
       Py_DECREF(key);
       Py_DECREF(val);
     }
     return dict;
-  }*/
+  }
 
   throw python::script::script_exception("Failed to convert data instance into python.");
 }
@@ -110,9 +107,7 @@ void initialize()
   Py_SetPath(wpython_path);
   
   Py_Initialize();
-  SDL_Log("%s: initialized python runtime %s",
-          __METHOD_NAME__,
-          Py_GetVersion());
+  SDL_Log("python - initialized %s", Py_GetVersion());
 }
 
 void shutdown()
@@ -124,7 +119,7 @@ void shutdown()
 script::script(const std::string file_path):
   _py_module(NULL)
 {
-  path script_path(file_path);
+  path script_path(media_path(file_path));
   _name = script_path.stem().string();
 
   // append path to the module to sys.path list
@@ -140,8 +135,8 @@ script::script(const std::string file_path):
       PyErr_Print();
 
     SDL_Log("%s - failed to load python script from %s",
-      __METHOD_NAME__, file_path.c_str());
-    throw script_exception("Failed to load python script");
+      __METHOD_NAME__, script_path.string().c_str());
+    throw python::script::script_exception("Failed to load python script");
   }
 }
 
@@ -155,25 +150,21 @@ script::~script()
 /* 
  * Convert PyObject to a value of json type
  */
-static json * PyObject_AsJSON(PyObject * py)
+static json PyObject_AsJSON(PyObject * py)
 {
-  json * p = nullptr;
-  /*
-   * FIXME: python to json
-   *
   // number is interger
   if (PyLong_Check(py)) {
-    p = data::json::integer(PyLong_AsLong(py));
+    return json(PyLong_AsLong(py));
   }
 
   // number is double
   if (PyFloat_Check(py)) {
-    p = data::json::real(PyFloat_AsDouble(py));
+    return json(PyFloat_AsDouble(py));
   }
 
   // boolean
   if (PyBool_Check(py)) {
-    p = data::json::boolean(PyObject_IsTrue(py) == 1);
+    return json(PyObject_IsTrue(py) == 1);
   }
   
   // unicode string
@@ -181,7 +172,7 @@ static json * PyObject_AsJSON(PyObject * py)
     Py_ssize_t sz = 0;
     char * utf8 = PyUnicode_AsUTF8AndSize(py, &sz);
     if (sz != 0) {
-      p = data::json::string(utf8);
+      return json(utf8);
     }
   }
 
@@ -195,18 +186,14 @@ static json * PyObject_AsJSON(PyObject * py)
       return NULL;
     }
     // init new array
-    p = data::json::array();
+    json p = json::array();
     while ( (item = PyIter_Next(iterator)) ) {
-      // prepare and set item  
-      data::json * jitem = PyObject_AsJSON(item);
+      // prepare and set child item
+      p.push_back(PyObject_AsJSON(item));
       Py_DECREF(item);
-      if (jitem == NULL) {
-        // proparate error
-        return NULL;
-      }
-      json_array_append(p, jitem);
     }
     Py_DECREF(iterator);
+    return p;
   }
 
   // dict as object
@@ -216,10 +203,11 @@ static json * PyObject_AsJSON(PyObject * py)
 
     if (iterator == NULL) {
       // proparate dict error
-      return NULL;
+      SDL_Log("PyObject_AsJSON - failed to get iterator");
+      throw std::runtime_error("failed to get iterator");
     }
     // init new dict
-    p = data::json::object();
+    json p = json::object();
     while ( (key = PyIter_Next(iterator)) ) {
       
       // key must be a unicode string for 
@@ -236,35 +224,29 @@ static json * PyObject_AsJSON(PyObject * py)
         // proparage key error
         SDL_Log("%s - failed to find value by key \"%s\"",
           __METHOD_NAME__, PyUnicode_AsUTF8(key));
-        return NULL;
+        throw std::runtime_error("failed to find key in python object");
       }
 
       // convert key & value
       char * key_str = PyUnicode_AsUTF8(key);
-      data::json * jval = PyObject_AsJSON(value);
+      p[key_str] = PyObject_AsJSON(value);
       Py_DECREF(value);
-      if (jval == NULL) {
-        // proparage value error
-        return NULL;
-      }
-      json_object_set(p, 
-                      key_str,
-                      jval);
     }
     Py_DECREF(iterator);
+    return p;
   }
-  */
-  return p;
+
+  SDL_Log("PyObject_AsJSON - unknown python object type, cannot convert to json.");
+  throw python::script::script_exception("unknown python type");
 }
 
 /*
  * python::script object interface
  */
 
-void script::call_func(json * ret, const std::string & func_name) const
+void script::call_func(json & ret, const std::string & func_name) const
 {
-  arguments args = arguments::kwargs();
-  call_func(ret, func_name, args);
+  call_func(ret, func_name, json::object());
 }
 
 /*
@@ -272,7 +254,7 @@ void script::call_func(json * ret, const std::string & func_name) const
  * Generic interface to call a function from
  * loaded python module
  */
-void* script::call_func_ex(const std::string & func_name, const script::arguments & args) const
+void* script::call_func_ex(const std::string & func_name, const json & args) const
 {
   if (_py_module == nullptr) {
     SDL_Log("%s - module %s is not initalized. cannot call \"%s\"",
@@ -319,7 +301,7 @@ void* script::call_func_ex(const std::string & func_name, const script::argument
   return ret;
 }
 
-void script::call_func(json * ret, const std::string & func_name, const arguments & args) const
+void script::call_func(json & ret, const std::string & func_name, const json & args) const
 {
   PyObject* py = (PyObject*)call_func_ex(func_name, args);
   ret = PyObject_AsJSON(py);
@@ -331,6 +313,4 @@ void script::call_func(json * ret, const std::string & func_name, const argument
   }
 }
 
-
-
-};
+} // namespace python

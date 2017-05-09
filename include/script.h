@@ -18,28 +18,17 @@ public:
 
   };
 
-  /*
-   * Python func call arugments
-   * A list or dict based on data
-   * with serialization into PyObject
-   */
-  class arguments: public json {
-  public:
-    static arguments arg() { return json::array(); }
-    static arguments kwargs() { return json::object(); }
-  };
-
   // load python script from path
   script(const std::string file_path);
   virtual ~script();
 
   // call python function and get result as data
-  void call_func(json * ret, const std::string & func_name) const;
-  void call_func(json * ret, const std::string & func_name, const arguments & args) const;
+  void call_func(json & ret, const std::string & func_name) const;
+  void call_func(json & ret, const std::string & func_name, const json & args) const;
 
   // call python function and get result as raw PyObject
   void* call_func_ex(const std::string & func_name) const;
-  void* call_func_ex(const std::string & func_name, const arguments & args) const;
+  void* call_func_ex(const std::string & func_name, const json & args) const;
 
   // get module's name. i.e. /path/to/[name].py
   const std::string & name() const { return _name; }
@@ -49,6 +38,6 @@ private:
   std::string _name;
 };
 
-};
+} // namespace python
 
 #endif //_GM_PYTHON_H_

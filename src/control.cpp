@@ -38,8 +38,7 @@ control::control():
   _destroyed(false), _disabled(false),
   _id("root")
 {
-  SDL_Log("%s - ui manager intialized with %s", 
-    __METHOD_NAME__,
+  SDL_Log("ui::manager - initialized %s",
     _pos.tostr().c_str());
 }
 

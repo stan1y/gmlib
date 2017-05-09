@@ -496,6 +496,55 @@ void multi_texture::render_texture(SDL_Renderer * r, const texture & tx, const p
   }
 }
 
+void multi_texture::render_draw_rect(SDL_Renderer * r, const rect & rct)
+{
+  lock_container(_fragments);
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    const rect & fpos = f->pos();
+    if (fpos.collide_rect(rct)) {
+      rect clipped = rct.clip(fpos);
+      // render into the fragment's texture with clipped rect
+      {
+        rect dst(clipped.x - fpos.x, clipped.y - rct.y, clipped.w, clipped.h);
+        texture::render_context ctx(&f->get_texture(), r);
+        SDL_RenderDrawRect(r, &dst);
+      }
+    }
+  }
+}
+
+void multi_texture::render_fill_rect(SDL_Renderer * r, const rect & rct)
+{
+  lock_container(_fragments);
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    const rect & fpos = f->pos();
+    if (fpos.collide_rect(rct)) {
+      rect clipped = rct.clip(fpos);
+      // render into the fragment's texture with clipped rect
+      {
+        rect dst(clipped.x - fpos.x, clipped.y - rct.y, clipped.w, clipped.h);
+        texture::render_context ctx(&f->get_texture(), r);
+        SDL_RenderFillRect(r, &dst);
+      }
+    }
+  }
+}
+
+void multi_texture::render_clear(SDL_Renderer * r)
+{
+  lock_container(_fragments);
+  container<fragment*>::iterator it = _fragments.begin();
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    texture::render_context ctx(&f->get_texture(), r);
+    SDL_RenderClear(r);
+  }
+}
+
 multi_texture::~multi_texture()
 {
 }

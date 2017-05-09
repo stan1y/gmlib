@@ -526,13 +526,14 @@ public:
   static void set_current(screen* s, bool destroy_on_change = true);
 
   /* Screen Update */
-  virtual void update() {
+  virtual void update()
+  {
     lock_container(_components);
     container<screen::component*>::iterator it = _components.begin();
     for(; it != _components.end(); ++it) {
       (*it)->on_update(this);
     }
-  };
+  }
   
   /* Screen Render */
   virtual void render(SDL_Renderer * r) {
