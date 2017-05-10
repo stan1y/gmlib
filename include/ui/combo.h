@@ -14,7 +14,7 @@ public:
   public:
     area(const rect & pos):
       box(pos, ui::box::vbox, h_align::left, v_align::middle, 0),
-      tileframe(ui::current_theme())
+      tileframe(ui::current_theme_sprites())
     {}
 
     virtual void draw(SDL_Renderer* r, const rect & dst);

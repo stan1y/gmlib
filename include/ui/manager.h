@@ -205,12 +205,7 @@ public:
 
   /* Initialize UI subsystem */
   static void initialize(rect & available_rect,
-                         const std::string & theme,
-                         const std::string & font = "default.ttf",
-                         const int font_size = 12,
-                         color color_idle = color::gray(),
-                         color color_highlight = color::white(),
-                         color color_back = color::black());
+                         const std::string & theme);
                          
 
   /* Pointer to a currently processed event (during event handlers execution) */
@@ -242,14 +237,16 @@ public:
   void push_back(control * c);
 
   /** UI Theme API */
-  const texture & get_theme() { return _theme; }
-  const ttf_font & get_font() { return _font; }
-  const color get_color_idle() { return _theme_color_idle; }
-  void set_color_idle(color idle) { _theme_color_idle = idle; }
-  const color get_color_highlight() { return _theme_color_highlight; }
-  void set_color_highlight(color highlight) { _theme_color_highlight = highlight; }
-  const color get_color_back() { return _theme_color_back; }
-  void set_color_back(color back) { _theme_color_back = back; }
+  const texture & get_theme_sprites() { return _theme_sprites; }
+  json get_theme_prop(const std::string & type_name, const std::string & prop_name);
+  color get_idle_color(const std::string & type_name);
+  color get_highlight_color(const std::string & type_name);
+  color get_back_color(const std::string & type_name);
+  const ttf_font * get_font(const std::string & type_name);
+
+  /* load cached font */
+  static ttf_font* load_font(const std::string & font_file,
+                             const size_t & ptsize);
 
   /* screen::component protocol overrides */
   virtual void on_update(screen *);
@@ -260,19 +257,10 @@ public:
   virtual std::string tostr() const;
 
 private:
-  manager(rect &  available_rect,
-    const std::string & theme_file,
-    const std::string & theme_font,
-    const int theme_font_size,
-    const color & color_idle,
-    const color & color_highlight,
-    const color & color_back);
+  manager(rect &  available_rect, const std::string & theme_file);
   
   void set_hovered_control(control * target);
   void set_focused_control(control * target);
-
-  // forbid manager::load calls
-  //virtual void load(data&) {};
 
   // global pointer position
   point _pointer;
@@ -289,12 +277,8 @@ private:
   sdl_mutex _cur_event_mx;
 
   // Theme settings
-  texture _theme;
-  ttf_font _font;
-  color _theme_color_idle;
-  color _theme_color_highlight;
-  color _theme_color_back;
-  
+  texture _theme_sprites;
+  json _theme_data;
 };
 
 
@@ -357,9 +341,9 @@ T * get_hovered_control()
   return dynamic_cast<T*> (c);
 }
 
-static const texture * current_theme()
+static const texture * current_theme_sprites()
 {
-  return &ui::manager::instance()->get_theme();
+  return &ui::manager::instance()->get_theme_sprites();
 }
 
 /*

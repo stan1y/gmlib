@@ -11,7 +11,7 @@ text_input::text_input(const rect & pos,
                        const padding & pad):
 
   label(pos, ip, ha, va, pad),
-	tileframe(ui::current_theme()),
+  tileframe(ui::current_theme_sprites()),
   _readonly(false),
   _draw_frame(true),
   _filter(filter),
@@ -23,6 +23,10 @@ text_input::text_input(const rect & pos,
   enable_hightlight_on_focus();
   kbd_up += boost::bind(&text_input::on_kbd_up, this, _1);
   focused += boost::bind(&text_input::on_focused, this, _1);
+
+  set_font(ui::manager::instance()->get_font("input"));
+  set_idle_color(ui::manager::instance()->get_idle_color("input"));
+  set_highlight_color(ui::manager::instance()->get_highlight_color("input"));
 }
 
 
@@ -243,7 +247,7 @@ void text_input::draw(SDL_Renderer * r, const rect & dst)
 point text_input::get_cursor_pos(const rect & dst)
 {
   std::string sub = get_text().substr(0, _cursor);
-  rect txt_rect = get_font().get_text_rect(sub);
+  rect txt_rect = get_font()->get_text_rect(sub);
   return point (get_text_offset().x + txt_rect.w, get_text_offset().y);
 }
 

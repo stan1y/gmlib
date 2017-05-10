@@ -19,7 +19,7 @@ public:
     const padding & pad = padding());
   
   virtual void draw(SDL_Renderer * r, const rect & dst);
-  virtual std::string get_type_name() const { return "button"; }
+  virtual std::string get_type_name() const { return "btn"; }
   virtual void set_user_data(const std::string & usr) { _usr_data = usr; }
   const std::string & get_user_data() const { return _usr_data; }
 

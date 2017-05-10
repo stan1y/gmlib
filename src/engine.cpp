@@ -18,7 +18,6 @@ static uint32_t g_screen_ticks_per_frame = 0;
 static float g_avg_fps = 0.0f;
 static texture g_fps;
 static color g_fps_color;
-static ttf_font const * g_fps_font = nullptr;
 
 /* Screens */
 static sdl_mutex g_screen_lock;
@@ -134,11 +133,7 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     
     // init UI
     rect display = GM_GetDisplayRect();
-    color clr = color::from_json(cfg["ui_color"]);
-    ui::manager::initialize(display,
-                            cfg["ui_theme"],
-                            cfg["ui_font"][0], cfg["ui_font"][1],
-                            clr, clr);
+    ui::manager::initialize(display, cfg["ui_theme"]);
     
     // setup screens
     g_screen_current = nullptr;
@@ -149,7 +144,6 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
         cfg["fps_counter"].get<bool>()) {
       g_fps_timer = new timer();
       g_fps_color = color( 0, 255, 0, 255 );
-      g_fps_font = new ttf_font("default.ttf", 12);
     }
 
     return 0;
@@ -249,9 +243,9 @@ void GM_RenderFrame()
   
   // render avg fps
   if (g_fps_timer) {
-    SDL_Surface *s = g_fps_font->print_solid(
+    SDL_Surface *s = ui::manager::instance()->get_font("fps_counter")->print_solid(
       std::string("fps: ") + std::to_string(float_to_sint32(GM_CurrentFPS())),
-      g_fps_color);
+      ui::manager::instance()->get_idle_color("fps_counter"));
     g_fps.set_surface(s);
     SDL_FreeSurface(s);
     g_fps.render(GM_GetRenderer(), point(5, 5));
@@ -308,6 +302,46 @@ screen::~screen()
       continue;
     delete *it;
   }
+}
+
+void screen::update()
+{
+  lock_container(_components);
+  // update UI first
+  ui::manager::instance()->on_update(this);
+  container<screen::component*>::iterator it = _components.begin();
+  for(; it != _components.end(); ++it) {
+    (*it)->on_update(this);
+  }
+}
+
+/* Screen Render */
+void screen::render(SDL_Renderer * r)
+{
+  lock_container(_components);
+  // render components first
+  container<screen::component*>::iterator it = _components.begin();
+  for(; it != _components.end(); ++it) {
+    (*it)->render(r);
+  }
+  // render UI on top of others
+  ui::manager::instance()->render(r);
+}
+
+/* Screen On Event Callback */
+void screen::on_event(SDL_Event* ev)
+{
+  lock_container(_components);
+  // handle event by UI first
+  ui::manager::instance()->on_event(ev);
+  container<screen::component*>::iterator it = _components.begin();
+  for(; it != _components.end(); ++it) {
+    (*it)->on_event(ev);
+  }
+}
+
+void screen::add_component(screen::component* c) {
+  _components.push_back(c);
 }
 
 const screen* screen::current() 
@@ -620,4 +654,6 @@ void ttf_font::load(const std::string & file_path, size_t pts)
   _pts = pts;
   _f = GM_LoadFont(media_path(file_path), _pts);
   _fname = file_path;
+  SDL_Log("ttf_font - loaded %s, pt size: %zu",
+          _fname.c_str(), _pts);
 }

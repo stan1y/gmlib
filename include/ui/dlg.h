@@ -22,15 +22,15 @@ public:
   virtual std::string get_type_name() const { return "message"; }
 
   /* show global alert */
-  static void alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  static void alert_ex(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms);
   static void alert(const std::string & text, uint32_t timeout_ms);
 
 protected:
   /* use static methods to create new instances of global message alert */
-  message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  message(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms);
 
 private:
-  void reset(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms);
+  void reset(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms);
   uint32_t _timeout_ms;
   timer _timer;
   std::string _text;

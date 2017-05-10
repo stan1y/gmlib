@@ -18,6 +18,24 @@ uint32_t UI_GetUserIdle()
 
 namespace ui {
 
+
+/** Fonts cache */
+
+typedef std::map<std::string, ttf_font*> fonts_cache;
+static fonts_cache g_fonts_cache;
+
+ttf_font* manager::load_font(const std::string & font_file, const size_t & ptsize)
+{
+  std::string font_id = (std::stringstream() << font_file << ":" << ptsize).str();
+  fonts_cache::iterator i = g_fonts_cache.find(font_id);
+  if (i == g_fonts_cache.end()) {
+    ttf_font * font = new ttf_font(font_file, ptsize);
+    g_fonts_cache.insert(std::make_pair(font_id, font));
+    return font;
+  }
+  return i->second;
+}
+
 static manager* g_manager = NULL;
 typedef container<control*> dead_list;
 static dead_list g_graveyard;
@@ -26,18 +44,10 @@ static message * g_message = NULL;
 static std::mutex g_message_mx;
 
 /** Manager **/
-void manager::initialize(rect & available_rect,
- 									 const std::string & theme_tileset,
- 									 const std::string & theme_font,
-	                 const int theme_font_size,
- 									 const color color_idle,
- 									 const color color_highlight,
- 									 const color color_back)
+void manager::initialize(rect & available_rect, const std::string & theme_file)
 {
   if (g_manager == NULL) {
-    g_manager = new manager(available_rect,
-			theme_tileset, theme_font, theme_font_size, 
-			color_idle, color_highlight, color_back);
+    g_manager = new manager(available_rect, theme_file);
   }
   else {
     g_manager->set_pos(available_rect);
@@ -60,24 +70,17 @@ const SDL_Event* manager::current_event()
 }
 
 manager::manager(rect & available_rect, 
-                 const std::string & theme_file,
-								 const std::string & font_file,
-								 const int font_size,
-	               const color & color_idle, 
-	               const color & color_highlight,
-								 const color & color_back):
+                 const std::string & theme_file):
   control(),
   screen::component(NULL),
   _hovered_cnt(NULL),
   _focused_cnt(NULL),
-  _cur_event(NULL),
-  _theme(theme_file),
-  _font(font_file, font_size),
-	_theme_color_idle(color_idle),
-	_theme_color_highlight(color_highlight),
-	_theme_color_back(color_back)
+  _cur_event(NULL)
 {
   set_pos(available_rect);
+  // read theme settings
+  std::ifstream(media_path(theme_file)) >> _theme_data;
+  _theme_sprites.load(_theme_data["res"]);
 }
 
 void manager::destroy(control* child)
@@ -96,6 +99,51 @@ std::string manager::tostr() const
      << " children: " << _children.size()
      << "}";
   return ss.str();
+}
+
+json manager::get_theme_prop(const std::string & type_name, const std::string & prop_name)
+{
+  if (_theme_data.find(type_name) != _theme_data.end() &&
+      _theme_data.at(type_name).find(prop_name) != _theme_data.at(type_name).end())
+  {
+    return _theme_data.at(type_name).at(prop_name);
+  }
+  else if (_theme_data.find(prop_name) != _theme_data.end())
+  {
+    return _theme_data.at(prop_name);
+  }
+  else
+  {
+    SDL_Log("ui::manager::get_theme_prop - failed to find any property '%s'",
+            prop_name.c_str());
+    throw std::runtime_error("failed to find theme property");
+  }
+}
+
+color manager::get_back_color(const std::string & type_name)
+{
+  return color::from_json(get_theme_prop(type_name, "back_color"));
+}
+
+color manager::get_highlight_color(const std::string & type_name)
+{
+  return color::from_json(get_theme_prop(type_name, "highlight_color"));
+}
+
+color manager::get_idle_color(const std::string & type_name)
+{
+  return color::from_json(get_theme_prop(type_name, "idle_color"));
+}
+
+const ttf_font * manager::get_font(const std::string & type_name)
+{
+  json font = get_theme_prop(type_name, "font");
+  if (font.is_array()) {
+    return load_font(font.at(0), font.at(1));
+  }
+  SDL_Log("ui::manager::get_font - failed to load font for %s",
+          type_name.c_str());
+  throw std::runtime_error("failed to load font");
 }
 
 void manager::set_focused_control(control * target)
@@ -244,23 +292,49 @@ void manager::on_event(SDL_Event* ev)
 
 control* create_control(const std::string type_id, rect & pos)
 {
-  if (type_id == "panel") {
-    return new panel(pos);
-  }
-  if (type_id == "box") {
+  if (type_id == "box")
+  {
     return new box(pos);
   }
-  if (type_id == "label") {
-    return new label(pos);
+  if (type_id == "hbox")
+  {
+    return new box(pos, box::hbox);
   }
-  if (type_id == "button") {
-    return new button(pos);
+  if (type_id == "vbox")
+  {
+    return new box(pos, box::vbox);
   }
-  if (type_id == "input") {
-    return new text_input(pos);
+  if (type_id == "panel" || type_id == "pnl")
+  {
+    return new panel(pos);
   }
-  if (type_id == "combo") {
-    return new combo(pos);
+  if (type_id.find("label") != std::string::npos)
+  {
+    // styled label
+    label* lbl = new label(pos);
+    lbl->set_style(type_id);
+    return lbl;
+  }
+  if (type_id.find("btn") != std::string::npos)
+  {
+    // styled button
+    button* btn = new button(pos);
+    btn->set_style(type_id);
+    return btn;
+  }
+  if (type_id.find("input") != std::string::npos)
+  {
+    // styled input
+    text_input* inp = new text_input(pos);
+    inp->set_style(type_id);
+    return inp;
+  }
+  if (type_id.find("combo") != std::string::npos)
+  {
+    // styled combo
+    combo *cmb = new combo(pos);
+    cmb->set_style(type_id);
+    return cmb;
   }
   return NULL;
 }
@@ -360,19 +434,19 @@ control* manager::build(const json & d)
 /**
   UI Message implementation
   */
-message::message(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms):
-  control(f.get_text_rect(text)),
+message::message(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms):
+  control(f->get_text_rect(text)),
   _timeout_ms(timeout_ms)
 {
   reset(text, f, c, timeout_ms);
 }
 
-void message::reset(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms)
+void message::reset(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms)
 {
   _timer.stop();
   set_visible(false);
   _text = text;
-  SDL_Surface *s = f.print_solid(_text, c);
+  SDL_Surface *s = f->print_solid(_text, c);
   _tx.set_surface(s);
   SDL_FreeSurface(s);
   rect display = GM_GetDisplayRect();
@@ -417,12 +491,12 @@ void message::show()
 void message::alert(const std::string & text, uint32_t timeout_ms)
 {
   alert_ex(text, 
-    ui::manager::instance()->get_font(), 
-    ui::manager::instance()->get_color_highlight(),
+    ui::manager::instance()->get_font("alert"),
+    ui::manager::instance()->get_highlight_color("alert"),
     timeout_ms);
 }
 
-void message::alert_ex(const std::string & text, const ttf_font & f, const color & c, uint32_t timeout_ms)
+void message::alert_ex(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms)
 {
   g_message_mx.lock();
   if (g_message == NULL)

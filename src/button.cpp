@@ -8,11 +8,9 @@ button::button(const rect & pos,
     const v_align & va,
     const padding & pad):
   label(pos, ip, ha, va, pad),
-	tileframe(ui::current_theme())
+  tileframe(ui::current_theme_sprites())
 {
-  set_font(ui::manager::instance()->get_font());
-  set_idle_color(ui::manager::instance()->get_color_idle());
-  set_highlight_color(ui::manager::instance()->get_color_highlight());
+  set_style(get_type_name());
 }
 
 void button::load(const json &d)

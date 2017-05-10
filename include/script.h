@@ -30,6 +30,9 @@ public:
   void* call_func_ex(const std::string & func_name) const;
   void* call_func_ex(const std::string & func_name, const json & args) const;
 
+  // check if module exports callable with name
+  bool has_func(const std::string & func_name) const;
+
   // get module's name. i.e. /path/to/[name].py
   const std::string & name() const { return _name; }
 

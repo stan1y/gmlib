@@ -313,4 +313,20 @@ void script::call_func(json & ret, const std::string & func_name, const json & a
   }
 }
 
+bool script::has_func(const std::string & func_name) const
+{
+  PyObject * func = PyObject_GetAttrString((PyObject*)_py_module, func_name.c_str());
+  if (func == NULL) {
+    return false;
+  }
+
+  if (!PyCallable_Check(func)) {
+    Py_XDECREF(func);
+    return false;
+  }
+
+  Py_DECREF(func);
+  return true;
+}
+
 } // namespace python

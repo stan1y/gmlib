@@ -12,11 +12,12 @@ label::label(const rect & pos,
   _pad(pad), _ha(ha), _va(va),
   _icon_pos(icon), _icon_gap(gap),
   _icon_tx(nullptr),
-  _font_text(ui::manager::instance()->get_font()),
+  _style(get_type_name()),
+  _font(ui::manager::instance()->get_font(_style)),
   _font_style(font_style::blended),
-  _color_idle(ui::manager::instance()->get_color_idle()),
-  _color_highlight(ui::manager::instance()->get_color_highlight()),
-  _color_back(ui::manager::instance()->get_color_back()),
+  _color_idle(ui::manager::instance()->get_idle_color(_style)),
+  _color_highlight(ui::manager::instance()->get_highlight_color(_style)),
+  _color_back(ui::manager::instance()->get_back_color(_style)),
   _dirty(true),
   _sticky(false),
   _stuck(false),
@@ -97,6 +98,16 @@ void label::set_icon(texture* icon)
   if (_icon_tx != nullptr)
     delete _icon_tx;
   _icon_tx = icon;
+}
+
+void label::set_style(const std::string &st)
+{
+  _style = st;
+  _font = ui::manager::instance()->get_font(_style);
+  _font_style = font_style::blended;
+  _color_idle = ui::manager::instance()->get_idle_color(_style);
+  _color_highlight = ui::manager::instance()->get_highlight_color(_style);
+  _color_back = ui::manager::instance()->get_back_color(_style);
 }
 
 void label::on_hovered(control * target)
@@ -183,10 +194,10 @@ void label::load(const json & d)
     _icon_gap = d["icon_gap"];
   }
 
-  if (d.find("font_text") != d.end() && d["font_text"].is_object()) {
-    _font_text.load(d["font_text"]["face"], d["font_text"]["size"]);
-    if (d["font_text"].find("style") != d["font_text"].end())
-      _font_style = font_style_from_str(d["font_text.style"]);
+  if (d.find("font") != d.end() && d["font"].is_array()) {
+    _font = manager::load_font(d["font"].at(0), d["font"].at(1));
+    if (d.find("font_style") != d.end())
+      _font_style = font_style_from_str(d["font_style"]);
   }
 
   if (d.find("color_back") != d.end()) {
@@ -278,13 +289,13 @@ void label::draw(SDL_Renderer * r, const rect & dst)
   control::draw(r, dst);
 }
 
-void label::paint_text(texture & tx, const std::string & text, const ttf_font & fnt, const color & clr)
+void label::paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr)
 {
   SDL_Surface *s;
   if (_font_style == font_style::blended)
-    s = fnt.print_blended(text.length() > 0 ? text : " ", clr);
+    s = fnt->print_blended(text.length() > 0 ? text : " ", clr);
   else
-    s = fnt.print_solid(text.length() > 0 ? text : " ", clr);
+    s = fnt->print_solid(text.length() > 0 ? text : " ", clr);
   tx.set_surface(s);
   SDL_FreeSurface(s);
 }
@@ -301,7 +312,7 @@ void label::paint(SDL_Renderer * r)
   else if (is_hovered() && _highlight_on_hover) {
     clr = _color_highlight;
   }
-  paint_text(_text_tx, _text, _font_text, clr);
+  paint_text(_text_tx, _text, _font, clr);
 
   // load icon as resource only if given
   if (_icon_file.size() > 0 && _icon_tx == nullptr) {

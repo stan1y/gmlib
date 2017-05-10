@@ -19,7 +19,6 @@ public:
     _panel_from_json(NULL),
     _back(GM_GetDisplayRect(), 1024 / 64, 768 / 64) 
   {
-    add_component(ui::manager::instance());
 
     // build background
     texture start("start.png");

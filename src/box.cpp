@@ -522,7 +522,7 @@ panel::panel(const rect & pos,
              const padding & pad,
              const int & gap):
   box(pos, t, ha, va, pad, gap),
-  tileframe(ui::current_theme())
+  tileframe(ui::current_theme_sprites())
 {
 }
 

@@ -57,19 +57,13 @@ public:
   const std::string& get_text() { return _text; }
   
   /* Label text font */
-  void set_font(std::string name, size_t pt)
+  void set_font(const ttf_font * fnt)
   {
-    _font_text.load(name, pt);
+    _font = fnt;
     _dirty = true;
   }
 
-  void set_font(const ttf_font & fnt)
-  {
-    _font_text = fnt;
-    _dirty = true;
-  }
-
-  const ttf_font & get_font() { return _font_text; }
+  const ttf_font * get_font() { return _font; }
 
   void set_font_style(font_style s) { _font_style = s; }
   const font_style get_font_style() { return _font_style; }
@@ -151,6 +145,9 @@ public:
   void set_sticky(bool st) { _sticky = st; if (_sticky) _stuck = false; }
   void set_stuck(bool st) { if (_sticky) _stuck = st; }
 
+  const std::string get_style() const { return _style; }
+  void set_style(const std::string & st);
+
 protected:
 
   virtual void paint(SDL_Renderer * r);
@@ -159,7 +156,7 @@ protected:
   void mark_dirty() { _dirty = true; }
   const texture & get_text_texture() const { return _text_tx; }
   const point & get_text_offset() const { return _text_offset; }
-  void paint_text(texture & tx, const std::string & text, const ttf_font & fnt, const color & clr);
+  void paint_text(texture & tx, const std::string & text, const ttf_font * fnt, const color & clr);
 
 private:
   void on_hovered(control * target);
@@ -187,7 +184,8 @@ private:
   point _icon_offset;
   texture * _icon_tx;
   
-  ttf_font _font_text;
+  std::string _style;
+  const ttf_font * _font;
   font_style _font_style;
 
   color _color_idle;
