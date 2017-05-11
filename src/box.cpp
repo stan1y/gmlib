@@ -11,13 +11,13 @@ namespace ui {
 
 /** UI BOX Container Implementation **/
 
-box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & gap):
+box::box(const rect & pos, const box_type & t, const h_align & ha, const v_align & va, const padding & pad, const int & margin):
   control(pos),
   _type(t), _ha(ha), _va(va),
   _dirty(false),
   _pad(pad),
   _children_rect(0, 0, _pad.top, _pad.left),
-  _gap(gap),
+  _margin(margin),
   _vscroll(nullptr),
   _hscroll(nullptr),
   _scroll_type(scroll_type::scrollbar_hidden),
@@ -164,6 +164,7 @@ void box::clear_children()
     // clear the source list
     _children.clear();
   }
+
   update_children();
 }
 
@@ -278,8 +279,8 @@ void box::load(const json & d)
       _pad = padding(d["padding"].get<int>());
   }
 
-  if (d.find("gap") != d.end() && d["gap"].is_number())
-    _gap = d["gap"];
+  if (d.find("margin") != d.end() && d["margin"].is_number())
+    _margin = d["margin"];
 }
 
 void box::switch_selection(control * target)
@@ -407,14 +408,14 @@ void box::update_children()
           // append from the top
           if (last_pos.y == 0)
             last_pos.y = area.y + _pad.top;
-          pos.y = last_pos.y + last_pos.h + _gap;
+          pos.y = last_pos.y + last_pos.h + _margin;
           break;
 
         case v_align::bottom:
           // append at the bottom
           if (last_pos.y == 0)
             last_pos.y = area.y + area.h - _pad.bottom;
-          pos.y = last_pos.y - _gap - pos.h;
+          pos.y = last_pos.y - _margin - pos.h;
           break;
         }; 
       }
@@ -461,13 +462,13 @@ void box::update_children()
         case h_align::left:
           if (last_pos.x == 0)
             last_pos.x = area.x + _pad.left;
-          pos.x = last_pos.x + last_pos.w + _gap;
+          pos.x = last_pos.x + last_pos.w + _margin;
           break;
 
         case h_align::right:
           if (last_pos.x == 0)
             last_pos.x = area.x + area.w - _pad.right;
-          pos.x = last_pos.x - _gap - pos.w;
+          pos.x = last_pos.x - _margin - pos.w;
 
           break;
         };
@@ -506,8 +507,10 @@ void box::update_children()
       _children.erase(it);
     _children.push_back(_hscroll);
   }
-  
+
   // rebuild on children add/remove/show/hide/reorder
+  _scrolled_rect.x = 0;
+  _scrolled_rect.y = 0;
   _dirty = true;
 }
 

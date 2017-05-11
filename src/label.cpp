@@ -14,7 +14,7 @@ label::label(const rect & pos,
   _icon_tx(nullptr),
   _style(get_type_name()),
   _font(ui::manager::instance()->get_font(_style)),
-  _font_style(font_style::blended),
+  _font_style(ui::manager::instance()->get_font_style(_style)),
   _color_idle(ui::manager::instance()->get_idle_color(_style)),
   _color_highlight(ui::manager::instance()->get_highlight_color(_style)),
   _color_back(ui::manager::instance()->get_back_color(_style)),
@@ -42,16 +42,6 @@ label::~label()
 {
   if (_icon_tx != nullptr)
     delete _icon_tx;
-}
-
-label::font_style label::font_style_from_str(const std::string & s)
-{
-  if (s == "solid")
-    return font_style::solid;
-  else if (s == "blended")
-    return font_style::blended;
-  else
-    throw std::runtime_error("Failed to convert string to font_style");
 }
 
 void label::set_text(const std::string& txt)
@@ -100,11 +90,17 @@ void label::set_icon(texture* icon)
   _icon_tx = icon;
 }
 
+void label::set_icon_gap(int gap)
+{
+  _icon_gap = gap;
+  _dirty = true;
+}
+
 void label::set_style(const std::string &st)
 {
   _style = st;
   _font = ui::manager::instance()->get_font(_style);
-  _font_style = font_style::blended;
+  _font_style = ui::manager::instance()->get_font_style(_style);
   _color_idle = ui::manager::instance()->get_idle_color(_style);
   _color_highlight = ui::manager::instance()->get_highlight_color(_style);
   _color_back = ui::manager::instance()->get_back_color(_style);
@@ -197,7 +193,7 @@ void label::load(const json & d)
   if (d.find("font") != d.end() && d["font"].is_array()) {
     _font = manager::load_font(d["font"].at(0), d["font"].at(1));
     if (d.find("font_style") != d.end())
-      _font_style = font_style_from_str(d["font_style"]);
+      _font_style = manager::font_style_from_str(d["font_style"]);
   }
 
   if (d.find("color_back") != d.end()) {

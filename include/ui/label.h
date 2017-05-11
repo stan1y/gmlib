@@ -11,20 +11,6 @@ namespace ui {
 */
 class label: public control {
 public:
-
-  // this is the position of
-  // label icon if used
-  typedef enum {
-    icon_right,
-    icon_left
-  } icon_pos;
-
-  // the style of label's font rendering
-  typedef enum {
-    solid   = 0,
-    blended = 1
-  } font_style;
-
   static font_style font_style_from_str(const std::string & s);
 
   /* Public constructor for labels */
@@ -147,6 +133,9 @@ public:
 
   const std::string get_style() const { return _style; }
   void set_style(const std::string & st);
+
+  int get_icon_gap() const { return _icon_gap; }
+  void set_icon_gap(int gap);
 
 protected:
 

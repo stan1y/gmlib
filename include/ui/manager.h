@@ -5,9 +5,34 @@
 #include "evhndlr.h"
 #include "texture.h"
 
-
+/*
+ * GMLib User Interface Manager
+ * `ui::manager` is a root screen::component attached
+ * to every screen and used to build interfaces in
+ * game screens. The UI controls library is available
+ * to build sophisticated nested UI dialogs. Dynamic
+ * loading of controls structure is supported with
+ * JSON based interface description files and `ui::build`
+ * family of functions.
+ */
 
 namespace ui {
+
+/**
+ * @brief the position of label icon
+ */
+typedef enum {
+  icon_right,
+  icon_left
+} icon_pos;
+
+/**
+ * @brief the style of font rendering
+ */
+typedef enum {
+  solid   = 0,
+  blended = 1
+} font_style;
 
 /* Forward declare control and control_list */
 class control;
@@ -243,10 +268,12 @@ public:
   color get_highlight_color(const std::string & type_name);
   color get_back_color(const std::string & type_name);
   const ttf_font * get_font(const std::string & type_name);
+  font_style get_font_style(const std::string & type_name);
 
   /* load cached font */
   static ttf_font* load_font(const std::string & font_file,
                              const size_t & ptsize);
+  static font_style font_style_from_str(const std::string & s);
 
   /* screen::component protocol overrides */
   virtual void on_update(screen *);

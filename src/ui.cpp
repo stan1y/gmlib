@@ -1,5 +1,5 @@
 #include "manager.h"
-#include "dlg.h"
+#include "dialog.h"
 #include "util.h"
 
 #include "box.h"
@@ -18,7 +18,6 @@ uint32_t UI_GetUserIdle()
 
 namespace ui {
 
-
 /** Fonts cache */
 
 typedef std::map<std::string, ttf_font*> fonts_cache;
@@ -36,12 +35,19 @@ ttf_font* manager::load_font(const std::string & font_file, const size_t & ptsiz
   return i->second;
 }
 
+font_style manager::font_style_from_str(const std::string & s)
+{
+  if (s == "solid")
+    return font_style::solid;
+  else if (s == "blended")
+    return font_style::blended;
+  else
+    throw std::runtime_error("Failed to convert string to font_style");
+}
+
 static manager* g_manager = NULL;
 typedef container<control*> dead_list;
 static dead_list g_graveyard;
-
-static message * g_message = NULL;
-static std::mutex g_message_mx;
 
 /** Manager **/
 void manager::initialize(rect & available_rect, const std::string & theme_file)
@@ -133,6 +139,11 @@ color manager::get_highlight_color(const std::string & type_name)
 color manager::get_idle_color(const std::string & type_name)
 {
   return color::from_json(get_theme_prop(type_name, "idle_color"));
+}
+
+font_style manager::get_font_style(const std::string &type_name)
+{
+  return manager::font_style_from_str(get_theme_prop(type_name, "font_style"));
 }
 
 const ttf_font * manager::get_font(const std::string & type_name)
@@ -429,93 +440,6 @@ control* manager::build(const json & d)
   }
 
   return inst;
-}
-
-/**
-  UI Message implementation
-  */
-message::message(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms):
-  control(f->get_text_rect(text)),
-  _timeout_ms(timeout_ms)
-{
-  reset(text, f, c, timeout_ms);
-}
-
-void message::reset(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms)
-{
-  _timer.stop();
-  set_visible(false);
-  _text = text;
-  SDL_Surface *s = f->print_solid(_text, c);
-  _tx.set_surface(s);
-  SDL_FreeSurface(s);
-  rect display = GM_GetDisplayRect();
-
-  _pos.w = _tx.width();
-  _pos.h = _tx.height();
-  // middle of the screen with Y offset
-  _pos.x = (display.w - _pos.w) / 2;
-  _pos.y = 25 + _pos.h;
-  show();
-}
-
-void message::update()
-{
-  if (!_timer.is_started())
-    return;
-
-  g_message_mx.lock();
-  uint32_t ticked = _timer.get_ticks();
-  uint32_t step = 255 / _timeout_ms;
-  //deplete 1 alpha each step
-  uint32_t depleted = ticked / step;
-  if (depleted >= 255) {
-    _timer.stop();
-
-    //self-destruct when alpha depleted
-    ui::destroy(this);
-    g_message = NULL;
-  }
-  
-  uint8_t a = 255 - uint32_to_uint8(depleted);
-  _tx.set_alpha(a);
-  g_message_mx.unlock();
-}
-
-void message::show()
-{
-  set_visible(true);
-  _timer.start();
-}
-
-void message::alert(const std::string & text, uint32_t timeout_ms)
-{
-  alert_ex(text, 
-    ui::manager::instance()->get_font("alert"),
-    ui::manager::instance()->get_highlight_color("alert"),
-    timeout_ms);
-}
-
-void message::alert_ex(const std::string & text, const ttf_font * f, const color & c, uint32_t timeout_ms)
-{
-  g_message_mx.lock();
-  if (g_message == NULL)
-    g_message = new message(text, f, c, timeout_ms);
-  else
-    g_message->reset(text, f, c, timeout_ms);
-  g_message_mx.unlock();
-}
-
-message::~message()
-{
-  
-}
-
-void message::render(SDL_Renderer * r, const rect & dst)
-{
-  g_message_mx.lock();
-  _tx.render(r, dst);
-  g_message_mx.unlock();
 }
 
 } //namespace ui

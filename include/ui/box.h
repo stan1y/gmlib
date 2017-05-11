@@ -46,7 +46,7 @@ public:
     const h_align & ha = h_align::center,
     const v_align & va = v_align::top,
     const padding & pad = padding(),
-    const int & gap = 2);
+    const int & margin = 5);
 
   virtual std::string get_type_name() const { return "box"; }
   std::string get_box_type_name() const;
@@ -105,6 +105,9 @@ public:
   }
   void set_padding(padding & pad) { _pad = pad; }
   const padding & get_padding() { return _pad; }
+
+  const int get_margin() const { return _margin; }
+  void set_margin(const int & m) { _margin = m; }
 
   virtual void update();
   
@@ -165,7 +168,7 @@ protected:
   rect _children_rect;
   // step in px between children in positioning
   // both for vertical and horizontal layout
-  int _gap;
+  int _margin;
   
   // scroll controls
   button * _vscroll;
