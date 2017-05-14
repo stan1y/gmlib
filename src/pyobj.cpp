@@ -29,7 +29,7 @@ static struct PyModuleDef pygm_module = {
 
 struct pypoint {
   PyObject_HEAD
-  point * p;
+  point p;
 };
 
 static PyMethodDef pypoint_methods[] = {
@@ -50,7 +50,7 @@ static void        pypoint_dealloc(struct pypoint *);
 static PyTypeObject pypoint_type = {
   PyVarObject_HEAD_INIT(NULL, 0)
   .tp_name = "gm.point",
-  .tp_doc = "struct point",
+  .tp_doc = "struct pypoint",
   .tp_getset = pypoint_getset,
   .tp_methods = pypoint_methods,
   .tp_basicsize = sizeof(struct pypoint),
@@ -58,23 +58,110 @@ static PyTypeObject pypoint_type = {
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 };
 
-static void        pypoint_dealloc(struct pypoint *)
+static
+void
+pypoint_dealloc(struct pypoint *p)
 {
-
+  PyObject_Del((PyObject*)p);
 }
 
 static
 PyObject*
 pypoint_getx(struct pypoint *pnt, void *)
 {
-  return PyLong_FromLong(pnt->p->x);
+  return PyLong_FromLong(pnt->p.x);
 }
 
 static
 PyObject*
 pypoint_gety(struct pypoint *pnt, void *)
 {
-  return PyLong_FromLong(pnt->p->y);
+  return PyLong_FromLong(pnt->p.y);
+}
+
+
+/**
+ * @brief The pysprite struct
+ */
+
+struct pysprite {
+  PyObject_HEAD
+  sprite s;
+};
+
+static PyObject *pysprite_getcliprect(struct pysprite *, PyObject *);
+static PyObject *pysprite_render(struct pysprite *, PyObject *);
+
+static PyMethodDef pysprite_methods[] = {
+  METHOD("get_cliprect",   pysprite_getcliprect,   METH_NOARGS),
+  METHOD("render",         pysprite_render,        METH_VARARGS),
+  METHOD(NULL, NULL, -1),
+};
+
+static PyObject   *pysprite_getidx(struct pysprite *, void *);
+static PyObject   *pysprite_getw(struct pysprite *, void *);
+static PyObject   *pysprite_geth(struct pysprite *, void *);
+
+static PyGetSetDef pysprite_getset[] = {
+  GETTER("w", pysprite_getw),
+  GETTER("h", pysprite_geth),
+  GETTER("idx", pysprite_getidx),
+  GETTER(NULL, NULL),
+};
+
+static void        pysprite_dealloc(struct pysprite *);
+
+static PyTypeObject pysprite_type = {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  .tp_name = "gm.sprite",
+  .tp_doc = "struct pysprite",
+  .tp_getset = pysprite_getset,
+  .tp_methods = pysprite_methods,
+  .tp_basicsize = sizeof(struct pysprite),
+  .tp_dealloc = (destructor)pysprite_dealloc,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+};
+
+static void
+pysprite_dealloc(struct pysprite *p)
+{
+  PyObject_Del((PyObject*)p);
+}
+
+static PyObject*
+pysprite_getcliprect(struct pysprite *self, PyObject *)
+{
+  return python::pyrect_alloc(self->s.get_clip_rect());
+}
+
+static PyObject*
+pysprite_render(struct pysprite *self, PyObject *args)
+{
+  struct pypoint *pnt = nullptr;
+
+  if (!PyArg_ParseTuple(args, "O!", &pypoint_type, (PyObject*)pnt)) {
+    PyErr_SetString(PyExc_TypeError, "function gm.point argument");
+    return (NULL);
+  }
+  self->s.render(GM_GetRenderer(), pnt->p);
+  Py_RETURN_NONE;
+}
+
+static PyObject*
+pysprite_getidx(struct pysprite *self, void *)
+{
+  return PyLong_FromLong(self->s.idx);
+}
+
+static PyObject*
+pysprite_getw(struct pysprite *self, void *)
+{
+  return PyLong_FromLong(self->s.w);
+}
+
+static PyObject* pysprite_geth(struct pysprite *self, void *)
+{
+  return PyLong_FromLong(self->s.h);
 }
 
 /**** Log Utility ****/
@@ -105,6 +192,7 @@ pygm_init(void)
     throw python::script::script_error("pygm_init: failed to setup 'pygm' module");
 
   python::register_type("pypoint", pygm, &pypoint_type);
+  python::register_type("pysprite", pygm, &pysprite_type);
 
   return pygm;
 }
@@ -115,17 +203,46 @@ pygm_init(void)
 
 namespace python {
 
-PyObject*
-pypoint_alloc(point *p)
+/* Exported Types */
+
+PyObject* pypoint_alloc(const point &p)
 {
   struct pypoint *pnt;
-  pnt = (struct pypoint*)PyObject_New(struct point, &pypoint_type);
+  pnt = (struct pypoint*)PyObject_New(struct pypoint, &pypoint_type);
   if (pnt == NULL)
     return NULL;
 
   pnt->p = p;
   return (PyObject *)pnt;
 }
+
+PyObject* pyrect_alloc(const rect & r)
+{
+  Py_RETURN_NONE;
+}
+
+PyObject* pycolor_alloc(const color & c)
+{
+  Py_RETURN_NONE;
+}
+
+PyObject* pysprite_alloc(const sprite &s)
+{
+  struct pysprite *spr;
+  spr = (struct pysprite*)PyObject_New(struct pysprite, &pysprite_type);
+  if (spr == NULL)
+    return NULL;
+
+  spr->s = s;
+  return (PyObject *)spr;
+}
+
+PyObject* pytexture_alloc(texture *tx)
+{
+  Py_RETURN_NONE;
+}
+
+/***** Initialization *****/
 
 void initialize()
 {

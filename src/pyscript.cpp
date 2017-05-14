@@ -43,30 +43,66 @@ void append_path(const char *path)
   Py_DECREF(mpath);
 }
 
-script::script_error::script_error(const char * msg):
-  runtime_error(msg)
+void script::script_error::collect()
 {
-  if (!PyErr_Occurred()) {
+  PyObject	*type, *value, *traceback;
+
+  if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_StopIteration))
+    return;
+
+  PyErr_Fetch(&type, &value, &traceback);
+
+  if (type == NULL || value == NULL || traceback == NULL) {
+    SDL_Log("script::python - unknown exception");
     return;
   }
 
-  // Get python error traceback
-  PyErr_Print();
-  PyErr_Clear();
+  char *tp    = PyUnicode_AsUTF8(type),
+       *val   = PyUnicode_AsUTF8(value),
+       *trace = PyUnicode_AsUTF8(traceback);
+  SDL_Log("python exception - type: %s - value: %s - trace: %s",
+          tp, val, trace);
+
+  std::stringstream ss;
+  ss << "error:";
+  if (tp)
+    ss << " [" << tp << "]";
+  if (val)
+    ss << " \"" << val << "\"";
+  if (trace)
+    ss << std::endl << trace;
+
+  Py_DECREF(type);
+  Py_DECREF(value);
+  Py_DECREF(traceback);
+
+  _msg = ss.str();
 }
 
-script::script_error::script_error(const std::stringstream & ss):
-  runtime_error(ss.str().c_str())
+script::script_error::script_error(const char * msg)
 {
-  if (!PyErr_Occurred()) {
-    return;
-  }
-
-  // Get python error traceback
-  PyErr_Print();
+  collect();
+  _msg  = _msg + ". " + msg;
   PyErr_Clear();
 }
 
+script::script_error::script_error(const std::stringstream & ss)
+{
+  collect();
+  _msg  = _msg + ". " + ss.str();
+  PyErr_Clear();
+}
+
+script::script_error::script_error()
+{
+  collect();
+  PyErr_Clear();
+}
+
+const char* script::script_error::what() const _NOEXCEPT
+{
+  return _msg.c_str();
+}
 
 script::script(const std::string file_path):
   _py_module(NULL)
@@ -90,6 +126,7 @@ script::script(const std::string file_path):
       __METHOD_NAME__, script_path.string().c_str());
     throw python::script::script_error("Failed to load python script");
   }
+  SDL_Log("python::script - loaded module '%s'", _name.c_str());
 }
 
 script::~script()
@@ -113,18 +150,12 @@ void script::call_func(json & ret, const std::string & func_name) const
  * Generic interface to call a function from
  * loaded python module
  */
-PyObject* script::call_func_ex(const std::string & func_name, const json & args) const
+PyObject* script::call_func_ex(const std::string & func_name, PyObject * kwargs) const
 {
   if (_py_module == nullptr) {
     SDL_Log("%s - module %s is not initalized. cannot call \"%s\"",
       __METHOD_NAME__, _name.c_str(), func_name.c_str());
     throw script_error("Cannot call function. Module object is not initialized.");
-  }
-
-  if (!args.is_object()) {
-    SDL_Log("%s - python function arguments must be a dictionary. cannot call \"%s\"",
-      __METHOD_NAME__, func_name.c_str());
-    throw script_error("Cannot call function. Arguments object is not a dictionary.");
   }
 
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
@@ -142,34 +173,24 @@ PyObject* script::call_func_ex(const std::string & func_name, const json & args)
     throw script_error("Called python module attribute is not a function");
   }
 
-  PyObject * kwargs = from_json(args);
-
   // call python
-  PyObject * targs = PyTuple_New(0);
-  PyObject * ret = PyObject_Call(func, targs, kwargs);
-  Py_DECREF(targs);
-  Py_DECREF(kwargs);
+  PyObject *args = PyTuple_New(0);
+  PyObject *ret = PyObject_Call(func, args, kwargs);
+  Py_DECREF(args);
   if (ret == NULL) {
-    Py_XDECREF(ret);
-
-    SDL_Log("%s - python function call failed. %s:%s",
-      __METHOD_NAME__, _name.c_str(), func_name.c_str());
-    throw script::script_error("Python function call failed");
+    throw script::script_error();
   }
 
   return ret;
 }
 
-void script::call_func(json & ret, const std::string & func_name, const json & args) const
+void script::call_func(json & ret, const std::string & func_name, const json & kwargs) const
 {
-  PyObject* py = (PyObject*)call_func_ex(func_name, args);
+  PyObject* pykwargs = from_json(kwargs);
+  PyObject* py = (PyObject*)call_func_ex(func_name, pykwargs);
   ret = to_json(py);
   Py_XDECREF(py);
-  if (ret == NULL) {
-    SDL_Log("%s - failed to convert returned value of %s:%s",
-      __METHOD_NAME__, _name.c_str(), func_name.c_str());
-    throw script_error("Failed to convert value returned from Python");
-  }
+  Py_XDECREF(pykwargs);
 }
 
 bool script::has_func(const std::string & func_name) const
@@ -186,35 +207,6 @@ bool script::has_func(const std::string & func_name) const
 
   Py_DECREF(func);
   return true;
-}
-
-PyObject*
-import(const char *p)
-{
-  path filep(p);
-  append_path(filep.parent_path().string().c_str());
-
-  PyObject* module = PyImport_ImportModule(filep.leaf().string().c_str());
-  if (module == NULL)
-    PyErr_Print();
-
-  return module;
-}
-
-PyObject*
-callable(PyObject *module, const char *symbol)
-{
-  PyObject *obj;
-
-  if ((obj = PyObject_GetAttrString(module, symbol)) == NULL)
-    return NULL;
-
-  if (!PyCallable_Check(obj)) {
-    Py_DECREF(obj);
-    return NULL;
-  }
-
-  return obj;
 }
 
 void
@@ -244,6 +236,11 @@ register_type(const char *name, PyObject *module, PyTypeObject *type)
 
 json to_json(PyObject * py)
 {
+  // none
+  if (py == Py_None) {
+    return json();
+  }
+
   // number is interger
   if (PyLong_Check(py)) {
     return json(PyLong_AsLong(py));
@@ -334,6 +331,9 @@ json to_json(PyObject * py)
 
 PyObject * from_json(const json & json_data)
 {
+  if (json_data.is_null()) {
+    Py_RETURN_NONE;
+  }
   if (json_data.is_number_integer()) {
     return PyLong_FromLong(json_data.get<long>());
   }

@@ -60,19 +60,6 @@ PyObject * from_json(const json &);
 json to_json(PyObject *);
 
 /**
- * @brief import
- * @return newlypython module objref
- * import python module from a file path
- */
-PyObject* import(const char *);
-
-/**
- * @brief callable
- * @return new python callable objref
- */
-PyObject* callable(PyObject *, const char *);
-
-/**
  * @brief register_const
  * register named constant integer in python runtime
  */
@@ -94,11 +81,11 @@ void register_type(const char *, PyObject *, PyTypeObject *);
  * texture
  */
 
-PyObject   *pypoint_alloc(point *);
-PyObject   *pyrect_alloc(rect *);
-PyObject   *pycolor_alloc(color *);
-PyObject   *pysprite_alloc(sprite *);
-PyObject   *pytexture_alloc(texture *);
+PyObject   *pypoint_alloc(const point &);
+PyObject   *pyrect_alloc(const rect &);
+PyObject   *pycolor_alloc(const color &);
+PyObject   *pysprite_alloc(const sprite &);
+PyObject   *pytexture_alloc(const texture *);
 
 /**
  * @brief The script class
@@ -111,11 +98,17 @@ public:
    * @brief The script_error class
    * Generic python runtime error
    */
-  class script_error: public std::runtime_error {
+  class script_error: public std::exception {
   public:
     script_error(const std::stringstream &);
     script_error(const char *);
+    script_error();
 
+    virtual const char* what() const _NOEXCEPT;
+
+  private:
+    std::string _msg;
+    void collect();
   };
 
   // load python script from path
@@ -124,10 +117,10 @@ public:
 
   // call python function and get result as data
   void call_func(json & ret, const std::string & func_name) const;
-  void call_func(json & ret, const std::string & func_name, const json & args) const;
+  void call_func(json & ret, const std::string & func_name, const json & kwargs) const;
 
   // call python function and get result as raw PyObject
-  PyObject* call_func_ex(const std::string & func_name, const json & args) const;
+  PyObject* call_func_ex(const std::string & func_name, PyObject * kwargs) const;
 
   // check if module exports callable with name
   bool has_func(const std::string & func_name) const;
