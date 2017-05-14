@@ -5,7 +5,7 @@
 #include "texture.h"
 #include "sprite.h"
 #include "manager.h"
-#include "script.h"
+#include "pyscript.h"
 
 /* Global State */
 static SDL_Window* g_window = nullptr;
