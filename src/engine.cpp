@@ -124,9 +124,6 @@ int GM_Init(const std::string & cfg_path, const std::string & name) {
     // setup random
     srand((unsigned int)time(NULL));
 
-    // init python
-    python::initialize();
-
     // fps timer
     g_frame_timer = new timer();
     g_screen_ticks_per_frame = 1000 / cfg["fps_cap"].get<int>();

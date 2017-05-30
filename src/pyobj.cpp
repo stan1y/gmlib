@@ -1,5 +1,6 @@
 #include "pyscript.h"
 
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wwritable-strings"
@@ -7,12 +8,26 @@
 #endif
 
 /**
- * @brief pypebble_init
+ * @brief pypebble_module_init
  * Initialize python exported objects
  * Must be called before Py_Initialize()
  */
-PyMODINIT_FUNC          pygm_init(void);
-static PyObject		     *pygm_log(PyObject *, PyObject *);
+PyMODINIT_FUNC    pygm_module_init(void);
+static PyObject		      *pygm_log(PyObject *, PyObject *);
+/*
+static void             *python_malloc(void *, size_t);
+static void             *python_calloc(void *, size_t, size_t);
+static void             *python_realloc(void *, void *, size_t);
+static void              python_free(void *, void *);
+
+static PyMemAllocatorEx allocator = {
+  .ctx = NULL,
+  .malloc = python_malloc,
+  .calloc = python_calloc,
+  .realloc = python_realloc,
+  .free = python_free
+};*/
+
 
 static struct PyMethodDef pygm_methods[] = {
   METHOD("log", pygm_log, METH_VARARGS),
@@ -137,12 +152,20 @@ pysprite_getcliprect(struct pysprite *self, PyObject *)
 static PyObject*
 pysprite_render(struct pysprite *self, PyObject *args)
 {
-  struct pypoint *pnt = nullptr;
+  PyObject       *p   = NULL;
+  struct pypoint *pnt = NULL;
 
-  if (!PyArg_ParseTuple(args, "O!", &pypoint_type, (PyObject*)pnt)) {
-    PyErr_SetString(PyExc_TypeError, "function gm.point argument");
-    return (NULL);
+  if (!PyArg_ParseTuple(args, "O", &p)) {
+    PyErr_SetString(PyExc_TypeError, "function needs gm.point argument");
+    return NULL;
   }
+
+  if(Py_TYPE(p) != &pypoint_type) {
+    PyErr_SetString(PyExc_TypeError, "argument is not gm.point type");
+    return NULL;
+  }
+  pnt = (struct pypoint*)p;
+
   self->s.render(GM_GetRenderer(), pnt->p);
   Py_RETURN_NONE;
 }
@@ -174,22 +197,22 @@ pygm_log(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args, "s", &msg)) {
     PyErr_SetString(PyExc_TypeError, "function expects string argument");
-    return (NULL);
+    return NULL;
   }
 
   SDL_Log("python: %s", msg);
-  Py_RETURN_TRUE;
+  Py_RETURN_NONE;
 }
 
 /***** Initialization *****/
 
 PyMODINIT_FUNC
-pygm_init(void)
+pygm_module_init(void)
 {
   PyObject	*pygm;
 
   if ((pygm = PyModule_Create(&pygm_module)) == NULL)
-    throw python::script::script_error("pygm_init: failed to setup 'pygm' module");
+    throw python::script::script_error("pygm_module_init: failed to setup 'pygm' module");
 
   python::register_type("pypoint", pygm, &pypoint_type);
   python::register_type("pysprite", pygm, &pysprite_type);
@@ -244,20 +267,24 @@ PyObject* pytexture_alloc(texture *tx)
 
 /***** Initialization *****/
 
-void initialize()
+void setup()
 {
   Py_NoSiteFlag = 1;
   const config & cfg = config::current();
   path python_path(cfg.get_data()["python_path"].get<std::string>());
   wchar_t * wpython_path = Py_DecodeLocale(python_path.string().c_str(), NULL);
   Py_SetPath(wpython_path);
+  SDL_Log("python::setup - %s", python_path.string().c_str());
+}
 
-  if (PyImport_AppendInittab("gm", &pygm_init) == -1) {
+void initialize()
+{
+  if (PyImport_AppendInittab("gm", &pygm_module_init) == -1) {
     throw script::script_error("PyImport_AppendInittab: failed to add 'gm' module");
   }
 
   Py_Initialize();
-  SDL_Log("python::initialize - %s, %s", Py_GetVersion(), python_path.string().c_str());
+  SDL_Log("python::initialize - %s", Py_GetVersion());
 }
 
 void shutdown()

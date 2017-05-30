@@ -45,32 +45,54 @@ void append_path(const char *path)
 
 void script::script_error::collect()
 {
-  PyObject	*type, *value, *traceback;
+  PyObject	*type = NULL,
+            *value = NULL,
+            *traceback = NULL;
+  PyObject	*stype = NULL,
+            *svalue = NULL,
+            *straceback = NULL;
 
   if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_StopIteration))
     return;
 
   PyErr_Fetch(&type, &value, &traceback);
+  _msg = std::string("unknown exception");
 
   if (type == NULL || value == NULL || traceback == NULL) {
     SDL_Log("script::python - unknown exception");
     return;
   }
+  if (type != NULL) {
+    stype = PyObject_Str(type);
+    if (stype == NULL) {
+      SDL_Log("script::python - failed to collect exception type");
+      return;
+    }
+  }
+  if (value != NULL) {
+    svalue = PyObject_Str(value);
+    if (svalue == NULL) {
+      SDL_Log("script::python - failed to collect exception type");
+      return;
+    }
+  }
+  if (traceback != NULL) {
+    straceback = PyObject_Str(traceback);
+    if (straceback == NULL) {
+      SDL_Log("script::python - failed to collect exception type");
+      return;
+    }
+  }
 
-  char *tp    = PyUnicode_AsUTF8(type),
-       *val   = PyUnicode_AsUTF8(value),
-       *trace = PyUnicode_AsUTF8(traceback);
-  SDL_Log("python exception - type: %s - value: %s - trace: %s",
-          tp, val, trace);
+  char *tp    = PyUnicode_AsUTF8(stype),
+       *val   = PyUnicode_AsUTF8(svalue);
 
   std::stringstream ss;
-  ss << "error:";
+  ss << "error: ";
   if (tp)
-    ss << " [" << tp << "]";
+    ss << " " << tp << "";
   if (val)
     ss << " \"" << val << "\"";
-  if (trace)
-    ss << std::endl << trace;
 
   Py_DECREF(type);
   Py_DECREF(value);
@@ -83,20 +105,17 @@ script::script_error::script_error(const char * msg)
 {
   collect();
   _msg  = _msg + ". " + msg;
-  PyErr_Clear();
 }
 
 script::script_error::script_error(const std::stringstream & ss)
 {
   collect();
   _msg  = _msg + ". " + ss.str();
-  PyErr_Clear();
 }
 
 script::script_error::script_error()
 {
   collect();
-  PyErr_Clear();
 }
 
 const char* script::script_error::what() const _NOEXCEPT
@@ -114,17 +133,12 @@ script::script(const std::string file_path):
   append_path(script_path.parent_path().string().c_str());
 
   // load module object
-  PyObject* module_name = PyUnicode_FromString(_name.c_str());
-  _py_module = PyImport_Import(module_name);
-  Py_DECREF(module_name);
+  _py_module = PyImport_ImportModule(_name.c_str());
 
-  if (_py_module == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
-
+  if (_py_module == NULL || PyErr_Occurred()) {
     SDL_Log("%s - failed to load python script from %s",
       __METHOD_NAME__, script_path.string().c_str());
-    throw python::script::script_error("Failed to load python script");
+    throw script_error();
   }
   SDL_Log("python::script - loaded module '%s'", _name.c_str());
 }
@@ -150,22 +164,23 @@ void script::call_func(json & ret, const std::string & func_name) const
  * Generic interface to call a function from
  * loaded python module
  */
-PyObject* script::call_func_ex(const std::string & func_name, PyObject * kwargs) const
+PyObject* script::call_func_ex(const std::string & func_name, PyObject * args_tuple) const
 {
+  PyErr_Clear();
+
   if (_py_module == nullptr) {
-    SDL_Log("%s - module %s is not initalized. cannot call \"%s\"",
-      __METHOD_NAME__, _name.c_str(), func_name.c_str());
-    throw script_error("Cannot call function. Module object is not initialized.");
+    SDL_Log("python::script - no module \"%s\"", _name.c_str());
+    throw script_error("module is not loaded");
   }
 
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
-  if (func == NULL) {
-    SDL_Log("%s - failed to find module attribute %s",
-      __METHOD_NAME__, func_name.c_str());
-    throw script_error("Failed to find python module attribute");
+  if (func == NULL || PyErr_Occurred()) {
+    SDL_Log("python::script - failed to find callable attribute %s",
+      func_name.c_str());
+    throw script_error();
   }
 
-  if (!PyCallable_Check(func)) {
+  if (!PyCallable_Check(func) || PyErr_Occurred()) {
     Py_XDECREF(func);
 
     SDL_Log("%s - python module attribute %s is not a function",
@@ -174,9 +189,7 @@ PyObject* script::call_func_ex(const std::string & func_name, PyObject * kwargs)
   }
 
   // call python
-  PyObject *args = PyTuple_New(0);
-  PyObject *ret = PyObject_Call(func, args, kwargs);
-  Py_DECREF(args);
+  PyObject *ret = PyObject_Call(func, args_tuple, NULL);
   if (ret == NULL) {
     throw script::script_error();
   }
@@ -195,13 +208,14 @@ void script::call_func(json & ret, const std::string & func_name, const json & k
 
 bool script::has_func(const std::string & func_name) const
 {
+  PyErr_Clear();
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
   if (func == NULL) {
     return false;
   }
 
   if (!PyCallable_Check(func)) {
-    Py_XDECREF(func);
+    Py_DECREF(func);
     return false;
   }
 

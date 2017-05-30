@@ -17,6 +17,13 @@
 namespace python {
 
 /**
+ * @brief setup
+ * setup python runtime flags and built-in
+ * modules path (Py_SetPath, Py_NoSiteFlag)
+ */
+void setup();
+
+/**
  * @brief initialize
  * initialize embedded python runtime
  * call this method after extensions registration
@@ -120,7 +127,7 @@ public:
   void call_func(json & ret, const std::string & func_name, const json & kwargs) const;
 
   // call python function and get result as raw PyObject
-  PyObject* call_func_ex(const std::string & func_name, PyObject * kwargs) const;
+  PyObject* call_func_ex(const std::string & func_name, PyObject * tuple) const;
 
   // check if module exports callable with name
   bool has_func(const std::string & func_name) const;
