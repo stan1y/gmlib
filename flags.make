@@ -69,10 +69,10 @@ ifneq ("$(SDL2_TTF_INCLUDE)", "")
 else
     $(error  SDL2_TTF_INCLUDE is not set)
 endif
-ifneq ("$(JANSSON_INCLUDE)", "")
-    CFLAGS +=-I $(JANSSON_INCLUDE)
+ifneq ("$(JSON_INCLUDE)", "")
+    CFLAGS +=-I $(JSON_INCLUDE)
 else
-    $(error  JANSSON_INCLUDE is not set)
+    $(error  JSON_INCLUDE is not set)
 endif
 
 # User defined paths to libraries
@@ -118,10 +118,4 @@ ifneq ("$(SDL2_TTF_LIB)", "")
               -l SDL2_ttf
 else
     $(error  SDL2_TTF_LIB is not set)
-endif
-ifneq ("$(JANSSON_LIB)", "")
-    LDFLAGS +=-L $(JANSSON_LIB) \
-              -l jansson
-else
-    $(error  JANSSON_LIB is not set)
 endif

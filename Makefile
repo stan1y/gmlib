@@ -85,8 +85,9 @@ uninstall:
 
 python:
 	@rm -f python3.6m.zip
-	@cd $(PYTHON_LIB)/Lib; zip -r python3.6m.zip $(GM_EMBEDDED_MODULES)
-	@mv $(PYTHON_LIB)/Lib/python3.6m.zip python3.6m.zip
+	@cp $(PYTHON_SRC)/build/lib.macosx-10.12-x86_64-3.6/_sysconfigdata_m.py $(PYTHON_SRC)/Lib/_sysconfigdata_m.py
+	@cd $(PYTHON_SRC)/Lib; zip -r python3.6m.zip _sysconfigdata_m.py $(GM_EMBEDDED_MODULES)
+	@mv $(PYTHON_SRC)/Lib/python3.6m.zip python3.6m.zip
 
 $(OBJDIR)/%.o: %.cpp
 	@$(CXX) $(CFLAGS) -c $< -o $@
