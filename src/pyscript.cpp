@@ -345,8 +345,15 @@ json to_json(PyObject * py)
 
 PyObject * from_json(const json & json_data)
 {
+
   if (json_data.is_null()) {
     Py_RETURN_NONE;
+  }
+  if (json_data.is_boolean()) {
+    if (json_data.get<bool>())
+      Py_RETURN_TRUE;
+    else
+      Py_RETURN_FALSE;
   }
   if (json_data.is_number_integer()) {
     return PyLong_FromLong(json_data.get<long>());
@@ -371,8 +378,8 @@ PyObject * from_json(const json & json_data)
     PyObject * dict = PyDict_New();
     json::const_iterator i = json_data.begin();
     for(; i != json_data.end(); ++i) {
-      PyObject * key = PyUnicode_FromString(i->get<std::string>().c_str());
-      PyObject * val = from_json(*i);
+      PyObject * key = PyUnicode_FromString(i.key().c_str());
+      PyObject * val = from_json(i.value());
       PyDict_SetItem(dict, key, val);
       Py_DECREF(key);
       Py_DECREF(val);
