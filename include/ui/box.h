@@ -103,7 +103,7 @@ public:
     _pad.bottom = pad;
     _pad.right = pad;
   }
-  void set_padding(padding & pad) { _pad = pad; }
+  void set_padding(const padding & pad) { _pad = pad; }
   const padding & get_padding() { return _pad; }
 
   const int get_margin() const { return _margin; }
