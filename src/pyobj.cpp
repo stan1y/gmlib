@@ -53,6 +53,9 @@ static PyMethodDef pypoint_methods[] = {
 
 static PyObject   *pypoint_getx(struct pypoint *, void *);
 static PyObject   *pypoint_gety(struct pypoint *, void *);
+static PyObject   *pypoint_str(struct pypoint *);
+static int         pypoint_init(struct pypoint *, PyObject *, PyObject *);
+static PyObject *  pypoint_new(PyTypeObject *, PyObject *, PyObject *);
 
 static PyGetSetDef pypoint_getset[] = {
   GETTER("x", pypoint_getx),
@@ -65,7 +68,10 @@ static void        pypoint_dealloc(struct pypoint *);
 static PyTypeObject pypoint_type = {
   PyVarObject_HEAD_INIT(NULL, 0)
   .tp_name = "gm.point",
-  .tp_doc = "struct pypoint",
+  .tp_doc = "struct point",
+  .tp_str = (reprfunc)pypoint_str,
+  .tp_new = (newfunc)pypoint_new,
+  .tp_init = (initproc)pypoint_init,
   .tp_getset = pypoint_getset,
   .tp_methods = pypoint_methods,
   .tp_basicsize = sizeof(struct pypoint),
@@ -78,6 +84,32 @@ void
 pypoint_dealloc(struct pypoint *p)
 {
   PyObject_Del((PyObject*)p);
+}
+
+static
+PyObject *
+pypoint_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  struct pypoint *self;
+  static char *kwlist[] = {"x", "y", NULL};
+  self = (struct pypoint *)type->tp_alloc(type, 0);
+  if (self != NULL) {
+    PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist, &self->p.x, &self->p.y);
+  }
+
+  return (PyObject *)self;
+}
+
+static
+int
+pypoint_init(struct pypoint *pnt, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = {"x", "y", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist,
+                                   &pnt->p.x, &pnt->p.y))
+    return -1;
+
+  return 0;
 }
 
 static
@@ -94,6 +126,13 @@ pypoint_gety(struct pypoint *pnt, void *)
   return PyLong_FromLong(pnt->p.y);
 }
 
+static
+PyObject*
+pypoint_str(struct pypoint *pnt)
+{
+  return PyUnicode_FromString(pnt->p.tostr().c_str());
+}
+
 
 /**
  * @brief The pysprite struct
@@ -104,8 +143,9 @@ struct pysprite {
   sprite s;
 };
 
-static PyObject *pysprite_getcliprect(struct pysprite *, PyObject *);
-static PyObject *pysprite_render(struct pysprite *, PyObject *);
+static PyObject   *pysprite_getcliprect(struct pysprite *, PyObject *);
+static PyObject   *pysprite_render(struct pysprite *, PyObject *);
+static PyObject   *pysprite_str(struct pysprite *);
 
 static PyMethodDef pysprite_methods[] = {
   METHOD("get_cliprect",   pysprite_getcliprect,   METH_NOARGS),
@@ -129,13 +169,21 @@ static void        pysprite_dealloc(struct pysprite *);
 static PyTypeObject pysprite_type = {
   PyVarObject_HEAD_INIT(NULL, 0)
   .tp_name = "gm.sprite",
-  .tp_doc = "struct pysprite",
+  .tp_doc = "struct sprite",
+  .tp_str = (reprfunc)pysprite_str,
   .tp_getset = pysprite_getset,
   .tp_methods = pysprite_methods,
   .tp_basicsize = sizeof(struct pysprite),
   .tp_dealloc = (destructor)pysprite_dealloc,
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 };
+
+static
+PyObject*
+pysprite_str(struct pysprite *spr)
+{
+  return PyUnicode_FromFormat("sprite<%d, %dx%d>", spr->s.idx, spr->s.w, spr->s.h);
+}
 
 static void
 pysprite_dealloc(struct pysprite *p)
@@ -154,19 +202,23 @@ pysprite_render(struct pysprite *self, PyObject *args)
 {
   PyObject       *p   = NULL;
   struct pypoint *pnt = NULL;
+  point at(0, 0);
 
-  if (!PyArg_ParseTuple(args, "O", &p)) {
-    PyErr_SetString(PyExc_TypeError, "function needs gm.point argument");
-    return NULL;
+  if (PyObject_Size(args) > 0) {
+    if (!PyArg_ParseTuple(args, "O", &p)) {
+      PyErr_SetString(PyExc_TypeError, "function needs gm.point argument");
+      return NULL;
+    }
+
+    if(Py_TYPE(p) != &pypoint_type) {
+      PyErr_SetString(PyExc_TypeError, "argument is not gm.point type");
+      return NULL;
+    }
+    pnt = (struct pypoint*)p;
+    at = pnt->p;
   }
 
-  if(Py_TYPE(p) != &pypoint_type) {
-    PyErr_SetString(PyExc_TypeError, "argument is not gm.point type");
-    return NULL;
-  }
-  pnt = (struct pypoint*)p;
-
-  self->s.render(GM_GetRenderer(), pnt->p);
+  self->s.render(GM_GetRenderer(), at);
   Py_RETURN_NONE;
 }
 
@@ -214,8 +266,8 @@ pygm_module_init(void)
   if ((pygm = PyModule_Create(&pygm_module)) == NULL)
     throw python::script::script_error("pygm_module_init: failed to setup 'pygm' module");
 
-  python::register_type("pypoint", pygm, &pypoint_type);
-  python::register_type("pysprite", pygm, &pysprite_type);
+  python::register_type("point", pygm, &pypoint_type);
+  python::register_type("sprite", pygm, &pysprite_type);
 
   return pygm;
 }

@@ -175,9 +175,9 @@ PyObject* script::call_func_ex(const std::string & func_name, PyObject * args_tu
 
   PyObject * func = PyObject_GetAttrString(_py_module, func_name.c_str());
   if (func == NULL || PyErr_Occurred()) {
-    SDL_Log("python::script - failed to find callable attribute %s",
-      func_name.c_str());
-    throw script_error();
+    SDL_Log("python::script - failed to find callable attribute %s in module %s",
+      func_name.c_str(), _name.c_str());
+    throw script_error("failed to find callable in python module");
   }
 
   if (!PyCallable_Check(func) || PyErr_Occurred()) {
@@ -306,7 +306,7 @@ json to_json(PyObject * py)
 
     if (iterator == NULL) {
       // proparate dict error
-      SDL_Log("PyObject_AsJSON - failed to get iterator");
+      SDL_Log("python::to_json - failed to get iterator");
       throw std::runtime_error("failed to get iterator");
     }
     // init new dict
@@ -316,8 +316,7 @@ json to_json(PyObject * py)
       // key must be a unicode string for
       // compatibility with JSON
       if (!PyUnicode_Check(key)) {
-        SDL_Log("%s - cannot convert non-string key in object",
-          __METHOD_NAME__);
+        SDL_Log("python::to_json - cannot convert non-string key in object");
         return NULL;
       }
 
@@ -325,8 +324,8 @@ json to_json(PyObject * py)
       value = PyObject_GetItem(py, key);
       if (value == NULL) {
         // proparage key error
-        SDL_Log("%s - failed to find value by key \"%s\"",
-          __METHOD_NAME__, PyUnicode_AsUTF8(key));
+        SDL_Log("python::to_json - failed to find value by key \"%s\"",
+                PyUnicode_AsUTF8(key));
         throw std::runtime_error("failed to find key in python object");
       }
 
@@ -339,7 +338,13 @@ json to_json(PyObject * py)
     return p;
   }
 
-  SDL_Log("PyObject_AsJSON - unknown python object type, cannot convert to json.");
+  PyObject *pytype = PyObject_Type(py);
+  PyObject *pydesc = PyObject_Str(pytype);
+
+  SDL_Log("python::to_json - unsupported type '%s', cannot convert to json.",
+          PyUnicode_AsUTF8(pydesc));
+  Py_DECREF(pydesc);
+  Py_DECREF(pytype);
   throw python::script::script_error("unknown python type");
 }
 

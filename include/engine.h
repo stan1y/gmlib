@@ -283,7 +283,7 @@ public:
       TTF_CloseFont(_f);
   }
 
-  std::string tostr()
+  std::string tostr() const
   {
     std::stringstream ss;
     ss << "font< " << _fname \

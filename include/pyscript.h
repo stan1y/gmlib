@@ -10,7 +10,7 @@
 
 #define METHOD(n, c, a)		{ n, (PyCFunction)c, a, NULL }
 #define GETTER(n, g)		{ n, (getter)g, NULL, NULL, NULL }
-#define SETTER(n, s)		{ n, NULL, (setter)g, NULL, NULL }
+#define SETTER(n, s)		{ n, NULL, (setter)s, NULL, NULL }
 #define GETSET(n, g, s)		{ n, (getter)g, (setter)s, NULL, NULL }
 
 
