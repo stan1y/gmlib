@@ -26,9 +26,7 @@ public:
     static const int fragment_max_height = 4096;
 
     // create a new fragment of given size at position
-    fragment(rect & pos):
-      _pos(pos), _tx(pos.w, pos.h, SDL_TEXTUREACCESS_TARGET)
-    {}
+    fragment(rect & pos);
 
     ~fragment() {}
     // get fragment size and position on multi_texture
@@ -62,6 +60,7 @@ public:
   /* render 'sprite' instance onto this multi_texture at given point */
   void render_sprite(SDL_Renderer *, const sprite & s, const point & at = point(0, 0));
 
+  void render_draw_lines(SDL_Renderer *, const rect &, const point *, int);
   void render_draw_rect(SDL_Renderer *, const rect &);
   void render_fill_rect(SDL_Renderer *, const rect &);
   void render_clear(SDL_Renderer *);

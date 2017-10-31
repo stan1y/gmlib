@@ -374,6 +374,19 @@ multi_texture::multi_texture(int w, int h, int fw, int fh):
   init(fw, fh);
 }
 
+multi_texture::fragment::fragment(rect & pos):
+  _pos(pos), _tx(pos.w, pos.h, SDL_TEXTUREACCESS_TARGET)
+{
+  // DEBUG REMOVE ME
+  SDL_Renderer *r = GM_GetRenderer();
+  texture::render_context ctx(&_tx, r);
+  color rand_color = color::random();
+  rand_color.apply(r);
+  SDL_RenderClear(r);
+  SDL_Log("multi_texture::fragment - random debug: %s",
+          rand_color.tostr().c_str());
+}
+
 void multi_texture::init(int fw, int fh)
 {
   uint32_t fragments_w = 0;
@@ -429,15 +442,32 @@ void multi_texture::init(int fw, int fh)
 #endif
 }
 
-void multi_texture::render(SDL_Renderer * r, const rect & src, const rect &dst)
+void multi_texture::render(SDL_Renderer * r, const rect & src, const rect & dst)
 {
+  lock_container(_fragments);
   container<fragment*>::iterator it = _fragments.begin();
   for(; it != _fragments.end(); ++it) {
     fragment * f = *it;
     if (!f->pos().collide_rect(src))
       continue;
-    rect fragment_src = f->pos().clip(src);
-    f->get_texture().render(r, fragment_src, dst);
+    rect fragment_src = f->pos().clip(src) - f->pos().topleft();
+    rect fragment_dst(dst.x, dst.y,
+                      fragment_src.w,
+                      fragment_src.h);
+    if (f->pos().x > 0)
+      fragment_dst.x += f->pos().x - src.x;
+    if (f->pos().y > 0)
+      fragment_dst.y += f->pos().y - src.y;
+
+//    SDL_Log("***");
+//    SDL_Log("frg_src=%s", fragment_src.tostr().c_str());
+//    SDL_Log("frg_dst=%s", fragment_dst.tostr().c_str());
+//    SDL_Log("frg_pos=%s", f->pos().tostr().c_str());
+//    SDL_Log("src=%s", src.tostr().c_str());
+//    SDL_Log("dst=%s", dst.tostr().c_str());
+    f->get_texture().render(r,
+                            fragment_src,
+                            fragment_dst);
   }
 }
 
@@ -492,6 +522,37 @@ void multi_texture::render_texture(SDL_Renderer * r, const texture & tx, const p
         texture::render_context ctx(&f->get_texture(), r);
         tx.render(r, src, dst);
       }
+    }
+  }
+}
+
+void multi_texture::render_draw_lines(SDL_Renderer * r,
+                                      const rect & bounds,
+                                      const point * points,
+                                      int count)
+{
+  /*
+   * points array is expected to be an absolute
+   * pixel values for total size of the multi_texture
+   */
+  lock_container(_fragments);
+  container<fragment*>::iterator it = _fragments.begin();
+
+  // find fragments containing this line
+  for(; it != _fragments.end(); ++it) {
+    fragment * f = *it;
+    const rect & fpos = f->pos();
+    if (!bounds.collide_rect(fpos))
+      continue;
+    {
+      texture::render_context ctx(&f->get_texture(), r);
+      point * adj = new point[count];
+      for(int i = 0; i < count; ++i) {
+        adj[i].x = points[i].x - fpos.x;
+        adj[i].y = points[i].y - fpos.y;
+      }
+      SDL_RenderDrawLines(r, adj, count);
+      delete[] adj;
     }
   }
 }
