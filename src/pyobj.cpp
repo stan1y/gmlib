@@ -12,8 +12,11 @@
  * Initialize python exported objects
  * Must be called before Py_Initialize()
  */
-PyMODINIT_FUNC    pygm_module_init(void);
+PyMODINIT_FUNC           pygm_module_init(void);
 static PyObject		      *pygm_log(PyObject *, PyObject *);
+static PyObject         *pygm_timer(PyObject *, PyObject *);
+static unsigned int      pytimer_callback(unsigned int, void *);
+
 /*
 static void             *python_malloc(void *, size_t);
 static void             *python_calloc(void *, size_t, size_t);
@@ -29,8 +32,12 @@ static PyMemAllocatorEx allocator = {
 };*/
 
 
+/**
+ * @brief 'gm' module in python runtime
+ */
 static struct PyMethodDef pygm_methods[] = {
   METHOD("log", pygm_log, METH_VARARGS),
+  METHOD("timer", pygm_timer, METH_VARARGS),
   { NULL, NULL, 0, NULL }
 };
 
@@ -239,7 +246,9 @@ static PyObject* pysprite_geth(struct pysprite *self, void *)
   return PyLong_FromLong(self->s.h);
 }
 
-/**** Log Utility ****/
+/*
+ * python runtime log utility
+ */
 
 static
 PyObject*
@@ -252,7 +261,64 @@ pygm_log(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  SDL_Log("python: %s", msg);
+  SDL_Log(">%s", msg);
+  Py_RETURN_NONE;
+}
+
+/*
+ * python timer utility
+ */
+
+struct pytimer {
+  unsigned int    interval;
+  PyObject*       state;
+  PyObject*       callback;
+  SDL_TimerID     timer;
+
+  pytimer(unsigned int i,
+          PyObject *st,
+          PyObject *clb):
+    interval(i),
+    state(st),
+    callback(clb)
+  {
+    timer = SDL_AddTimer(interval, &pytimer_callback, this);
+  }
+
+  ~pytimer()
+  {
+    SDL_RemoveTimer(timer);
+  }
+};
+
+unsigned int
+pytimer_callback(unsigned int interval, void *arg)
+{
+  struct pytimer * timer = (struct pytimer*)arg;
+
+  // cancel timer
+  delete timer;
+  return 0;
+}
+
+static
+PyObject*
+pygm_timer(PyObject *self, PyObject *args)
+{
+  unsigned int     interval = 0;
+  PyObject        *callback = NULL,
+                  *state    = NULL;
+
+  if (!PyArg_ParseTuple(args, "IOO",
+                        &interval,
+                        callback,
+                        state))
+  {
+    PyErr_SetString(PyExc_TypeError, "function expects interval, callback and state as arguments");
+    return NULL;
+  }
+
+  new pytimer(interval, state, callback);
   Py_RETURN_NONE;
 }
 
