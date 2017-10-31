@@ -84,12 +84,6 @@ public:
       }
     }
 
-    void clear_target()
-    {
-      color(0, 0, 0, 0).apply(_r);
-      SDL_RenderClear(_r);
-    }
-
   private:
     SDL_Renderer * _r;
     texture * _t;
