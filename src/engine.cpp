@@ -184,11 +184,6 @@ void GM_StartFrame()
       g_avg_fps = 0;
     }  
   }
-
-  // clear screen with black
-  SDL_SetRenderTarget(g_renderer, NULL);
-  SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, 255);
-  SDL_RenderClear(g_renderer);
 }
 
 void GM_UpdateFrame()
@@ -231,9 +226,9 @@ void GM_RenderFrame()
   }
   SDL_Renderer * r = GM_GetRenderer();
 
-  // reset renderer
+  // reset renderer and paint white
   SDL_SetRenderTarget(r, NULL);
-  color::black().apply(r);
+  color::white().apply(r);
   SDL_RenderClear(r);
 
   g_screen_current->render(r);
@@ -554,6 +549,27 @@ void color::apply(SDL_Renderer* rnd) const
 void color::apply() const
 {
   apply(GM_GetRenderer());
+}
+
+std::string color::tostr() const
+{
+  std::stringstream ss;
+  ss << "color<" \
+     << "r:" << (int)r << ", " \
+     << "g:" << (int)g << ", " \
+     << "b:" << (int)b << ", " \
+     << "a:" << (int)a << ">";
+
+  return ss.str();
+}
+
+color color::random()
+{
+  return color(
+        int32_to_uint8(rand_int(0, 255)),
+        int32_to_uint8(rand_int(0, 255)),
+        int32_to_uint8(rand_int(0, 255)),
+        255);
 }
 
 color color::from_json(const json & d)
