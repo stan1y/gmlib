@@ -136,6 +136,9 @@ struct color : SDL_Color {
   void apply(SDL_Renderer* rnd) const;
   void apply() const;
 
+  std::string tostr() const;
+
+  static color random();
   static color from_string(const std::string & sclr);
   static color from_json(const json & d);
 
@@ -348,6 +351,7 @@ typedef std::lock_guard<sdl_mutex> mutex_lock;
 */
 template<class T> class container {
 public:
+  typedef typename std::vector<T>::reference reference;
   typedef typename std::vector<T>::const_iterator const_iterator;
   typedef typename std::vector<T>::iterator iterator;
   typedef typename std::vector<T>::reverse_iterator reverse_iterator;
@@ -382,6 +386,7 @@ public:
   }
 
   iterator begin() { return _v.begin(); }
+  reference front() { return _v.front(); }
   iterator end() { return _v.end(); }
 
   const_iterator begin() const { return _v.begin(); }
