@@ -16,20 +16,26 @@ native support for C++ data classes into python objects serialization.
 GMLib uses the following libraries:
 
 * `SDL`, `SDL_ttf` and `SDL_image` - Simple Direct Layer libraries
-* `boost` - Most of the cross platform needs
-* `jansson` - Fast JSON parser
 * `freetype` - Used by SDL_ttf
+* `boost` - Most of the cross platform needs
+* `https://github.com/nlohmann/json` - JSON for Modern C++
 
 ## Components
 
 The overview list of GMLib features:
 * Components (of a screen) architecture.
-* Generic resources caches with dynamic and static update.
+* Generic in-memory resources cache.
 * Sprites, sprite sheets and animations.
 * Textures, drawing and pixel access.
 * Comprehensive GUI manager and controls library
 * Native JSON as internal and external structured data format
 * Embedded python (Python 3) runtime and data marshaling support
+
+### Planned
+
+This planned to be implemented at some point:
+* Resources based on [PhysicsFS](https://icculus.org/physfs/).
+* Generic 2d grids with rectangular and [hexagon](https://www.redblobgames.com/grids/hexagons) cells.
 
 There is a brief [documentation of GMLib architecture and classes](https://github.com/stan1y/gmlib/blob/master/Documentation.md) and a separate [UI controls reference](https://github.com/stan1y/gmlib/blob/master/GMUI_Reference.md). Also there are a [getting started guide](/) and a [demo application](https://github.com/stan1y/gmlib/tree/master/src/demo).
 
